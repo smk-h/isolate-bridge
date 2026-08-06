@@ -1,0 +1,24 @@
+{
+  "name": "@smai-kit/msgferry-worker",
+  "version": "0.1.0",
+  "description": "MsgFerry 外网 Node Worker - 任务消费与 SSH 执行",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "msgferry-worker": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@smai-kit/msgferry-shared": "workspace:*",
+    "ssh2": "^1.16.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.0",
+    "@types/node": "^22.0.0",
+    "@types/ssh2": "^1.15.1"
+  }
+}

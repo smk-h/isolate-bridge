@@ -1,0 +1,16 @@
+{
+  "name": "@smai-kit/msgferry-shared",
+  "version": "0.1.0",
+  "description": "MsgFerry 共享类型契约 - 任务结构体、错误码、路径常量",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@smai-kit/msgferry-mcp-server",
+  "version": "0.1.0",
+  "description": "MsgFerry 内网 MCP Server - 任务投递与结果回读",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "msgferry-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@smai-kit/msgferry-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

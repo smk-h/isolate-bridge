@@ -1,0 +1,15 @@
+{
+  "name": "@smai-kit/msgferry",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MsgFerry - 隔离网络环境下基于 HGFS 文件队列的 AI 设备指令摆渡桥",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r --parallel run dev",
+    "clean": "pnpm -r exec rm -rf dist node_modules"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
