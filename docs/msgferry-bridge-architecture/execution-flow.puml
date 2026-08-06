@@ -1,0 +1,74 @@
+@startuml 完整执行流程时序图
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam SequenceParticipantBorderColor #7A93BE
+skinparam SequenceParticipantBackgroundColor #DCE9FB
+skinparam SequenceParticipantFontColor #1F2933
+skinparam SequenceLifeLineBorderColor #7A93BE
+skinparam SequenceGroupBackgroundColor #F7F9FC
+skinparam SequenceGroupBorderColor #7A93BE
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title MsgFerry 完整执行流程：从内网 Claude 提交到设备 A 执行回传
+
+participant "Claude Code\n(内网)" as CC
+participant "MCP / TypeScript 工具\n(内网)" as TOOL
+participant "HGFS 队列\n(pending/done/...)" as Q
+participant "Node Worker\n(Windows)" as W
+participant "设备 A\n(外网 SSH)" as D
+
+== 阶段一：内网提交任务 ==
+
+CC -> TOOL : 生成 Shell 指令
+TOOL -> Q : 检查 task_id 幂等
+note over TOOL, Q : pending/processing 已存在同 id 则拒绝重提
+TOOL -> Q : 写 .tmp → rename pending/<task_id>.json
+
+== 阶段二：外网消费并抢占 ==
+
+W -> Q : 轮询 pending (500ms 退避)
+W -> Q : 创建 processing/<task_id>.lock 抢占
+note over W, Q : O_CREAT|O_EXCL，创建成功者拥有执行权
+W -> Q : 二次确认 processing 无同 id 文件
+
+== 阶段三：安全校验与执行 ==
+
+W -> W : 命令白/黑名单校验
+alt 校验通过
+  W -> D : SSH 执行命令
+  D --> W : stdout / stderr / exit_code
+  alt 输出超过 64KB
+    W -> Q : 落盘 outputs/<task_id>.stdout
+    note over W, Q : 结构体只保留摘要 + 指针
+  end
+else 校验失败
+  W -> Q : 写 failed，error_msg=blocked_by_policy
+end
+
+== 阶段四：结果回写与消费 ==
+
+W -> Q : 回写 completed / failed
+CC -> TOOL : 轮询结果目录
+TOOL --> CC : 读取结果 JSON
+note over TOOL, Q : truncated=true 则按指针读 outputs/ 大文件
+
+== 阶段五：超时取消兜底 ==
+
+TOOL -> Q : 超时写 cancelled/<task_id>
+W -> Q : 回写前检查 cancelled/
+note over W, Q : 已取消则写 cancelled/<task_id>.result(审计)，不污染 completed
+
+== 阶段六：心跳保活 ==
+
+W -> Q : 每 5s 写 heartbeat.json
+TOOL -> Q : 提交前读心跳
+note over TOOL, Q : now - last_beat > 15s 则返回 worker_offline，不提交
+
+@enduml
