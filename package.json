@@ -1,6 +1,6 @@
 {
   "name": "@smai-kit/msgferry",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "MsgFerry - 隔离网络环境下基于 HGFS 文件队列的 AI 设备指令摆渡桥",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@smai-kit/msgferry-mcp-server",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "MsgFerry 内网 MCP Server - 任务投递与结果回读",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@smai-kit/msgferry-build",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "description": "MsgFerry 构建脚本 - 产物打包与组装",
