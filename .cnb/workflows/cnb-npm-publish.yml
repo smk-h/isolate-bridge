@@ -1,0 +1,74 @@
+# npm 自动发布流水线
+# 仅在 main 分支的 push 中、且提交记录含有 [publish] 时触发
+# 发布流程:
+#   1. 安装依赖并构建产物 (pnpm build)
+#   2. 依次检查 mcp-server 和 worker 的版本号
+#   3. 版本号未改变则跳过，已改变则发布到 npm
+
+main:
+  push:
+    - docker:
+        image: node:22
+      stages:
+        - name: 环境版本
+          script: |
+            echo "Node.js 版本: $(node -v)"
+            echo "npm 版本: $(npm -v)"
+
+        - name: 安装 pnpm
+          if: |
+            case "$CNB_COMMIT_MESSAGE" in *"[publish]"* ) true ;; * ) false ;; esac
+          script: |
+            npm install -g pnpm
+
+        - name: 安装依赖
+          if: |
+            case "$CNB_COMMIT_MESSAGE" in *"[publish]"* ) true ;; * ) false ;; esac
+          script: |
+            pnpm install --frozen-lockfile
+
+        - name: 构建产物
+          if: |
+            case "$CNB_COMMIT_MESSAGE" in *"[publish]"* ) true ;; * ) false ;; esac
+          script: |
+            pnpm build
+            echo "--- 产物结构 ---"
+            ls -la dist/mcp-server/
+            ls -la dist/worker/
+
+        - name: 发布 mcp-server
+          if: |
+            case "$CNB_COMMIT_MESSAGE" in *"[publish]"* ) true ;; * ) false ;; esac
+          imports: https://cnb.cool/sumu.k/secret-key/-/blob/main/access-token.yml
+          script: |
+            PKG="@smai-kit/msgferry-mcp-server"
+            VER=$(node -p "require('./dist/mcp-server/package.json').version")
+            # 幂等保护：该版本已发布则跳过，避免重试时 EPUBLISHCONFLICT
+            if npm view "${PKG}@${VER}" version >/dev/null 2>&1; then
+              echo "⏭️  ${PKG}@${VER} 已存在，跳过发布"
+            else
+              echo "//registry.npmjs.org/:_authToken=${NPM_ACCESS_TOKENS}" > ~/.npmrc
+              npm config set registry https://registry.npmjs.org/
+              cd dist/mcp-server
+              npm publish --access public
+              cd ../../
+              echo "✅ 发布成功！包: ${PKG}@${VER}"
+            fi
+
+        - name: 发布 worker
+          if: |
+            case "$CNB_COMMIT_MESSAGE" in *"[publish]"* ) true ;; * ) false ;; esac
+          imports: https://cnb.cool/sumu.k/secret-key/-/blob/main/access-token.yml
+          script: |
+            PKG="@smai-kit/msgferry-worker"
+            VER=$(node -p "require('./dist/worker/package.json').version")
+            if npm view "${PKG}@${VER}" version >/dev/null 2>&1; then
+              echo "⏭️  ${PKG}@${VER} 已存在，跳过发布"
+            else
+              echo "//registry.npmjs.org/:_authToken=${NPM_ACCESS_TOKENS}" > ~/.npmrc
+              npm config set registry https://registry.npmjs.org/
+              cd dist/worker
+              npm publish --access public
+              cd ../../
+              echo "✅ 发布成功！包: ${PKG}@${VER}"
+            fi
