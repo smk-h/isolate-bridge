@@ -13,3 +13,5 @@
  */
 
 export const PACKAGE_NAME = '@smai-kit/msgferry-mcp-server';
+
+console.log("Hello, I'm mcp-server");

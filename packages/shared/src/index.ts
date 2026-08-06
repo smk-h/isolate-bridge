@@ -12,6 +12,8 @@
 
 export const PACKAGE_NAME = '@smai-kit/msgferry-shared';
 
+console.log("Hello, I'm shared");
+
 /** 队列目录名常量 */
 export const QUEUE_DIRS = {
   pending: 'pending',

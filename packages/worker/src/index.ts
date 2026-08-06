@@ -14,4 +14,6 @@
 
 export const PACKAGE_NAME = '@smai-kit/msgferry-worker';
 
+console.log("Hello, I'm worker");
+
 export { QUEUE_DIRS } from '@smai-kit/msgferry-shared';
