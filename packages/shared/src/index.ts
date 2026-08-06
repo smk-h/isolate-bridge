@@ -11,3 +11,10 @@
  */
 
 export const PACKAGE_NAME = '@smai-kit/msgferry-shared';
+
+/** 队列目录名常量 */
+export const QUEUE_DIRS = {
+  pending: 'pending',
+  completed: 'completed',
+  failed: 'failed',
+} as const;

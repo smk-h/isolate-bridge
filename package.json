@@ -5,9 +5,9 @@
   "description": "MsgFerry - 隔离网络环境下基于 HGFS 文件队列的 AI 设备指令摆渡桥",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm -r run build",
+    "build": "pnpm --filter @smai-kit/msgferry-build run build:dist",
     "dev": "pnpm -r --parallel run dev",
-    "clean": "pnpm -r exec rm -rf dist node_modules"
+    "clean": "pnpm -r exec rm -rf dist node_modules && rm -rf dist"
   },
   "engines": {
     "node": ">=20.0.0"
