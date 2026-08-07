@@ -3,6 +3,7 @@ include:
   - .cnb/workflows/cnb-custom-env.yml
   - .cnb/workflows/cnb-build-image.yml
   - .cnb/workflows/cnb-npm-publish.yml
+  - .cnb/workflows/cnb-github-sync.yml
 # - .cnb/workflows/cnb-crontab.yml
 
 $:
