@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
-    "@smai-kit/msgferry-shared": "workspace:*"
+    "@smai-kit/msgferry-shared": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "typescript": "^7.0.0",

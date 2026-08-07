@@ -1,17 +1,17 @@
 /**
- * @smai-kit/msgferry-mcp-server
- * MsgFerry 内网 MCP Server 入口
- *
- * 通过 stdio 协议与 Claude Code 通信，
- * 内部走 HGFS 文件队列与外网 Worker 通信。
- *
- * 后续将实现工具：
- * - submit_ssh_task：提交 SSH 任务
- * - query_task_status：查询任务状态
- * - cancel_task：取消任务
- * - check_bridge_health：检查 Worker 心跳
+ * =====================================================
+ * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
+ * File name  : index.ts
+ * Author     : MsgFerry
+ * Date       : 2026/08/08
+ * Version    : 0.0.1
+ * Description: @smai-kit/msgferry-mcp-server 包入口，re-export 全部模块
+ * ======================================================
  */
 
-export const PACKAGE_NAME = '@smai-kit/msgferry-mcp-server';
-
-console.log("Hello, I'm mcp-server");
+export { main } from './main.js';
+export * from './config.js';
+export * from './queue.js';
+export * from './backoff.js';
+export * from './tools.js';
+export * from './server.js';
