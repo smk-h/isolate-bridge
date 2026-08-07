@@ -5,9 +5,11 @@
   "description": "MsgFerry 共享类型契约 - 任务结构体、错误码、路径常量",
   "license": "MIT",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "build": "tsc"
   },
   "devDependencies": {
     "typescript": "^7.0.0",

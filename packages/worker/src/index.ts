@@ -1,19 +1,19 @@
 /**
- * @smai-kit/msgferry-worker
- * MsgFerry 外网 Node Worker 入口
- *
- * 常驻后台进程，轮询 pending/ 消费任务，
- * 经安全策略校验后 SSH 执行，回写结果到 completed/failed。
- *
- * 后续将实现：
- * - 主循环轮询与任务抢占
- * - 命令安全策略校验
- * - SSH 执行与超时控制
- * - 心跳保活
+ * =====================================================
+ * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
+ * File name  : index.ts
+ * Author     : MsgFerry
+ * Date       : 2026/08/07
+ * Version    : 0.0.1
+ * Description: @smai-kit/msgferry-worker 包入口，re-export 全部模块
+ * ======================================================
  */
 
-export const PACKAGE_NAME = '@smai-kit/msgferry-worker';
-
-console.log("Hello, I'm worker");
-
-export { QUEUE_DIRS } from '@smai-kit/msgferry-shared';
+export { main } from './main.js';
+export * from './config.js';
+export * from './backoff.js';
+export * from './queue.js';
+export * from './policy.js';
+export * from './executor.js';
+export * from './audit.js';
+export * from './housekeeping.js';
