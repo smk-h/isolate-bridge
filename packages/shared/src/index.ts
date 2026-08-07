@@ -1,22 +1,16 @@
 /**
- * @smai-kit/msgferry-shared
- * MsgFerry 共享类型契约
- * 内外网两侧共用，保证任务 JSON 读写契约一致
- *
- * 后续将定义：
- * - 任务消息结构体 TaskMessage
- * - 任务状态枚举 TaskStatus
- * - 错误码 ErrorCode
- * - 队列目录与轮询参数常量
+ * =====================================================
+ * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
+ * File name  : index.ts
+ * Author     : MsgFerry
+ * Date       : 2026/08/07
+ * Version    : 0.0.1
+ * Description: @smai-kit/msgferry-shared 包入口，统一 re-export 五个模块
+ * ======================================================
  */
 
-export const PACKAGE_NAME = '@smai-kit/msgferry-shared';
-
-console.log("Hello, I'm shared");
-
-/** 队列目录名常量 */
-export const QUEUE_DIRS = {
-  pending: 'pending',
-  completed: 'completed',
-  failed: 'failed',
-} as const;
+export * from './constants.js';
+export * from './status.js';
+export * from './errors.js';
+export * from './tasks.js';
+export * from './utils.js';
