@@ -1,0 +1,130 @@
+/**
+ * =====================================================
+ * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
+ * File name  : test_work.mjs
+ * Author     : MsgFerry
+ * Date       : 2026/08/08
+ * Version    : 0.0.1
+ * Description: 测试辅助脚本——创建 test/temp 共享目录并启动 Worker 进程
+ *
+ * 用法：
+ *   node test/test_work.mjs [options]
+ *
+ * 选项：
+ *   --executor mock|ssh2   SSH 执行器选择，默认 mock
+ *   --ssh-host <host>      SSH 主机（ssh2 模式必填）
+ *   --ssh-port <port>      SSH 端口，默认 22
+ *   --ssh-user <user>      SSH 用户名
+ *   --ssh-key <path>       SSH 私钥路径
+ *   --ssh-password <pass>  SSH 密码
+ *
+ * 行为：
+ *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
+ *   2. 启动 Worker 进程（mock 模式），将 stderr 转发到当前进程
+ *   3. 收到 SIGINT/SIGTERM 时优雅终止 Worker 并清理
+ * ======================================================
+ */
+
+import { spawn } from 'node:child_process';
+import { mkdirSync, existsSync, rmSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(__dirname, '..');
+const tempDir = join(__dirname, 'temp');
+const workerJs = resolve(projectRoot, 'packages', 'worker', 'dist', 'src', 'main.js');
+
+// 解析命令行参数
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const opts = {
+    executor: 'mock',
+    sshHost: undefined,
+    sshPort: undefined,
+    sshUser: undefined,
+    sshKey: undefined,
+    sshPassword: undefined,
+  };
+  for (let i = 0; i < args.length; i++) {
+    switch (args[i]) {
+      case '--executor':
+        opts.executor = args[++i];
+        break;
+      case '--ssh-host':
+        opts.sshHost = args[++i];
+        break;
+      case '--ssh-port':
+        opts.sshPort = args[++i];
+        break;
+      case '--ssh-user':
+        opts.sshUser = args[++i];
+        break;
+      case '--ssh-key':
+        opts.sshKey = args[++i];
+        break;
+      case '--ssh-password':
+        opts.sshPassword = args[++i];
+        break;
+    }
+  }
+  return opts;
+}
+
+const opts = parseArgs();
+
+// 检查 Worker 编译产物
+if (!existsSync(workerJs)) {
+  console.error('[test_work] worker 产物不存在，请先构建：cd packages/worker && pnpm build');
+  process.exit(1);
+}
+
+// 创建 test/temp 共享目录
+console.log(`[test_work] 创建共享目录: ${tempDir}`);
+mkdirSync(tempDir, { recursive: true });
+
+// 组装 Worker 启动参数
+const workerArgs = ['--hgfs-root', tempDir, '--executor', opts.executor];
+if (opts.sshHost) {
+  workerArgs.push('--ssh-host', opts.sshHost);
+}
+if (opts.sshPort) {
+  workerArgs.push('--ssh-port', opts.sshPort);
+}
+if (opts.sshUser) {
+  workerArgs.push('--ssh-user', opts.sshUser);
+}
+if (opts.sshKey) {
+  workerArgs.push('--ssh-key', opts.sshKey);
+}
+if (opts.sshPassword) {
+  workerArgs.push('--ssh-password', opts.sshPassword);
+}
+
+console.log(`[test_work] 启动 Worker: node ${workerJs} ${workerArgs.join(' ')}`);
+
+const worker = spawn('node', [workerJs, ...workerArgs], {
+  stdio: ['pipe', 'inherit', 'inherit'],
+});
+
+worker.on('error', (err) => {
+  console.error('[test_work] Worker 启动失败:', err.message);
+  process.exit(1);
+});
+
+worker.on('exit', (code, signal) => {
+  console.log(`[test_work] Worker 退出: code=${code} signal=${signal}`);
+  process.exit(code ?? 0);
+});
+
+// 转发信号给 Worker
+function forwardSignal(sig) {
+  console.log(`[test_work] 收到 ${sig}，转发给 Worker...`);
+  worker.kill(sig);
+}
+
+process.on('SIGINT', () => forwardSignal('SIGINT'));
+process.on('SIGTERM', () => forwardSignal('SIGTERM'));
+
+console.log('[test_work] Worker 已启动，等待 mcp-client 连接...');
+console.log('[test_work] 按 Ctrl+C 退出');
