@@ -181,7 +181,8 @@ export async function readHeartbeat(root: string): Promise<Heartbeat | null> {
  */
 export async function readOverflowOutput(root: string, relPath: string): Promise<string | null> {
   try {
-    const fullPath = join(root, relPath);
+    // 双平台兼容：Windows 写入的历史路径可能带反斜杠，统一替换为 posix 分隔符
+    const fullPath = join(root, relPath.replaceAll('\\', '/'));
     return await readFile(fullPath, 'utf-8');
   } catch {
     return null;

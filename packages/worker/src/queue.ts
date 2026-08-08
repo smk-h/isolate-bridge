@@ -151,8 +151,9 @@ export async function writeOverflowOutput(
   stdout: string,
   stderr: string,
 ): Promise<{ stdoutPath: string; stderrPath: string }> {
-  const stdoutPath = join(QUEUE_DIRS.outputs, `${taskId}.stdout`);
-  const stderrPath = join(QUEUE_DIRS.outputs, `${taskId}.stderr`);
+  // 相对路径统一用 posix 分隔符，确保 Windows 写入的路径可被 Linux 侧读取
+  const stdoutPath = `${QUEUE_DIRS.outputs}/${taskId}.stdout`;
+  const stderrPath = `${QUEUE_DIRS.outputs}/${taskId}.stderr`;
   const stdoutFull = join(root, stdoutPath);
   const stderrFull = join(root, stderrPath);
 
