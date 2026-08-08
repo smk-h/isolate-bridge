@@ -12,6 +12,7 @@
 import { parseConfig, validateConfig } from './config.js';
 import type { WorkerConfig } from './config.js';
 import { createBackoff } from './backoff.js';
+import { pathToFileURL } from 'node:url';
 import {
   initQueueDirs,
   listPending,
@@ -193,7 +194,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 // 作为主模块运行时自动调用 main
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.error('[main] fatal:', err);
     process.exit(1);

@@ -13,6 +13,7 @@ import { parseConfig, validateConfig } from './config.js';
 import { initQueueDirs } from './queue.js';
 import { createMcpServer, startServer } from './server.js';
 import type { McpServer } from '@modelcontextprotocol/server';
+import { pathToFileURL } from 'node:url';
 
 /**
  * 优雅退出：关闭 server 后退出进程
@@ -57,7 +58,7 @@ export async function main(): Promise<void> {
 }
 
 // 作为主模块运行时自动调用 main
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.error('[mcp-server] fatal:', err);
     process.exit(1);
