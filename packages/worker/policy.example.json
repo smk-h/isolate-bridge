@@ -1,0 +1,27 @@
+{
+  "//": "命令安全策略示例文件。部署时放在 HGFS 共享根目录下 policy/policy.json，Worker 启动时自动加载。字段说明：whitelist_prefixes=命令首词白名单（精确匹配）；blacklist_patterns=危险命令黑名单（子串匹配，优先级最高）；dangerous_param_patterns=危险参数正则模式（对整个命令做 RegExp 检测）；default_action=白名单未命中时的兜底动作（deny=拦截 / allow=放行）。省略的字段会用内置默认值补齐；文件由 JSON.parse 解析，不支持注释，本行仅作示例说明，部署时请删除。",
+  "whitelist_prefixes": [
+    "docker",
+    "kubectl",
+    "systemctl",
+    "journalctl",
+    "cat",
+    "ls",
+    "tail"
+  ],
+  "blacklist_patterns": [
+    "rm -rf /",
+    "dd if=",
+    "mkfs",
+    ":(){"
+  ],
+  "dangerous_param_patterns": [
+    ";",
+    "&&",
+    "\\|",
+    ">",
+    "\\$\\(",
+    "`"
+  ],
+  "default_action": "deny"
+}

@@ -154,6 +154,12 @@ const assemble = async () => {
       await copy(exampleSrc, resolve(outputDir, "config.example.json"));
     }
 
+    // 拷贝命令安全策略示例到产物（仅 worker 包提供，便于分发后直接参考）
+    const policyExampleSrc = resolve(projectRoot, "packages", pkgName, "policy.example.json");
+    if (existsSync(policyExampleSrc)) {
+      await copy(policyExampleSrc, resolve(outputDir, "policy.example.json"));
+    }
+
     console.log(picocolors.green(`[${pkgName}] Pack complete\n`));
   }
 };
