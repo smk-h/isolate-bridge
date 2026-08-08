@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__msgferry-bridge__submit_ssh_task",
+      "mcp__msgferry-bridge__query_task_status",
+      "mcp__msgferry-bridge__cancel_task",
+      "mcp__msgferry-bridge__check_bridge_health"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "msgferry-bridge"
+  ]
+}

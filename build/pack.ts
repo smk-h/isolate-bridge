@@ -160,6 +160,17 @@ const assemble = async () => {
       await copy(policyExampleSrc, resolve(outputDir, "policy.example.json"));
     }
 
+    // 拷贝「项目内免配置启动 Claude Code」模板到产物（仅 mcp-server 包提供）
+    // 使 MCP 成果物目录就地启动 claude 即可自动连接 MCP server，无需额外全局配置
+    const mcpJsonSrc = resolve(projectRoot, "packages", pkgName, ".mcp.json");
+    if (existsSync(mcpJsonSrc)) {
+      await copy(mcpJsonSrc, resolve(outputDir, ".mcp.json"));
+    }
+    const claudeSettingsSrc = resolve(projectRoot, "packages", pkgName, ".claude", "settings.local.json");
+    if (existsSync(claudeSettingsSrc)) {
+      await copy(claudeSettingsSrc, resolve(outputDir, ".claude", "settings.local.json"));
+    }
+
     console.log(picocolors.green(`[${pkgName}] Pack complete\n`));
   }
 };

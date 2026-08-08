@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "mcpServers": {
+    "msgferry-bridge": {
+      "command": "node",
+      "args": [
+        "./index.mjs"
+      ],
+      "env": {
+        "MSGFERRY_HGFS_ROOT": "/mnt/hgfs/sharedir/vm_share",
+        "MSGFERRY_MAX_WAIT_MS": "30000",
+        "MSGFERRY_POLLING_INITIAL": "500",
+        "MSGFERRY_POLLING_MAX": "3000"
+      }
+    }
+  }
+}
