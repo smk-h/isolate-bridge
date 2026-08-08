@@ -29,7 +29,7 @@ import { loadPolicy, checkCommand, createPolicyWatcher } from './policy.js';
 import type { PolicyRule, PolicyResult } from './policy.js';
 import { createExecutor } from './executor.js';
 import type { SshExecutor } from './executor.js';
-import { AuditLogger } from './audit.js';
+import { AuditLogger, formatSystemTime } from './audit.js';
 import type { AuditEntry } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 
@@ -104,15 +104,17 @@ function makeAuditEntry(
   startTime: number,
   cancelled: boolean,
 ): AuditEntry {
+  const now = Date.now();
   return {
     task_id: task.task_id,
     cmd_summary: task.cmd.slice(0, 200),
     policy_result: policyResult,
     ssh_target: sshTarget,
     exit_code: task.exit_code,
-    duration_ms: Date.now() - startTime,
+    duration_ms: now - startTime,
     cancelled,
-    timestamp: Date.now(),
+    timestamp: now,
+    system_time: formatSystemTime(now),
   };
 }
 

@@ -19,7 +19,7 @@ import { initQueueDirs, listPending, acquireLock, readTask } from '../src/queue.
 import { transitionToProcessing, writeResult, checkCancelled, writeCancelledResult } from '../src/queue.js';
 import { loadPolicy, checkCommand } from '../src/policy.js';
 import { MockSshExecutor } from '../src/executor.js';
-import { AuditLogger } from '../src/audit.js';
+import { AuditLogger, formatSystemTime } from '../src/audit.js';
 import type { AuditEntry } from '../src/audit.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
@@ -84,6 +84,7 @@ async function processTask(task: CommandTask, pid: number): Promise<void> {
 
 /** 记录审计日志 */
 async function logAudit(task: CommandTask, policyResult: { allowed: boolean; reason?: string }, endTime: number): Promise<void> {
+  const now = Date.now();
   const entry: AuditEntry = {
     task_id: task.task_id,
     cmd_summary: task.cmd.slice(0, 200),
@@ -92,7 +93,8 @@ async function logAudit(task: CommandTask, policyResult: { allowed: boolean; rea
     exit_code: task.exit_code,
     duration_ms: endTime - task.start_time,
     cancelled: task.status === 'cancelled',
-    timestamp: Date.now(),
+    timestamp: now,
+    system_time: formatSystemTime(now),
   };
   await auditLogger.log(entry);
 }

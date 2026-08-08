@@ -15,14 +15,14 @@ import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, utimesSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { AuditLogger } from '../src/audit.js';
+import { AuditLogger, formatSystemTime } from '../src/audit.js';
 import type { AuditEntry } from '../src/audit.js';
 
 function makeEntry(overrides: Partial<AuditEntry> = {}): AuditEntry {
   return {
     task_id: 'a1', cmd_summary: 'docker ps', policy_result: { allowed: true },
     ssh_target: null, exit_code: 0, duration_ms: 100, cancelled: false,
-    timestamp: Date.now(), ...overrides,
+    timestamp: Date.now(), system_time: formatSystemTime(Date.now()), ...overrides,
   };
 }
 
@@ -51,6 +51,42 @@ describe('AuditLogger log', () => {
     const content = readFileSync(join(logDir, `${dateStr}.log`), 'utf-8');
     const entry = JSON.parse(content.trim());
     assert.equal(entry.cmd_summary.length, 200);
+  });
+
+  it('应写入 system_time 字段，格式为 YYYY-MM-DD HH:MM:SS', async () => {
+    const logger = new AuditLogger(logDir);
+    const ts = Date.now();
+    await logger.log(makeEntry({ timestamp: ts }));
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const content = readFileSync(join(logDir, `${dateStr}.log`), 'utf-8');
+    const entry = JSON.parse(content.trim());
+    assert.match(entry.system_time, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    assert.equal(entry.system_time, formatSystemTime(ts));
+  });
+
+  it('未提供 system_time 时应基于 timestamp 自动补齐', async () => {
+    const logger = new AuditLogger(logDir);
+    // 模拟旧调用方未提供 system_time：移除该字段后仍能自动补齐
+    const entry = makeEntry();
+    const { system_time: _omit, ...rest } = entry;
+    void _omit;
+    await logger.log(rest as AuditEntry);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const content = readFileSync(join(logDir, `${dateStr}.log`), 'utf-8');
+    const entryOut = JSON.parse(content.trim());
+    assert.match(entryOut.system_time, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  });
+});
+
+describe('formatSystemTime', () => {
+  it('应输出本地时区 YYYY-MM-DD HH:MM:SS 格式', () => {
+    const ts = new Date(2026, 7, 8, 9, 5, 7).getTime();
+    assert.equal(formatSystemTime(ts), '2026-08-08 09:05:07');
+  });
+
+  it('月/日/时/分/秒应补零', () => {
+    const ts = new Date(2026, 0, 3, 4, 6, 8).getTime();
+    assert.equal(formatSystemTime(ts), '2026-01-03 04:06:08');
   });
 });
 

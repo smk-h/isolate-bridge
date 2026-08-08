@@ -23,7 +23,19 @@ export interface AuditEntry {
   exit_code: number | null;
   duration_ms: number;
   cancelled: boolean;
-  timestamp: number;
+  timestamp: number;                  // 毫秒 epoch 时间戳
+  system_time: string;                // 系统时间戳（本地时区），格式 YYYY-MM-DD HH:MM:SS
+}
+
+/**
+ * 格式化系统时间戳（本地时区）为 YYYY-MM-DD HH:MM:SS
+ * @param ts - 毫秒 epoch 时间戳
+ * @returns 形如 2026-08-08 12:30:45 的字符串
+ */
+export function formatSystemTime(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 const LOG_SUFFIX = '.log';
@@ -46,7 +58,13 @@ export class AuditLogger {
   async log(entry: AuditEntry): Promise<void> {
     await mkdir(this.logDir, { recursive: true });
     const summary = entry.cmd_summary.slice(0, MAX_CMD_SUMMARY);
-    const line = JSON.stringify({ ...entry, cmd_summary: summary }) + '\n';
+    // 写入时补充系统时间戳（YYYY-MM-DD HH:MM:SS），格式与 timestamp 一致，便于人工阅读
+    const loggedEntry: AuditEntry = {
+      ...entry,
+      cmd_summary: summary,
+      system_time: entry.system_time ?? formatSystemTime(entry.timestamp),
+    };
+    const line = JSON.stringify(loggedEntry) + '\n';
     const dateStr = new Date().toISOString().slice(0, 10);
     const basePath = join(this.logDir, `${dateStr}${LOG_SUFFIX}`);
     await this.appendWithRoll(basePath, line);
