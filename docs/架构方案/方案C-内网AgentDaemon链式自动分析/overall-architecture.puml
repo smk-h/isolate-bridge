@@ -1,0 +1,93 @@
+@startuml 方案C整体架构
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #7A93BE
+  BorderThickness 1
+  FontColor #1F2933
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #E0B400
+  FontColor #5C4A00
+  FontSize 10
+}
+
+title 方案 C：内网 Agent Daemon 链式自动分析 —— 常驻调度器 + 无状态 claudecode 工人
+
+rectangle "内网 VMware 虚拟桌面（TCP 完全隔离）" as intranet #DDF3E4 {
+  rectangle "交互会话 Claude Code\n(终端)\n投喂第一个任务\ndaemon.submit(goal+acceptance)" as cc #DCE9FB
+  rectangle "daemon_submit MCP 工具\n(本地 .mcp.json 注册)\n即写即返回" as mcp #B4C9E8
+  rectangle "inbox/\n任务意图投递口(内网本地)" as inbox #FFFFFF
+  rectangle "内网 Agent Daemon\n(常驻 packages/daemon)\n调度器+链执行器\n轮询 completed/ → 拉 claudecode" as daemon #B4C9E8
+  rectangle "chain_state/<batch_id>.json\n链状态记忆(可审计可恢复)" as chain #FFFFFF
+  rectangle "memory/<device>.md\n设备背景知识库" as mem #FFFFFF
+  rectangle "claudecode(按需拉起)\n无状态推理工人\nSDK query / claude -p" as icc #DCE9FB
+}
+
+rectangle "VMware HGFS 共享文件夹\n唯一跨域通信介质" as hgfs #FFE8E8 {
+  rectangle "pending/\ncommand + analysis 任务" as pending #FFFFFF
+  rectangle "processing/\n+ .lock" as proc #FFFFFF
+  rectangle "completed/\n命令结果 + 分析结论" as done #FFFFFF
+  rectangle "failed/\n失败" as fail #FFFFFF
+  rectangle "cancelled/\n取消" as canc #FFFFFF
+  rectangle "heartbeat.json" as hb #FFFFFF
+}
+
+rectangle "外网 Windows 宿主机（公网可达）" as host #DDF3E4 {
+  rectangle "Node.js Worker\n纯执行器(复用不改)" as worker #B4C9E8
+  rectangle "analyst-bridge\n只读预分析(演进可选)" as analyst #B4C9E8
+  rectangle "外网 claudecode\n只读日志分析员" as occ #DCE9FB
+}
+
+rectangle "外部设备 A\n(外网 SSH)" as deviceA #FFF3D6
+
+cc -[#2B5797,thickness=2]-> mcp : <color:#2B5797>① 会话投喂意图</color>
+mcp -[#2B5797,thickness=2]-> inbox : <color:#2B5797>写 inbox/<batch_id>.json</color>
+daemon -[#E65100,thickness=2]-> inbox : <color:#E65100>② 轮询 inbox 建链</color>
+daemon -[#2E7D32,thickness=2]-> icc : <color:#2E7D32>③ 按需拉起 claudecode\n(每棒全新，显式传上下文)</color>
+daemon -[#6A1B9B,thickness=2]-> pending : <color:#6A1B9B>④ 翻译结论写 pending/</color>
+daemon -[#C62828,thickness=2]-> done : <color:#C62828>⑤ 轮询 completed/ 取结果</color>
+daemon -[#00838F,thickness=2]-> chain : <color:#00838F>⑥ 维护链状态</color>
+daemon -[#00838F,thickness=2]-> mem : <color:#00838F>⑦ 沉淀设备记忆</color>
+daemon -[#AAAAAA,thickness=2]-> icc : <color:#888888>链状态机判定下一棒/收链</color>
+
+worker -[#CCCCCC,thickness=1]-> pending : <color:#999999>消费 command 任务</color>
+analyst -[#CCCCCC,thickness=1]-> occ : <color:#999999>预分析(可选)</color>
+worker -[#CCCCCC,thickness=1]-> deviceA : <color:#999999>SSH 执行</color>
+worker -[#AAAAAA]-> hb : <color:#888888>5s 心跳</color>
+
+note right of daemon
+  编排权写死在 daemon 代码里
+  不接受 LLM 自主循环
+  acceptance 逐条核对 → completed
+  超时/超轮数 → failed/terminated
+  重启可从 chain_state 断点续跑
+end note
+
+note right of icc
+  每棒都是全新 claudecode 调用
+  无隐式会话记忆
+  上下文由 daemon 显式喂:
+  系统指令 + memory + 前棒结论摘要 + 本棒问题
+end note
+
+legend right
+  |= 颜色 |= 含义 |
+  | <color:#2B5797>■</color> 蓝 | ① 会话投喂意图 |
+  | <color:#E65100>■</color> 橙 | ② 建链 |
+  | <color:#2E7D32>■</color> 绿 | ③ 拉 claudecode |
+  | <color:#6A1B9B>■</color> 紫 | ④ 写任务到外网 |
+  | <color:#C62828>■</color> 红 | ⑤ 轮询取结果 |
+  | <color:#00838F>■</color> 青 | ⑥⑦ 链状态/记忆 |
+endlegend
+
+@enduml

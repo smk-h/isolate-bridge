@@ -1,0 +1,66 @@
+@startuml 方案C链状态机
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam ActivityBackgroundColor #F7F9FC
+skinparam ActivityBorderColor #7A93BE
+skinparam ActivityFontColor #1F2933
+skinparam ActivityDiamondBackgroundColor #FFF3D6
+skinparam ActivityDiamondBorderColor #E0B400
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title 方案 C：链状态机 —— daemon 代码裁判，LLM 只干活不定案
+
+start
+:inbox/ 收到任务意图(goal+acceptance);
+:分配 batch_id → 建 chain_state/<batch_id>.json;
+
+:拉起 claudecode 第 1 棒(全新会话);
+:把结论翻译成任务写 pending/;
+
+repeat
+  :外网 Worker/analyst 执行与分析;
+  :轮询 completed/ 取回结果;
+  :拉起 claudecode 下一棒分析;
+  note right
+    每棒 prompt = 系统指令
+    + memory/<device>.md
+    + 前 N-1 棒结论摘要
+    + 本棒问题
+  end note
+repeat while (链状态机检查: 继续下一棒?) is (是) not (否)
+
+if (判定结果?) then (达成验收标准)
+  :链状态 → **completed**;
+elseif (超过 timeout_sec 或 429 重试耗尽) then
+  :链状态 → **failed**;
+elseif (达到 max_rounds 未收敛) then
+  :链状态 → **terminated**(防死循环);
+else (外部取消)
+  :链状态 → **terminated**;
+endif
+
+:写入 chain_state/<batch_id>.json 终态;
+:结论摘要沉淀进 memory/<device>.md;
+stop
+
+legend right
+  |= 状态 |= 含义 |
+  | running | 链执行中(逐棒推进) |
+  | completed | acceptance 全部达成 |
+  | failed | 超时 / 429 预算耗尽 |
+  | terminated | 超轮数 / 外部取消 |
+  ================================
+  判定权在 daemon 代码(状态机)
+  claudecode 只产出"结论+证据"
+  验收标准由用户在投喂时定义
+endlegend
+
+@enduml

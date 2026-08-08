@@ -1,0 +1,74 @@
+@startuml 方案B异步提交时序
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam SequenceParticipantBorderColor #7A93BE
+skinparam SequenceParticipantBackgroundColor #DCE9FB
+skinparam SequenceParticipantFontColor #1F2933
+skinparam SequenceLifeLineBorderColor #7A93BE
+skinparam SequenceGroupBackgroundColor #F7F9FC
+skinparam SequenceGroupBorderColor #7A93BE
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title 方案 B：分析任务异步提交 —— 内网永不阻塞，429 重试隔离在外网
+
+participant "Claude Code\n(内网决策)" as CC
+participant "MCP Server\n(内网)" as MCP
+participant "HGFS 队列" as Q
+participant "analyst-bridge\n(外网常驻)" as AB
+participant "外网 claudecode\n(只读分析员)" as OC
+participant "设备 A\n(日志)" as D
+
+== 一、异步提交(立即返回) ==
+
+CC -> MCP : submit_analysis_task(question, context, allowed_cmds, acceptance)
+MCP -> Q : 写 pending/analysis_<id>.json
+MCP --> CC : 返回 { task_id, status:'accepted' }（立即返回）
+note over CC : 内网这一轮 MCP 调用立刻结束\n不再阻塞等待，可继续干别的事
+
+== 二、分析桥消费 ==
+
+AB -> Q : 轮询 pending → 读到 kind='analysis' 任务
+AB -> Q : 创建 .lock 抢占
+AB -> AB : 拼 prompt = 系统只读指令 + memory/<device>.md + question + context
+
+== 三、调外网 claudecode 分析(含 429 退避) ==
+
+loop 429 重试预算内(最多 3 次 / 5 分钟)
+  AB -> OC : SDK query() / claude -p 只读分析
+  OC -> D : 执行只读命令(journalctl/tail/cat/grep...)
+  D --> OC : 原始日志(剪裁后的样本)
+  OC --> AB : 分析结论 + 证据片段
+  alt 遇 429
+    AB -> AB : retry-after 或指数退避(5s→10s→20s) + jitter
+  end
+end
+
+== 四、回写结论 ==
+
+AB -> Q : 写 completed/analysis_<id>.json(answer/summary/evidence)
+alt 超预算/失败
+  AB -> Q : 写 failed(error_code=rate_limited/analyst_timeout)
+end
+
+== 五、内网取回(定时轮询) ==
+
+loop 内网按需轮询(低优先级背景)
+  CC -> MCP : query_task_status(task_id) / analysis_status
+  MCP -> Q : 轮询 completed/ 或 failed/
+  Q --> MCP : 分析结论
+  MCP --> CC : answer + evidence
+end
+
+== 六、记忆沉淀(可选叠加) ==
+
+MCP -> MCP : 将结论摘要 append 进 memory/<device>.md
+note over MCP : 下次分析从背景知识起步，减少重复推理
+
+@enduml

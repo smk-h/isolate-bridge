@@ -1,0 +1,79 @@
+@startuml 三方案演进对比
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #7A93BE
+  BorderThickness 1
+  FontColor #1F2933
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #E0B400
+  FontColor #5C4A00
+  FontSize 10
+}
+
+title 三方案演进脉络：A(基线) → B(外网预分析) → C(内网 Daemon，最优收敛)
+
+rectangle "方案 A：当前项目方案(MsgFerry 基线)\n文件消息队列 + 内网 LLM + 外网无模型 Worker\n✅ 已落地" as A #DDF3E4 {
+  rectangle "内网 Claude Code\n唯一大脑" as acc #DCE9FB
+  rectangle "外网 Node Worker\n纯执行(无 LLM)" as aw #FFFFFF
+  rectangle "HGFS 文件队列" as aq #FFFFFF
+  acc -[#2B5797]-> aq : submit_ssh_task\n同步 30s 阻塞
+  aq -[#2B5797]-> aw : 轮询执行
+  note right of A
+    日志要摆渡回内网由 LLM 分析
+    海量原始日志 = 高 Token + 高 HGFS IO
+  end note
+}
+
+rectangle "方案 B：外网日志预分析层\n外网再跑一个 claudecode 只读分析\n💡 讨论中" as B #FFF3D6 {
+  rectangle "内网 Claude Code\n决策者" as bcc #DCE9FB
+  rectangle "analyst-bridge\n(外网常驻)" as bab #FFFFFF
+  rectangle "外网 claudecode\n只读分析员" as boc #DCE9FB
+  bcc -[#2B5797]-> bab : submit_analysis_task\n异步提交+轮询取回
+  bab -[#2B5797]-> boc : 拼 prompt 调分析
+  note right of B
+    日志就地分析只回传结论
+    需配异步化+429退避+上下文补偿
+  end note
+}
+
+rectangle "方案 C：内网 Agent Daemon 链式自动分析\n常驻调度器 + 无状态 claudecode 工人\n💡 当前最优收敛" as C #DDF3E4 {
+  rectangle "内网 Agent Daemon\n(常驻调度器)" as cda #DCE9FB
+  rectangle "内网 claudecode\n(按需拉起)" as cic #DCE9FB
+  rectangle "外网 Worker + analyst\n(执行+预分析)" as cw #FFFFFF
+  cda -[#2B5797]-> cic : 每棒拉起分析\n(显式传上下文)
+  cda -[#2B5797]-> cw : 写任务/轮询结果\n(自动链式)
+  note right of C
+    吸收 B 的异步+轮询+收件箱
+    编排权写死在 daemon 代码
+    真正无人值守自动链式
+  end note
+}
+
+A -[#AAAAAA,thickness=2]-> B : 演进：外网补只读分析脑
+B -[#AAAAAA,thickness=2]-> C : 收敛：内网 daemon 自动链式驱动
+
+note bottom
+  落地路径：先做 B 第一步(分析链路地基) → 再上 C 的 daemon 原型
+  每一步可独立验证价值，不一口吃成胖子
+end note
+
+legend right
+  |= 颜色 |= 含义 |
+  | <color:#2B5797>■</color> 蓝线 | 核心调用链 |
+  | <color:#AAAAAA>■</color> 灰线 | 方案演进方向 |
+  | <color:#DDF3E4>■</color> 浅绿 | 已落地 / 收敛方案 |
+  | <color:#FFF3D6>■</color> 浅黄 | 讨论中方案 |
+endlegend
+
+@enduml

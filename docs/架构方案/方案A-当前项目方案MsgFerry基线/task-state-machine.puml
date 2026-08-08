@@ -1,0 +1,80 @@
+@startuml 方案A任务状态机
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam ActivityBackgroundColor #F7F9FC
+skinparam ActivityBorderColor #7A93BE
+skinparam ActivityFontColor #1F2933
+skinparam ActivityDiamondBackgroundColor #FFF3D6
+skinparam ActivityDiamondBorderColor #E0B400
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title 方案 A：任务状态机 —— 严格单向流转，禁止逆向
+
+start
+:生成 task_id + CommandTask JSON;
+:写 .tmp → rename 至 **pending**;
+
+:外网 Worker 抢占任务;
+note right
+  创建 processing/<task_id>.lock
+  O_CREAT|O_EXCL 原子抢占
+  锁文件带 PID + 时间戳
+end note
+
+:移至 **processing** (状态流转);
+
+if (命令白/黑名单校验?) then (通过)
+  if (内网是否已取消?) then (否)
+    :SSH 执行设备指令;
+    if (执行结果?) then (成功)
+      :回填 stdout/stderr/exit_code;
+      if (输出超过 64KB?) then (是)
+        :大输出落 outputs/;
+        :结构体只保留摘要 + 指针;
+      else (否)
+        :内联写入结构体;
+      endif
+      :移至 **completed**;
+    else (失败/超时)
+      :回填 error_msg + exit_code;
+      :强制销毁 SSH 子进程;
+      :移至 **failed**;
+    endif
+  else (已取消)
+    :写 cancelled/<task_id>.result;
+    note right
+      仅审计用，不污染 completed
+    end note
+    :移至 **cancelled**;
+  endif
+else (未通过)
+  :error_msg = blocked_by_policy;
+  :移至 **failed**;
+endif
+
+:内网读取结果继续迭代;
+:结果文件保留 10 分钟后清理;
+stop
+
+legend right
+  |= 状态 |= 含义 |
+  | pending | 待执行（内网写入） |
+  | processing | Worker 抢占执行中 |
+  | completed | 执行成功 |
+  | failed | 失败 / 超时 / 策略拦截 |
+  | cancelled | 内网取消 + 孤儿结果回收 |
+  ================================
+  状态机严格单向流转
+  pending → processing → completed/failed/cancelled
+  禁止逆向流转
+endlegend
+
+@enduml

@@ -1,0 +1,77 @@
+@startuml 方案A同步提交时序
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam SequenceParticipantBorderColor #7A93BE
+skinparam SequenceParticipantBackgroundColor #DCE9FB
+skinparam SequenceParticipantFontColor #1F2933
+skinparam SequenceLifeLineBorderColor #7A93BE
+skinparam SequenceGroupBackgroundColor #F7F9FC
+skinparam SequenceGroupBorderColor #7A93BE
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title 方案 A：内网 Claude 提交 SSH 命令 → 外网 Worker 执行 → 同步回传
+
+participant "Claude Code\n(内网)" as CC
+participant "MCP Server\n(内网, stdio)" as TOOL
+participant "HGFS 队列\n(pending/...)" as Q
+participant "Node Worker\n(Windows)" as W
+participant "设备 A\n(外网 SSH)" as D
+
+== 阶段一：内网提交任务 ==
+
+CC -> TOOL : 调用 submit_ssh_task(cmd, timeout_sec)
+TOOL -> Q : 检查 task_id 幂等
+note over TOOL, Q : pending/processing 已存在同 id 则拒绝重提
+TOOL -> Q : 读 heartbeat.json 判断 Worker 在线
+TOOL -> Q : 写 .tmp → rename pending/<task_id>.json
+
+== 阶段二：外网消费并抢占 ==
+
+W -> Q : 轮询 pending (500ms 退避)
+W -> Q : 创建 processing/<task_id>.lock 抢占
+note over W, Q : O_CREAT|O_EXCL，创建成功者拥有执行权
+W -> Q : 二次确认 processing 无同 id 文件
+
+== 阶段三：安全校验与执行 ==
+
+W -> W : 命令白/黑名单 + 参数校验
+alt 校验通过
+  W -> D : SSH 执行命令
+  D --> W : stdout / stderr / exit_code
+  alt 输出超过 64KB
+    W -> Q : 落盘 outputs/<task_id>.stdout
+    note over W, Q : 结构体只保留摘要 + 指针
+  end
+else 校验失败
+  W -> Q : 写 failed，error_msg=blocked_by_policy
+end
+
+== 阶段四：结果回写与消费 ==
+
+W -> Q : 回写 completed / failed
+TOOL -> Q : 阻塞轮询结果目录 (指数退避)
+TOOL --> CC : 返回 stdout/stderr/exit_code
+note over TOOL, Q : truncated=true 则按指针读 outputs/ 大文件
+
+== 阶段五：超时取消兜底 ==
+
+alt 30s 内未出结果
+  TOOL -> Q : 超时写 cancelled/<task_id>
+  W -> Q : 回写前检查 cancelled/
+  note over W, Q : 已取消则写 cancelled/<task_id>.result(审计)，不污染 completed
+end
+
+== 阶段六：心跳保活 ==
+
+W -> Q : 每 5s 写 heartbeat.json
+TOOL -> Q : 提交前读心跳
+note over TOOL, Q : now - last_beat > 15s 则返回 worker_offline，不提交
+
+@enduml

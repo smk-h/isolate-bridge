@@ -1,0 +1,95 @@
+@startuml 方案B整体架构
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #7A93BE
+  BorderThickness 1
+  FontColor #1F2933
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #E0B400
+  FontColor #5C4A00
+  FontSize 10
+}
+
+title 方案 B：外网日志预分析层（Log Analyst）—— 在外网就地读日志，只回传结论
+
+rectangle "内网 VMware 虚拟桌面（TCP 完全隔离）" as intranet #DDF3E4 {
+  rectangle "Claude Code\n决策者 / 唯一大脑\n规划 / 决策" as cc #DCE9FB
+  rectangle "MCP Server\nsubmit_ssh_task(同步)\nsubmit_analysis_task(异步)\nquery_task_status / cancel / health" as mcp #B4C9E8
+  rectangle "memory/<device>.md\n设备背景知识记忆库" as mem #FFFFFF
+}
+
+rectangle "VMware HGFS 共享文件夹\n唯一跨域通信介质" as hgfs #FFE8E8 {
+  rectangle "pending/\ncommand + analysis 任务" as pending #FFFFFF
+  rectangle "processing/\n+ .lock 抢占" as proc #FFFFFF
+  rectangle "completed/\n命令结果 + 分析结论" as done #FFFFFF
+  rectangle "failed/\n失败/超时/拦截/限流" as fail #FFFFFF
+  rectangle "cancelled/\n取消标记" as canc #FFFFFF
+  rectangle "outputs/\n大输出分包" as outs #FFFFFF
+  rectangle "analyst-heartbeat.json\n分析桥心跳" as ahb #FFFFFF
+  rectangle "heartbeat.json\nWorker 心跳" as hb #FFFFFF
+}
+
+rectangle "外网 Windows 宿主机（公网可达）" as host #DDF3E4 {
+  rectangle "Node.js Worker\n纯执行器\nSSH / 超时 / 回写" as worker #B4C9E8
+  rectangle "analyst-bridge\n(新增常驻进程 packages/analyst)\n轮询 pending → 按 kind 分派\n拼 prompt → headless 调 claudecode\n429 退避重试 / 预算控制" as analyst #B4C9E8
+  rectangle "外网 claudecode\n只读日志分析员\n(CLI -p 或 SDK query)" as occ #DCE9FB
+  rectangle "安全策略\n白/黑名单(只读命令子集)" as w2 #FFFFFF
+}
+
+rectangle "外部设备 A\n仅外网 SSH 接入\n(日志就地存放于此)" as deviceA #FFF3D6
+
+cc -[#2B5797,thickness=2]-> mcp : <color:#2B5797>内网提问/决策</color>
+analyst -[#E65100,thickness=2]-> pending : <color:#E65100>① 轮询 pending\n按 kind 分派</color>
+worker -[#E65100,thickness=2]-> pending : <color:#E65100>消费 command 任务</color>
+analyst -[#2E7D32,thickness=2]-> occ : <color:#2E7D32>② 拼 prompt 调 claudecode\n(只读 + 免询问)</color>
+occ -[#6A1B9B,thickness=2]-> deviceA : <color:#6A1B9B>③ 就地读日志\n(本地/受限 SSH 只读命令)</color>
+analyst -[#C62828,thickness=2]-> done : <color:#C62828>④ 回写分析结论\ncompleted/analysis_<id>.json</color>
+mcp -[#00838F,thickness=2]-> done : <color:#00838F>⑤ 内网异步轮询取回结论</color>
+mcp -[#00838F,thickness=2]-> mem : <color:#00838F>⑥ 结论沉淀记忆库</color>
+
+worker -[#CCCCCC,thickness=1]-> w2 : <color:#999999>策略校验</color>
+analyst -[#CCCCCC,thickness=1]-> w2 : <color:#999999>只读命令兜底校验</color>
+worker -[#CCCCCC,thickness=1]-> deviceA : <color:#999999>SSH 执行写操作</color>
+
+analyst -[#AAAAAA]-> ahb : <color:#888888>5s 写分析桥心跳</color>
+worker -[#AAAAAA]-> hb : <color:#888888>5s 写心跳</color>
+
+note right of occ
+  免询问两种形态：
+  A. claude -p --dangerously-skip-permissions
+  B. SDK query({ permissionMode:'bypassPermissions',
+                 allowedTools:[Bash只读,Read,Glob] })
+  三层兜底：工具收窄 + 策略白/黑名单 + 审计
+end note
+
+note right of analyst
+  429 重试收口在分析桥：
+  指数退避 + jitter
+  最大 3 次 + 总预算 5 分钟
+  超预算写 failed(error=rate_limited)
+  内网 MCP 永不阻塞
+end note
+
+legend right
+  |= 颜色 |= 含义 |
+  | <color:#2B5797>■</color> 蓝 | 内网决策/提问 |
+  | <color:#E65100>■</color> 橙 | 外网消费任务(kind 分派) |
+  | <color:#2E7D32>■</color> 绿 | 调外网 claudecode 分析 |
+  | <color:#6A1B9B>■</color> 紫 | 就地读日志(只读) |
+  | <color:#C62828>■</color> 红 | 回写分析结论 |
+  | <color:#00838F>■</color> 青 | 内网异步轮询取回/记忆沉淀 |
+  | <color:#AAAAAA>■</color> 灰 | 心跳/辅助 |
+endlegend
+
+@enduml

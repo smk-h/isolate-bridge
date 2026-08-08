@@ -1,0 +1,76 @@
+@startuml 方案C链式闭环时序
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam SequenceParticipantBorderColor #7A93BE
+skinparam SequenceParticipantBackgroundColor #DCE9FB
+skinparam SequenceParticipantFontColor #1F2933
+skinparam SequenceLifeLineBorderColor #7A93BE
+skinparam SequenceGroupBackgroundColor #F7F9FC
+skinparam SequenceGroupBorderColor #7A93BE
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title 方案 C：内网 Agent Daemon 链式自动分析完整闭环
+
+participant "交互会话\nClaude Code" as CC
+participant "inbox/\ndaemon_submit" as IN
+participant "内网 Agent Daemon\n(常驻)" as DA
+participant "内网 claudecode\n(无状态工人)" as IC
+participant "HGFS 队列\npending/completed" as Q
+participant "外网 Worker\n+ analyst" as W
+participant "设备 A\n(日志)" as D
+
+== ① 用户投喂第一个任务 ==
+
+CC -> IN : daemon.submit(goal, context, acceptance[], max_rounds, timeout_sec)
+IN --> CC : 返回 { batch_id, status:'accepted' }（立即返回）
+IN -> DA : 轮询发现新意图 → 分配 batch_id → 建 chain_state
+
+== ② 链执行：第 1 棒（分析任务目标） ==
+
+DA -> IC : 拉起 claudecode#1(prompt=系统指令+memory+goal+context)
+IC --> DA : 结论A：需要执行什么命令/查什么日志
+DA -> Q : 翻译成 command 任务写 pending/
+
+== ③ 外网执行与预分析 ==
+
+W -> Q : 轮询 → SSH 执行命令
+W -> D : 执行
+D --> W : 原始日志
+opt 方案 B 演进
+  W -> W : analyst-bridge 拉外网 claudecode 就地分析
+end
+W -> Q : 回写 completed/<task_id>.json
+
+== ④ 链执行：第 2 棒（分析外网结果） ==
+
+DA -> Q : 轮询 completed/ 发现新结果
+DA -> IC : 拉起 claudecode#2(prompt=系统指令+memory+结论A+本棒结果)
+IC --> DA : 结论B：根因判断/下一步命令/或已达成验收标准
+
+== ⑤ 循环往复，直到链状态机判定完成 ==
+
+loop 直到 acceptance 全过 / 超时 / 超轮数
+  DA -> Q : 写下一棒任务
+  Q --> DA : 外网执行 + 分析结果回传
+  DA -> IC : 再拉起 claudecode 分析
+end
+
+== ⑥ 收链 ==
+
+DA -> DA : 链状态机判定
+note over DA
+  达成 acceptance → completed
+  超 timeout_sec → failed
+  达 max_rounds → terminated
+  (判定权在 daemon 代码，不在 LLM)
+end note
+DA -> CC : 可查 daemon status <batch_id>
+
+@enduml

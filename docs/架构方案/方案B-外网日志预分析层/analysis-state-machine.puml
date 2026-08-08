@@ -1,0 +1,71 @@
+@startuml 方案B分析任务状态机
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam ActivityBackgroundColor #F7F9FC
+skinparam ActivityBorderColor #7A93BE
+skinparam ActivityFontColor #1F2933
+skinparam ActivityDiamondBackgroundColor #FFF3D6
+skinparam ActivityDiamondBorderColor #E0B400
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title 方案 B：分析任务状态机 —— 内网不阻塞，429 重试有界
+
+start
+:内网构造 AnalysisTask JSON;
+:写 .tmp → rename 至 **pending**;
+:内网立即返回 task_id(不阻塞);
+
+:分析桥抢占任务(lock);
+:拼 prompt(系统指令+记忆+问题+上下文);
+
+repeat
+  :headless 调外网 claudecode;
+  if (触发 429 限流?) then (是)
+    :读取 retry-after / 指数退避 + jitter;
+    note right
+      退避 5s→10s→20s
+      超总预算则放弃
+    end note
+  else (否)
+    break
+  endif
+repeat while (重试预算内(最多3次/5分钟)?) is (是) not (否)
+
+if (是否拿到分析结论?) then (是)
+  :回写 completed/analysis_<id>.json;
+  note right
+    字段: answer / summary / evidence
+    内网轮询取回，并可沉淀 memory/<device>.md
+  end note
+else (重试耗尽/失败)
+  :回写 failed/analysis_<id>.json;
+  note right
+    error_code:
+    analyst_rate_limited / analyst_timeout
+  end note
+endif
+
+:内网按需轮询 completed/ 取回结论;
+stop
+
+legend right
+  |= 状态 |= 含义 |
+  | pending | 分析任务待消费（内网写入） |
+  | processing | 分析桥抢占分析中 |
+  | completed | 分析完成（含结论+证据） |
+  | failed | 429 超预算 / 超时 / 失败 |
+  ================================
+  内网侧异步：提交即返回
+  429 重试收口在分析桥，有界
+  MCP 同步阻塞只保留给秒级 SSH 命令
+endlegend
+
+@enduml
