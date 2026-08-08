@@ -304,14 +304,15 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor mock
 ### 4. 快速上手模板
 
 ```bat
-:: 1. 在 HGFS 共享根目录（Windows 侧盘符）创建 config 子目录
-mkdir E:\MyLinux\VMware\sharedir\vm_share\config
+:: 1. 直接启动 Worker，自动补齐 config/ 与 policy/ 目录及模板文件
+::    （首次启动自动从产物模板复制并重命名，见「七、启动引导：自动补齐模板」）
+msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
-:: 2. 复制模板并编辑（文件在共享目录里，内网 Linux 侧也能直接改）
-copy dist\worker\config.example.json E:\MyLinux\VMware\sharedir\vm_share\config\worker.json
+:: 2. 按需编辑自动生成的模板（文件在共享目录里，内网 Linux 侧也能直接改）
 notepad E:\MyLinux\VMware\sharedir\vm_share\config\worker.json
+notepad E:\MyLinux\VMware\sharedir\vm_share\policy\policy.json
 
-:: 3. 启动 Worker（只需一个必填参数）
+:: 3. 改完重启 Worker 生效
 msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 ```
 
@@ -347,10 +348,36 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 优先私钥。`ssh_config.private_key_path` 非空即用私钥，否则用密码。
 
 **Q6：`config.example.json` 和部署用的 `worker.json` 是什么关系？**
-`config.example.json` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。部署时把它复制为 `<hgfs_root>\config\worker.json` 并按需修改。
+`config.example.json` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。**Worker 启动时若发现 `<hgfs_root>\config\worker.json` 不存在，会自动从模板复制并重命名**（策略同理），无需手动操作；已存在则原样保留、不会被覆盖（详见「七、启动引导」）。
 
 **Q7：配置里的路径该用 Windows 格式还是 Linux 格式？**
 看**谁消费**。配置文件由 Worker（Windows）读取，里面路径一律写 Windows 格式（如 `E:\MyLinux\VMware\sharedir\vm_share`、`C:\Users\...\id_ed25519`），JSON 中反斜杠要转义成 `\\`；MCP 侧（Linux）只需在 `.mcp.json` 环境变量里写 Linux 格式的 `MSGFERRY_HGFS_ROOT`（如 `/mnt/hgfs/sharedir/vm_share`），它不读这个配置文件。
+
+## 七、 启动引导：自动补齐模板
+
+> Worker 启动时会自动检测共享目录的 `config` 与 `policy` 目录及模板文件，**缺失则自动复制并重命名，已存在则跳过**，无需手动拷贝。
+
+### 1. 行为规则
+
+启动时（`main` 内 `initQueueDirs` 之前）执行引导逻辑：
+
+| 检测项 | 缺失时自动创建 | 已存在时 |
+| --- | --- | --- |
+| `<hgfs_root>\config\worker.json` | 从 `config.example.json` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
+| `<hgfs_root>\policy\policy.json` | 从 `policy.example.json` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
+
+- **模板来源**：随产物分发的 `config.example.json` / `policy.example.json`（位于 `dist/worker/`，与 `index.mjs` 同目录）；产物中模板缺失时使用内置兜底模板，保证首次启动总能成功。
+- **父目录自动创建**：`config/`、`policy/` 目录不存在时一并创建。
+- **幂等**：重复启动不会重复复制，也不会改动已存在文件。
+- **提示日志**：自动创建时打印 `[bootstrap] config/worker.json missing, created from template ...`，便于确认。
+
+### 2. 实现位置
+
+| 文件 | 职责 |
+| --- | --- |
+| `packages/worker/src/bootstrap.ts` | 引导模块：`ensureSharedTemplates(root)` 检测并补齐模板 |
+| `packages/worker/src/main.ts` | 启动流程中调用 `ensureSharedTemplates(root)` |
+| `packages/worker/test/bootstrap.test.ts` | 单元测试：缺失补齐 / 已存在跳过 / 幂等 |
 
 ---
 *本文档由 markdowncli 技能辅助生成*
