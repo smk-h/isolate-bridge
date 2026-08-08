@@ -337,7 +337,7 @@ Worker 主循环（无限循环）：
 ### 5. 可观测性设计
 
 - **心跳感知**：外网 Worker 每 5s 写入 `heartbeat.json`，内网提交前读取，若 `now - last_beat > 15s` 则返回 `worker_offline`，不提交任务，避免无效堆积。
-- **审计日志**：外网 Worker 维护本地审计日志（滚动文件），每条任务记录 task_id、cmd 摘要、命中策略、ssh 目标、exit_code、耗时、是否被取消；内网侧 TypeScript 工具维护提交日志。审计日志默认保留 30 天，支持按 task_id 检索。
+- **审计日志**：外网 Worker 维护本地审计日志（滚动文件），每条任务记录 task_id、cmd 摘要、命中策略、ssh 目标、exit_code、耗时、是否被取消，以及系统时间戳（`YYYY-MM-DD HH:MM:SS`）与毫秒级 epoch 时间戳；内网侧 TypeScript 工具维护提交日志。审计日志默认保留 30 天，支持按 task_id 检索。
 
 ### 6. 架构优势
 
