@@ -1,0 +1,337 @@
+> 本文档说明 MsgFerry 外网 Node Worker 的**全部配置方式**，以及「配置文件方案」如何把启动参数收敛到一个文件。
+>
+> 核心结论：**启动 Worker 只需一个必填参数 `--hgfs-root`**（HGFS 共享根目录绝对路径），其余全部可配置项按优先级 `命令行参数 > 环境变量 > 配置文件 > 内置默认值` 逐级回退。
+
+## 一、 方案背景与设计动机
+
+### 1. 以前的痛点
+
+在引入配置文件之前，Worker 的所有参数都必须显式传入，SSH 真实模式下启动命令又长又难维护：
+
+```bash
+nohup msgferry-worker \
+  --hgfs-root /mnt/hgfs/vm_share \
+  --executor ssh2 \
+  --ssh-host 192.168.1.100 \
+  --ssh-port 22 \
+  --ssh-user root \
+  --ssh-key /home/user/.ssh/id_ed25519 \
+  --heartbeat-interval 5 \
+  --result-ttl 600 \
+  > /var/log/msgferry-worker.log 2>&1 &
+```
+
+问题：
+
+- 参数全部硬编码在启动脚本里，内网侧看不到、也改不了；
+- 每次调整 SSH 账号、轮询间隔都要改启动命令再重启；
+- SSH 私钥等敏感信息散落在命令行（`ps` 可见）与 shell 历史中。
+
+### 2. 方案思路
+
+Worker 的全部可配置项其实分两类：
+
+1. **必须与 MCP 侧对齐的唯一耦合点**：`--hgfs-root`（HGFS 共享根目录绝对路径）。这是两侧进程**唯一需要保持一致的路径**，必须显式给出。
+2. **其余都是 Worker 自身参数**（SSH 连接、轮询、心跳、结果保留期、输出上限……），都有内置默认值，仅在需要调整时才要显式配置。
+
+因此把第 2 类全部收敛到配置文件 `<hgfs_root>/config/worker.json` 后，启动命令退化为**一行**：
+
+```bash
+# mock 模式（联调，无需 SSH）
+nohup msgferry-worker --hgfs-root /mnt/hgfs/vm_share > /var/log/msgferry-worker.log 2>&1 &
+
+# ssh2 真实模式（SSH 信息从 config/worker.json 读取，无需再传任何 --ssh-*）
+nohup msgferry-worker --hgfs-root /mnt/hgfs/vm_share > /var/log/msgferry-worker.log 2>&1 &
+```
+
+配置文件放在 HGFS 共享目录里，**天然跟随共享挂载点分发**——内网侧（MCP/Claude Code）与部署侧（外网 Worker）都能直接查看和编辑，不用再翻启动脚本。
+
+### 3. 核心结论
+
+- **一个必填参数**：`--hgfs-root`，指向 HGFS 共享根目录绝对路径；
+- **一个配置文件**：`<hgfs_root>/config/worker.json`，承载其余全部可配置项；
+- **一条优先级链**：`命令行参数 > 环境变量 > 配置文件 > 内置默认值`；
+- **一个例外**：`hgfs_root` 因循环依赖只从命令行/环境变量读取（详见「二、3」）。
+
+## 二、 配置项总览
+
+### 1. 配置来源与优先级模型
+
+Worker 共有 14 个可配置项（其中 13 项可写入配置文件，`hgfs_root` 只能走命令行/环境变量），取值来源按优先级从高到低依次为：
+
+1. 命令行参数（`--xxx`）；
+2. 环境变量（统一 `MSGFERRY_` 前缀）；
+3. 配置文件（`<hgfs_root>/config/worker.json`，可自定义路径）；
+4. 内置默认值（定义在 `packages/shared/src/constants.ts` 的 `POLLING` / `HEARTBEAT` / `RETENTION` / `OUTPUT`）。
+
+所有数值型参数（如 `ssh.port`、`polling.*`、`heartbeat_interval_sec` 等）在解析时都会做数值转换，非法值（非数字）自动回退到默认值，不会导致启动失败。
+
+### 2. 配置项对照表
+
+下表是全部 13 项的「配置文件字段 / 命令行参数 / 环境变量 / 默认值」对照关系：
+
+| 配置文件字段 | 命令行参数 | 环境变量 | 默认值 | 说明 |
+| --- | --- | --- | --- | --- |
+| `hgfs_root` | `--hgfs-root` | `MSGFERRY_HGFS_ROOT` | **无（必填）** | 共享根目录绝对路径；**只从命令行/环境变量读取**，不读配置文件 |
+| `executor` | `--executor` | `MSGFERRY_EXECUTOR` | `mock` | `mock` / `ssh2` |
+| `ssh.host` | `--ssh-host` | `MSGFERRY_SSH_HOST` | 无（ssh2 必填） | SSH 目标主机 |
+| `ssh.port` | `--ssh-port` | `MSGFERRY_SSH_PORT` | `22` | SSH 端口 |
+| `ssh.username` | `--ssh-user` | `MSGFERRY_SSH_USER` | 无（ssh2 必填） | SSH 登录用户 |
+| `ssh.private_key_path` | `--ssh-key` | `MSGFERRY_SSH_KEY` | 无 | 私钥路径（与密码二选一） |
+| `ssh.password` | `--ssh-password` | `MSGFERRY_SSH_PASSWORD` | 无 | 密码（与私钥二选一） |
+| `audit_log_dir` | `--audit-dir` | `MSGFERRY_AUDIT_DIR` | `<hgfs_root>/logs` | 审计日志目录 |
+| `policy_file` | `--policy-file` | `MSGFERRY_POLICY_FILE` | `<hgfs_root>/policy/policy.json` | 命令安全策略文件 |
+| `polling.initial_interval_ms` | `--polling-initial` | `MSGFERRY_POLLING_INITIAL` | `500` | 轮询起步间隔（ms），有任务后复位到此值 |
+| `polling.max_interval_ms` | `--polling-max` | `MSGFERRY_POLLING_MAX` | `3000` | 轮询退避上限（ms） |
+| `heartbeat_interval_sec` | `--heartbeat-interval` | `MSGFERRY_HEARTBEAT_INTERVAL` | `5` | 心跳写入间隔（秒） |
+| `result_ttl_sec` | `--result-ttl` | `MSGFERRY_RESULT_TTL` | `600` | completed/failed 结果文件保留期（秒），过期由 Worker 清理 |
+| `max_inline_bytes` | `--max-inline` | `MSGFERRY_MAX_INLINE` | `65536` | stdout/stderr 内联上限（字节），超出落 `outputs/` |
+
+### 3. 唯一例外：hgfs_root 不进配置文件
+
+#### 3.1 循环依赖
+
+配置文件路径本身依赖 `hgfs_root`（默认在 `<hgfs_root>/config/worker.json`），如果把 `hgfs_root` 也放进配置文件，就形成了**循环依赖**——不先知道 `hgfs_root` 就读不到配置文件，读不到配置文件又拿不到 `hgfs_root`。
+
+#### 3.2 实际处理
+
+因此 `hgfs_root` 是唯一例外：**只从命令行参数 / 环境变量读取**。配置文件里的 `hgfs_root` 字段即使写了也会被忽略（示例文件里保留该字段仅作说明）。
+
+## 三、 配置文件详解
+
+### 1. 配置文件路径
+
+#### 1.1 默认路径
+
+```
+<hgfs_root>/config/worker.json
+```
+
+- 相对路径常量 `WORKER_CONFIG_FILE = 'config/worker.json'` 定义在 `packages/shared/src/constants.ts`；
+- 由 shared 的 `resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE)` 拼接为绝对路径。
+
+#### 1.2 自定义路径
+
+可用 `--config-file` 参数或 `MSGFERRY_CONFIG_FILE` 环境变量显式指定其他位置：
+
+```bash
+nohup msgferry-worker \
+  --hgfs-root /mnt/hgfs/vm_share \
+  --config-file /etc/msgferry/worker.json \
+  > /var/log/msgferry-worker.log 2>&1 &
+```
+
+自定义路径的解析优先级：`--config-file` > `MSGFERRY_CONFIG_FILE` > 默认约定（`<hgfs_root>/config/worker.json`）。
+
+### 2. 完整示例
+
+仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/worker/config.example.json`）：
+
+```json
+{
+  "executor": "ssh2",
+  "ssh": {
+    "host": "192.168.1.100",
+    "port": 22,
+    "username": "root",
+    "private_key_path": "/home/user/.ssh/id_ed25519"
+  },
+  "audit_log_dir": "/mnt/hgfs/vm_share/logs",
+  "policy_file": "/mnt/hgfs/vm_share/policy/policy.json",
+  "polling": {
+    "initial_interval_ms": 500,
+    "max_interval_ms": 3000
+  },
+  "heartbeat_interval_sec": 5,
+  "result_ttl_sec": 600,
+  "max_inline_bytes": 65536
+}
+```
+
+### 3. 字段说明
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `hgfs_root` | string | 仅作注释/参考，**实际不会读取**（见「二、3」） |
+| `executor` | string | `mock`（本地模拟，不发起真实 SSH）或 `ssh2`（真实 SSH 执行） |
+| `ssh.host` | string | SSH 目标主机 IP 或域名；`ssh2` 模式必填 |
+| `ssh.port` | number/string | SSH 端口，默认 `22` |
+| `ssh.username` | string | SSH 登录用户名；`ssh2` 模式必填 |
+| `ssh.private_key_path` | string \| null | SSH 私钥文件绝对路径；与 `password` 二选一 |
+| `ssh.password` | string \| null | SSH 登录密码；与 `private_key_path` 二选一 |
+| `audit_log_dir` | string | 审计日志输出目录 |
+| `policy_file` | string | 命令安全策略 JSON 文件绝对路径 |
+| `polling.initial_interval_ms` | number/string | 轮询起步间隔（毫秒） |
+| `polling.max_interval_ms` | number/string | 轮询退避上限（毫秒） |
+| `heartbeat_interval_sec` | number/string | 心跳写入间隔（秒） |
+| `result_ttl_sec` | number/string | 结果文件保留期（秒） |
+| `max_inline_bytes` | number/string | stdout/stderr 内联上限（字节） |
+
+### 4. 使用注意事项
+
+- **`ssh.*` 仅在 `executor` 为 `ssh2` 时生效**：mock 模式下即便配置了 `ssh.*` 字段也会被忽略（`ssh_config` 直接为 `null`）。
+- **私钥与密码二选一**：两者都配时优先使用私钥（见 `config.ts` 中 `private_key_path ?? null` / `password ?? null` 的处理）；两者都没配且 `executor=ssh2` 时，校验会报 `ssh_config.host and ssh_config.username are required`。
+- **路径建议写绝对路径**：`audit_log_dir`、`policy_file`、`ssh.private_key_path` 等路径字段在配置文件中推荐写绝对路径，避免受进程工作目录影响。
+- 配置文件里**多余的未知字段会被忽略**，不会报错，方便以后扩展。
+
+### 5. 容错行为
+
+| 场景 | 行为 |
+| --- | --- |
+| 文件不存在 | **不报错**，全部走 CLI/env/默认值（向后兼容旧用法，见「四、3」） |
+| 文件存在但 JSON 非法 | **启动即抛错**：`config file is not valid JSON: <路径>: <原因>` |
+| 文件内容不是 JSON 对象（如数组/字符串） | **启动即抛错**：`config file must be a JSON object: <路径>` |
+| 文件存在且合法 | 正常按优先级读取，缺失字段回退默认值 |
+
+## 四、 配置解析与优先级
+
+### 1. 优先级规则
+
+```
+命令行参数  >  环境变量  >  配置文件  >  内置默认值
+```
+
+- 未显式给出的项按上表逐级回退，最终落到内置默认值（内置默认值定义在 `packages/shared/src/constants.ts` 的 `POLLING` / `HEARTBEAT` / `RETENTION` / `OUTPUT`）。
+- **`--hgfs-root` 是唯一例外**：只走前两级（命令行参数 > 环境变量），不读配置文件（见「二、3」）。
+- 优先级模型在代码中的实现位于 `packages/shared/src/config-file.ts`：
+  - `pickConfigValue`：字符串取值，按 CLI → env → 配置文件 → 默认值顺序返回第一个非空值；
+  - `pickConfigNumber`：数值取值，先走 `pickConfigValue`，再做 `Number()` 转换，非法值回退默认值。
+
+### 2. 临时覆盖示例
+
+需要临时覆盖时**无需改配置文件**，直接加命令行参数或环境变量即可：
+
+```bash
+# 临时把心跳间隔调到 10s、最大轮询间隔调到 5s，其余仍走配置文件
+nohup msgferry-worker \
+  --hgfs-root /mnt/hgfs/vm_share \
+  --heartbeat-interval 10 \
+  --polling-max 5000 \
+  > /var/log/msgferry-worker.log 2>&1 &
+
+# 等价：用环境变量覆盖
+MSGFERRY_HEARTBEAT_INTERVAL=10 MSGFERRY_POLLING_MAX=5000 \
+  nohup msgferry-worker --hgfs-root /mnt/hgfs/vm_share > /var/log/msgferry-worker.log 2>&1 &
+```
+
+### 3. 旧用法完全兼容
+
+原有的逐参数传参、环境变量传参方式**全部保留**，且优先级高于配置文件。现有启动脚本**无需任何修改**。
+
+三种来源可以自由混用，规则始终是 `命令行参数 > 环境变量 > 配置文件 > 内置默认值`：
+
+```bash
+# 旧脚本无需修改，继续可用
+nohup msgferry-worker \
+  --hgfs-root /mnt/hgfs/vm_share \
+  --executor ssh2 \
+  --ssh-host 192.168.1.100 \
+  --ssh-port 22 \
+  --ssh-user root \
+  --ssh-key /home/user/.ssh/id_ed25519 \
+  --heartbeat-interval 5 \
+  > /var/log/msgferry-worker.log 2>&1 &
+```
+
+### 4. 代码实现位置速查
+
+| 文件 | 职责 |
+| --- | --- |
+| `packages/shared/src/constants.ts` | `WORKER_CONFIG_FILE` 路径常量、`POLLING` / `HEARTBEAT` / `RETENTION` / `OUTPUT` 默认值常量 |
+| `packages/shared/src/config-file.ts` | 通用配置文件工具：`resolveUnderRoot` / `readJsonConfigFile` / `pickConfigValue` / `pickConfigNumber` |
+| `packages/worker/src/config.ts` | 解析与校验：`parseConfig`（三级优先级取值）、`resolveConfigFilePath`、`validateConfig` |
+| `packages/worker/config.example.json` | 示例配置文件，构建时拷贝到 `dist/worker/config.example.json` |
+| `build/pack.ts` | 打包时自动把 `config.example.json` 拷入产物目录 |
+| `packages/worker/test/config.test.ts` | 单元测试：配置文件读取 / 三级优先级 / 校验（57 个用例全部通过） |
+
+## 五、 启动方式
+
+### 1. 最简单的启动（推荐）
+
+配置文件就绪后，两种模式都只需一个必填参数：
+
+```bash
+# mock 模式（联调，无真实 SSH）
+nohup msgferry-worker --hgfs-root /mnt/hgfs/vm_share > /var/log/msgferry-worker.log 2>&1 &
+
+# ssh2 真实模式（SSH 信息从 config/worker.json 读取）
+nohup msgferry-worker --hgfs-root /mnt/hgfs/vm_share > /var/log/msgferry-worker.log 2>&1 &
+```
+
+> Worker 是**常驻后台进程**，建议用 `nohup`、`pm2` 或 systemd 守护开机自启。
+
+### 2. 完整参数启动（不依赖配置文件）
+
+```bash
+# ssh2 真实模式，全部参数显式给出（配置文件不存在时等效于这种方式）
+nohup msgferry-worker \
+  --hgfs-root /mnt/hgfs/vm_share \
+  --executor ssh2 \
+  --ssh-host 192.168.1.100 \
+  --ssh-port 22 \
+  --ssh-user root \
+  --ssh-key /home/user/.ssh/id_ed25519 \
+  > /var/log/msgferry-worker.log 2>&1 &
+```
+
+### 3. 混合方式（配置文件 + 临时覆盖）
+
+```bash
+nohup msgferry-worker \
+  --hgfs-root /mnt/hgfs/vm_share \
+  --executor mock \
+  > /var/log/msgferry-worker.log 2>&1 &
+```
+
+> 上面这条命令即使 `config/worker.json` 里配了 `executor: "ssh2"`，也会被命令行 `--executor mock` 覆盖——适合临时从真实模式切到联调模式，不用动配置文件。
+
+### 4. 快速上手模板
+
+```bash
+# 1. 在 HGFS 共享根目录创建 config 子目录
+mkdir -p /mnt/hgfs/vm_share/config
+
+# 2. 复制模板并编辑
+cp dist/worker/config.example.json /mnt/hgfs/vm_share/config/worker.json
+vim /mnt/hgfs/vm_share/config/worker.json
+
+# 3. 启动 Worker（只需一个必填参数）
+nohup msgferry-worker --hgfs-root /mnt/hgfs/vm_share > /var/log/msgferry-worker.log 2>&1 &
+```
+
+## 六、 边界与常见问题
+
+### 1. MCP 侧与配置文件的边界
+
+**当前 MCP 侧完全不会读取 `<hgfs_root>/config/worker.json`**，该配置文件只有 Worker 会消费。
+
+原因：
+
+- `config/worker.json` 里装的都是 **Worker 专属参数**（`executor`、`ssh.*`、`heartbeat_interval_sec`、`result_ttl_sec`、`max_inline_bytes` 等），MCP 侧根本不关心；
+- MCP 侧启动只需一个必填项 `MSGFERRY_HGFS_ROOT`（指向同一共享目录），其余 `max_wait_ms`、`polling.*` 都有内置默认值，一般不用配；
+- shared 里的 `config-file.ts` 工具和 `WORKER_CONFIG_FILE` 常量是通用的，未来若想让 MCP 侧也读配置文件（如新增 `<hgfs_root>/config/mcp.json`），可直接复用。
+
+**两侧唯一的耦合点始终是 `--hgfs-root` / `MSGFERRY_HGFS_ROOT` 指向同一个绝对路径**。
+
+### 2. 常见问题（FAQ）
+
+**Q1：不创建 `config/worker.json` 会怎样？**
+不报错。Worker 按「命令行参数 > 环境变量 > 内置默认值」运行，等价于旧用法；`executor` 默认 `mock`。
+
+**Q2：`executor` 配成 `ssh2` 但 `ssh.host` / `ssh.username` 没配会怎样？**
+启动校验失败：`ssh_config is required when executor_type is ssh2`（或 `ssh_config.host and ssh_config.username are required for ssh2 mode`）。
+
+**Q3：改了 `config/worker.json` 需要重启 Worker 吗？**
+需要。配置文件只在**启动时读取一次**（`parseConfig`），运行中修改不会热加载，重启 Worker 生效。
+
+**Q4：配置文件里的数字写成字符串可以吗？**
+可以。`pickConfigNumber` 会把字符串 `"500"` 转成数字 `500`；转不成数字则回退默认值。
+
+**Q5：私钥和密码都写了用哪个？**
+优先私钥。`ssh_config.private_key_path` 非空即用私钥，否则用密码。
+
+**Q6：`config.example.json` 和部署用的 `worker.json` 是什么关系？**
+`config.example.json` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。部署时把它复制为 `<hgfs_root>/config/worker.json` 并按需修改。
+
+---
+*本文档由 markdowncli 技能辅助生成*
