@@ -141,6 +141,12 @@ const assemble = async () => {
     genPackageJson(pkgName);
     await copyNodeModules(pkgName);
 
+    // 拷贝示例配置文件到产物（便于分发后直接参考）
+    const exampleSrc = resolve(projectRoot, "packages", pkgName, "config.example.json");
+    if (existsSync(exampleSrc)) {
+      await copy(exampleSrc, resolve(outputDir, "config.example.json"));
+    }
+
     console.log(picocolors.green(`[${pkgName}] Pack complete\n`));
   }
 };
