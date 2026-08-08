@@ -74,7 +74,9 @@ const genPackageJson = (pkgName: string) => {
 
 /**
  * 从 pnpm 的 .pnpm 目录拷贝依赖（解引用符号链接，拷贝真实文件）
- * pnpm .pnpm 目录格式: pkg@version/node_modules/pkg
+ * pnpm .pnpm 目录格式: pkg@version/node_modules/<name>，
+ * 同目录下还包含该包的全部传递依赖符号链接，一并解引用拷贝，
+ * 保证「解压即用」的产物不缺失运行时依赖
  */
 const copyPnpmDep = async (
   depName: string,
@@ -88,14 +90,19 @@ const copyPnpmDep = async (
   );
 
   for (const dir of dirs) {
-    const realPkgPath = resolve(pnpmDir, dir, "node_modules", depName);
-    if (!existsSync(realPkgPath)) continue;
+    const virtualRoot = resolve(pnpmDir, dir, "node_modules");
+    if (!existsSync(virtualRoot)) continue;
 
-    const dest = resolve(destModules, depName);
-    if (!existsSync(dest)) {
-      await ensureDir(resolve(dest, ".."));
-      await copy(realPkgPath, dest, { dereference: true });
-      console.log(picocolors.gray(`[${depName}] Copied from .pnpm`));
+    // 拷贝该包及其全部传递依赖（虚拟 store 顶层的符号链接）
+    const entries = readdirSync(virtualRoot);
+    for (const entry of entries) {
+      const src = resolve(virtualRoot, entry);
+      const dest = resolve(destModules, entry);
+      if (!existsSync(dest)) {
+        await ensureDir(resolve(dest, ".."));
+        await copy(src, dest, { dereference: true });
+        console.log(picocolors.gray(`[${entry}] Copied from .pnpm`));
+      }
     }
   }
 };
