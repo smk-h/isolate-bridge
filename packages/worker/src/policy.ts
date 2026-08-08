@@ -20,7 +20,7 @@ export interface PolicyRule {
   whitelist_prefixes: string[];
   /** 危险命令黑名单（子串匹配） */
   blacklist_patterns: string[];
-  /** 危险参数模式（正则字符串） */
+  /** 危险参数模式（正则字符串，含管道、重定向） */
   dangerous_param_patterns: string[];
   /** 白名单未命中时的默认动作：deny=拦截（whitelist_miss）｜allow=放行（黑名单与参数模式仍生效） */
   default_action: DefaultAction;
@@ -35,7 +35,8 @@ export type PolicyResult =
 export const DEFAULT_POLICY: PolicyRule = {
   whitelist_prefixes: ['docker', 'kubectl', 'systemctl', 'journalctl', 'cat', 'ls', 'tail'],
   blacklist_patterns: ['rm -rf /', 'dd if=', 'mkfs', ':(){'],
-  dangerous_param_patterns: [';', '&&', '\\|\\|', '\\$\\(', '`'],
+  // 危险参数模式：命令拼接（;、&&）、管道（|，含 ||）、重定向（>，含 >>）、命令替换（$()、反引号）
+  dangerous_param_patterns: [';', '&&', '\\|', '>', '\\$\\(', '`'],
   default_action: 'deny',
 };
 

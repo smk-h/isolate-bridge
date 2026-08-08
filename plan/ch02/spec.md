@@ -59,7 +59,7 @@ Worker 主进程进入无限循环，按 ch01 的 POLLING 退避参数轮询 `pe
 抢占成功后，Worker 解析任务 JSON 的 `cmd` 字段，经安全策略校验：
 - **白名单前缀匹配**：命令首词（如 `docker`、`kubectl`、`systemctl`、`journalctl`、`cat`、`ls`、`tail`）须命中白名单
 - **黑名单匹配**：命令须不命中高危黑名单（如 `rm -rf /`、`dd`、`mkfs`、fork 炸弹）
-- **参数校验**：命令经 shell-quote 解析后，参数中不得出现危险模式（如 `;`、`&&`、`||` 后接非白名单命令、`$()` 命令替换）
+- **参数校验**：命令经 shell-quote 解析后，参数中不得出现危险模式（如 `;`、`&&`、管道 `|`、重定向 `>`/`>>`、`$()` 命令替换）
 - **默认动作 `default_action`**：白名单未命中时的兜底策略，可配置为 `deny`（默认，拦截为 whitelist_miss）或 `allow`（放行，黑名单与参数模式仍生效）。设为 `allow` 即“黑名单优先”模式，无需每次为新增命令维护白名单
 - 命中策略失败的任务：标记 `policy_blocked=true`、`error_msg='blocked_by_policy'`、状态流转到 failed，写入 `failed/<task_id>.json`
 - 策略规则集从 `policy/` 目录的策略文件加载，支持运行时重载（文件变化检测或定时刷新）
