@@ -11,6 +11,7 @@
 
 import { parseConfig, validateConfig } from './config.js';
 import type { WorkerConfig } from './config.js';
+import { ensureSharedTemplates } from './bootstrap.js';
 import { createBackoff } from './backoff.js';
 import { pathToFileURL } from 'node:url';
 import {
@@ -120,6 +121,9 @@ export async function main(): Promise<void> {
   const config = parseConfig(process.argv, process.env);
   validateConfig(config);
   const root = config.hgfs_root;
+
+  // 启动引导：自动补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
+  await ensureSharedTemplates(root);
 
   await initQueueDirs(root);
   let policyRule = await loadPolicy(config.policy_file);

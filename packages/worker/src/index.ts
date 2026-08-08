@@ -10,6 +10,7 @@
  */
 
 export { main } from './main.js';
+export * from './bootstrap.js';
 export * from './config.js';
 export * from './backoff.js';
 export * from './queue.js';
