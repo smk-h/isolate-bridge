@@ -1,7 +1,8 @@
-import { resolve } from "path";
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { resolve, dirname } from "path";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "fs";
 import { copy, ensureDir, remove } from "fs-extra";
 import picocolors from "picocolors";
+import walk from "ignore-walk";
 import {
   buildTargets,
   nativeDeps,
@@ -17,6 +18,9 @@ interface PkgJson {
   bin?: Record<string, string>;
   dependencies?: Record<string, string>;
 }
+
+/** npm 发布时永不进包的保留文件（无论如何 .npmignore 都收不进去） */
+const ALWAYS_INCLUDED = ["package.json", "README.md", "LICENSE", "LICENCE", "NOTICE"];
 
 /**
  * 读取子包原始 package.json
@@ -131,7 +135,89 @@ const copyNodeModules = async (pkgName: string) => {
 };
 
 /**
- * 主流程：生成 package.json -> 拷贝 node_modules
+ * 读取子包 .npmignore（与 npm 发布同源规则），无则返回 null
+ */
+const readNpmIgnore = (pkgName: string): string | null => {
+  const igPath = resolve(projectRoot, "packages", pkgName, ".npmignore");
+  return existsSync(igPath) ? readFileSync(igPath, "utf-8") : null;
+};
+
+/**
+ * 依据 .npmignore 将子包内「需要分发」的文件递归拷贝到产物目录。
+ * 规则与 npm pack / npm publish 完全一致（ignore-walk 即 npm-packlist 底层），
+ * 因此「离线 tar.gz 里有什么」≈「npm 线上包里有什么」。
+ */
+const copyFilesByNpmIgnore = async (pkgName: string) => {
+  const pkgSrc = resolve(projectRoot, "packages", pkgName);
+  const outputDir = getPkgOutput(pkgName);
+
+  const ignoreContent = readNpmIgnore(pkgName);
+  const ignoreFiles = ignoreContent ? [".npmignore"] : undefined;
+
+  // 文件列表来自子包目录本身，不把产物目录/兄弟目录扫进来
+  const files = await walk({
+    path: pkgSrc,
+    ignoreFiles,
+    follow: true,
+  });
+
+  for (const rel of files) {
+    // 排除 npm 无条件保留的文件（与发布语义一致，产物自己会生成）
+    if (ALWAYS_INCLUDED.includes(rel)) continue;
+    // 排除 .npmignore 本身（它只是规则文件，不进入产物）
+    if (rel === ".npmignore") continue;
+
+    const src = resolve(pkgSrc, rel);
+    const dest = resolve(outputDir, rel);
+
+    // 保险：walk 只会返回文件，目录本身不需要创建（copy 会自动建父目录）
+    if (!statSync(src).isFile()) continue;
+
+    await ensureDir(dirname(dest));
+    await copy(src, dest);
+    console.log(picocolors.gray(`[${pkgName}] copied ${rel}`));
+  }
+};
+
+/**
+ * 校验 .npmignore 中「取反声明」的路径在源目录真实存在。
+ * 这是白名单式清单（`!foo.json`）的核心保障：声明了要分发却不存在，直接报错而不是静默跳过。
+ * 普通的排除规则（黑名单）不校验——排除一个不存在的路径是安全的。
+ */
+const verifyNpmIgnore = (pkgName: string) => {
+  const content = readNpmIgnore(pkgName);
+  if (!content) return;
+
+  const pkgSrc = resolve(projectRoot, "packages", pkgName);
+  const rules = content
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("#"));
+
+  const missing: string[] = [];
+  for (const rule of rules) {
+    if (!rule.startsWith("!")) continue; // 只校验取反规则
+    const pattern = rule.slice(1).replace(/\/+$/, "");
+    if (!pattern) continue;
+    // 含通配符的取反无法可靠静态判定，跳过
+    if (/[*?\[\]{}]/.test(pattern)) continue;
+
+    if (!existsSync(resolve(pkgSrc, pattern))) {
+      missing.push(rule);
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      picocolors.red(
+        `[${pkgName}] .npmignore 中取反声明的路径不存在: ${missing.join(", ")}`
+      )
+    );
+  }
+};
+
+/**
+ * 主流程：生成 package.json -> 拷贝 node_modules -> 按 .npmignore 拷贝分发文件
  * 注意：不清理 index.js（由 bundle 阶段生成）
  */
 const assemble = async () => {
@@ -145,37 +231,15 @@ const assemble = async () => {
     }
     await ensureDir(outputDir);
 
+    // 打包前校验 .npmignore 规则引用的路径都存在
+    verifyNpmIgnore(pkgName);
+
     genPackageJson(pkgName);
     await copyNodeModules(pkgName);
 
-    // 拷贝示例配置文件到产物（便于分发后直接参考）
-    const exampleSrc = resolve(projectRoot, "packages", pkgName, "config.example.json");
-    if (existsSync(exampleSrc)) {
-      await copy(exampleSrc, resolve(outputDir, "config.example.json"));
-    }
-
-    // 拷贝命令安全策略示例到产物（仅 worker 包提供，便于分发后直接参考）
-    const policyExampleSrc = resolve(projectRoot, "packages", pkgName, "policy.example.json");
-    if (existsSync(policyExampleSrc)) {
-      await copy(policyExampleSrc, resolve(outputDir, "policy.example.json"));
-    }
-
-    // 拷贝「项目内免配置启动 Claude Code」模板到产物（仅 mcp-server 包提供）
-    // 使 MCP 成果物目录就地启动 claude 即可自动连接 MCP server，无需额外全局配置
-    const mcpJsonSrc = resolve(projectRoot, "packages", pkgName, ".mcp.json");
-    if (existsSync(mcpJsonSrc)) {
-      await copy(mcpJsonSrc, resolve(outputDir, ".mcp.json"));
-    }
-    const claudeSettingsSrc = resolve(projectRoot, "packages", pkgName, ".claude", "settings.local.json");
-    if (existsSync(claudeSettingsSrc)) {
-      await copy(claudeSettingsSrc, resolve(outputDir, ".claude", "settings.local.json"));
-    }
-    // 拷贝「项目内免配置启动 OpenCode」模板到产物（仅 mcp-server 包提供）
-    // 使 MCP 成果物目录就地启动 opencode 即可自动连接 MCP server，无需额外全局配置
-    const opencodeConfigSrc = resolve(projectRoot, "packages", pkgName, ".opencode", "opencode.json");
-    if (existsSync(opencodeConfigSrc)) {
-      await copy(opencodeConfigSrc, resolve(outputDir, ".opencode", "opencode.json"));
-    }
+    // 按 .npmignore 拷贝分发文件（config.example.json、.mcp.json、.claude/... 等
+    // 都在各自的 .npmignore 白名单式清单里声明，新增文件无需再改 build）
+    await copyFilesByNpmIgnore(pkgName);
 
     console.log(picocolors.green(`[${pkgName}] Pack complete\n`));
   }

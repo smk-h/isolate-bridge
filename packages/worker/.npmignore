@@ -1,0 +1,19 @@
+# MsgFerry Worker 发布/分发文件清单
+# 语义与 npm 发布完全一致：这里排除的内容，离线 tar.gz 与 npm 线上包都不会包含。
+# build/pack.ts 依据本文件把「需要分发」的文件拷贝进产物目录（新增文件只改这里，不动 build）。
+
+# 源码 / 测试 / 构建产物：运行时用不到（已被 bundle 成 index.mjs）
+# 注：子包 package.json 的 main 指向 src/index.ts（供 tsc dev 直跑），按 npm 规则
+# main 指向的文件会被强制保留；而实际发布是从 dist/ 产物目录进行的（其 main 为
+# index.mjs），src/ 不会进入任何线上包，这里排除仅用于 build 拷贝清单语义。
+src/
+test/
+tsconfig.json
+*.tsbuildinfo
+
+# 依赖由 build 单独拷贝（离线解压即用），不随清单分发
+node_modules/
+
+# 运行时自动生成的临时文件
+*.log
+.DS_Store
