@@ -37,6 +37,33 @@ describe('policy checkCommand', () => {
     assert.equal((result as { reason: string }).reason, 'whitelist_miss');
   });
 
+  it('default_action=allow 时白名单未命中应放行', () => {
+    const allowPolicy = { ...DEFAULT_POLICY, default_action: 'allow' as const };
+    const result = checkCommand(allowPolicy, 'reboot');
+    assert.deepEqual(result, { allowed: true });
+  });
+
+  it('default_action=allow 时黑名单仍优先拦截', () => {
+    const allowPolicy = { ...DEFAULT_POLICY, default_action: 'allow' as const };
+    const result = checkCommand(allowPolicy, 'shutdown rm -rf /');
+    assert.equal(result.allowed, false);
+    assert.equal((result as { reason: string }).reason, 'blacklist_hit');
+  });
+
+  it('default_action=allow 时危险参数模式仍拦截', () => {
+    const allowPolicy = { ...DEFAULT_POLICY, default_action: 'allow' as const };
+    const result = checkCommand(allowPolicy, 'reboot; ls');
+    assert.equal(result.allowed, false);
+    assert.equal((result as { reason: string }).reason, 'param_blocked');
+  });
+
+  it('default_action=deny 时白名单未命中仍拦截（与默认一致）', () => {
+    const denyPolicy = { ...DEFAULT_POLICY, default_action: 'deny' as const };
+    const result = checkCommand(denyPolicy, 'reboot');
+    assert.equal(result.allowed, false);
+    assert.equal((result as { reason: string }).reason, 'whitelist_miss');
+  });
+
   it('dd if= 应被黑名单拦截', () => {
     const result = checkCommand(DEFAULT_POLICY, 'dd if=/dev/zero of=/tmp/x');
     assert.equal(result.allowed, false);

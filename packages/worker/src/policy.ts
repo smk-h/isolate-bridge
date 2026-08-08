@@ -11,14 +11,19 @@
 
 import { existsSync, statSync, readFileSync } from 'node:fs';
 
+/** 默认动作：白名单未命中时的兜底策略 */
+export type DefaultAction = 'deny' | 'allow';
+
 /** 策略规则集 */
 export interface PolicyRule {
-  /** 命令首词白名单（如 docker、kubectl） */
+  /** 命令首词白名单（如 docker、kubectl），default_action=deny 时生效 */
   whitelist_prefixes: string[];
   /** 危险命令黑名单（子串匹配） */
   blacklist_patterns: string[];
   /** 危险参数模式（正则字符串） */
   dangerous_param_patterns: string[];
+  /** 白名单未命中时的默认动作：deny=拦截（whitelist_miss）｜allow=放行（黑名单与参数模式仍生效） */
+  default_action: DefaultAction;
 }
 
 /** 策略校验结果 */
@@ -31,6 +36,7 @@ export const DEFAULT_POLICY: PolicyRule = {
   whitelist_prefixes: ['docker', 'kubectl', 'systemctl', 'journalctl', 'cat', 'ls', 'tail'],
   blacklist_patterns: ['rm -rf /', 'dd if=', 'mkfs', ':(){'],
   dangerous_param_patterns: [';', '&&', '\\|\\|', '\\$\\(', '`'],
+  default_action: 'deny',
 };
 
 /**
@@ -49,6 +55,7 @@ export async function loadPolicy(file: string): Promise<PolicyRule> {
       whitelist_prefixes: parsed.whitelist_prefixes ?? DEFAULT_POLICY.whitelist_prefixes,
       blacklist_patterns: parsed.blacklist_patterns ?? DEFAULT_POLICY.blacklist_patterns,
       dangerous_param_patterns: parsed.dangerous_param_patterns ?? DEFAULT_POLICY.dangerous_param_patterns,
+      default_action: parsed.default_action ?? DEFAULT_POLICY.default_action,
     };
   } catch {
     // 策略文件解析失败回退到默认规则，不阻塞启动
@@ -94,7 +101,11 @@ export function checkCommand(rule: PolicyRule, cmd: string): PolicyResult {
   }
 
   // 白名单前缀匹配（最后检查，确保黑名单与参数危险模式优先拦截）
+  // default_action=deny 时未命中白名单直接拦截；=allow 时放行（黑名单与参数模式仍生效）
   if (!rule.whitelist_prefixes.includes(head)) {
+    if (rule.default_action === 'allow') {
+      return { allowed: true };
+    }
     return { allowed: false, reason: 'whitelist_miss' };
   }
 
