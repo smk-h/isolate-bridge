@@ -379,5 +379,23 @@ Worker 主循环（无限循环）：
 2. Windows 宿主机：启动常驻 Node.js Worker 进程，后台静默运行。
 3. Claude Code 直接调用封装工具，无感使用外网设备能力。
 
+### 3. 两侧的路径视图与 `--hgfs-root` 取值
+
+Worker 运行在**外网 Windows 宿主机**、MCP 运行在**内网 Linux 虚拟机**，两者看到的是**同一个物理 HGFS 共享目录**，但操作系统不同、路径写法不同，`--hgfs-root` / `MSGFERRY_HGFS_ROOT` 各填各侧的系统路径：
+
+| 进程 | 运行位置 | 操作系统 | 共享目录路径写法 |
+| --- | --- | --- | --- |
+| Node Worker | 外网 Windows 宿主机 | Windows | `E:\MyLinux\VMware\sharedir\vm_share`（HGFS 共享文件夹） |
+| MCP Server | 内网虚拟机 | Linux | `/mnt/hgfs/sharedir/vm_share`（HGFS 挂载点） |
+
+#### 3.1 配置中的路径处理规则
+
+- **Worker 侧**：启动参数与 `config/worker.json` 内所有路径字段（`audit_log_dir`、`policy_file`、`ssh.private_key_path` 等）一律写 **Windows 路径**（如 `E:\MyLinux\VMware\sharedir\vm_share`、`C:\Users\msgferry\.ssh\id_ed25519`），JSON 中反斜杠需转义为 `\\`。
+- **MCP 侧**：`.mcp.json` 的 `MSGFERRY_HGFS_ROOT` 环境变量写 **Linux 路径**（如 `/mnt/hgfs/sharedir/vm_share`），MCP 不读 `config/worker.json`，无其他路径配置。
+- 队列子目录、心跳文件等**相对路径约定由 shared 包统一定义**，代码层基于 `node:path` 的 `join` 拼接，自动适配两侧系统，无需人工区分。
+- 两侧唯一需要对齐的是「指向同一个物理目录」，路径写法可以不同，只要各自能正确访问该目录即可。
+
+更多 Worker 配置文件与路径细节见 [`docs/worker-config.md`](worker-config.md)。
+
 ---
 *本文档由 markdowncli 技能辅助生成*
