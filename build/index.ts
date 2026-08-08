@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from "fs";
 import picocolors from "picocolors";
 import { execSync } from "child_process";
-import { buildTargets, buildOutput, getPkgOutput } from "./helper";
+import { buildTargets, buildOutput, pkgOutputNames } from "./helper";
 
 /**
  * 完整构建流程：
@@ -32,18 +32,20 @@ const main = async () => {
   // 4. 打包 tarball
   console.log(picocolors.cyan("\n--- Step 3: Pack tarballs ---"));
   for (const pkgName of buildTargets) {
-    execSync(`tar czf ${pkgName}.tar.gz ${pkgName}`, {
+    const outputName = pkgOutputNames[pkgName] ?? pkgName;
+    execSync(`tar czf ${outputName}.tar.gz ${outputName}`, {
       stdio: "inherit",
       cwd: buildOutput,
     });
-    console.log(picocolors.green(`Created dist/${pkgName}.tar.gz`));
+    console.log(picocolors.green(`Created dist/${outputName}.tar.gz`));
   }
 
   console.log(picocolors.cyan("\n=== Build complete ==="));
   console.log(picocolors.green("产物位于 dist/ 目录，可直接压缩分发："));
   for (const pkgName of buildTargets) {
-    console.log(picocolors.gray(`  dist/${pkgName}/         (解压即用)`));
-    console.log(picocolors.gray(`  dist/${pkgName}.tar.gz   (压缩包)`));
+    const outputName = pkgOutputNames[pkgName] ?? pkgName;
+    console.log(picocolors.gray(`  dist/${outputName}/         (解压即用)`));
+    console.log(picocolors.gray(`  dist/${outputName}.tar.gz   (压缩包)`));
   }
 };
 

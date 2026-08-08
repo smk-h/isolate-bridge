@@ -157,7 +157,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 
 ### 3. 完整示例（Windows 路径）
 
-仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/worker/config.example.json`），路径均为 Worker 所在 Windows 主机的视角：
+仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/msgferry-worker/config.example.json`），路径均为 Worker 所在 Windows 主机的视角：
 
 ```json
 {
@@ -264,7 +264,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 
 | `packages/shared/src/constants.ts` | `WORKER_CONFIG_FILE` 路径常量、`POLLING` / `HEARTBEAT` / `RETENTION` / `OUTPUT` 默认值常量 |
 | `packages/shared/src/config-file.ts` | 通用配置文件工具：`resolveUnderRoot` / `readJsonConfigFile` / `pickConfigValue` / `pickConfigNumber` |
 | `packages/worker/src/config.ts` | 解析与校验：`parseConfig`（三级优先级取值）、`resolveConfigFilePath`、`validateConfig` |
-| `packages/worker/config.example.json` | 示例配置文件（Windows 路径），构建时拷贝到 `dist/worker/config.example.json` |
+| `packages/worker/config.example.json` | 示例配置文件（Windows 路径），构建时拷贝到 `dist/msgferry-worker/config.example.json` |
 | `build/pack.ts` | 打包时自动把 `config.example.json` 拷入产物目录 |
 | `packages/worker/test/config.test.ts` | 单元测试：配置文件读取 / 三级优先级 / 校验 |
 
@@ -366,7 +366,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 | `<hgfs_root>\config\worker.json` | 从 `config.example.json` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
 | `<hgfs_root>\policy\policy.json` | 从 `policy.example.json` 模板复制并重命名，且 **`default_action` 由 `deny` 改写为 `allow`** | **跳过**，不覆盖用户改动 |
 
-- **模板来源**：随产物分发的 `config.example.json` / `policy.example.json`（位于 `dist/worker/`，与 `index.mjs` 同目录）；产物中模板缺失时使用内置兜底模板，保证首次启动总能成功。
+- **模板来源**：随产物分发的 `config.example.json` / `policy.example.json`（位于 `dist/msgferry-worker/`，与 `index.mjs` 同目录）；产物中模板缺失时使用内置兜底模板，保证首次启动总能成功。
 - **父目录自动创建**：`config/`、`policy/` 目录不存在时一并创建。
 - **`default_action` 改写**：自动生成的 `policy/policy.json` 中 `default_action` 固定为 `allow`（模板里为 `deny`），即白名单未命中时默认放行；黑名单与危险参数模式仍然生效。已存在的策略文件不会被改写。
 - **幂等**：重复启动不会重复复制，也不会改动已存在文件。

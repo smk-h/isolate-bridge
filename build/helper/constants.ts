@@ -14,6 +14,12 @@ export const binNames: Record<string, string> = {
   "worker": "msgferry-worker",
 };
 
+/** 产物目录名（dist 下的目录名，即成果物名称） */
+export const pkgOutputNames: Record<string, string> = {
+  "mcp-server": "msgferry-mcp-server",
+  "worker": "msgferry-worker",
+};
+
 /** 原生/不可 bundle 的依赖，保持 external 并拷贝 node_modules */
 export const nativeDeps = ["ssh2", "cpu-features"];
 
