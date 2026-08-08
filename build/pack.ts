@@ -170,6 +170,12 @@ const assemble = async () => {
     if (existsSync(claudeSettingsSrc)) {
       await copy(claudeSettingsSrc, resolve(outputDir, ".claude", "settings.local.json"));
     }
+    // 拷贝「项目内免配置启动 OpenCode」模板到产物（仅 mcp-server 包提供）
+    // 使 MCP 成果物目录就地启动 opencode 即可自动连接 MCP server，无需额外全局配置
+    const opencodeConfigSrc = resolve(projectRoot, "packages", pkgName, ".opencode", "opencode.json");
+    if (existsSync(opencodeConfigSrc)) {
+      await copy(opencodeConfigSrc, resolve(outputDir, ".opencode", "opencode.json"));
+    }
 
     console.log(picocolors.green(`[${pkgName}] Pack complete\n`));
   }
