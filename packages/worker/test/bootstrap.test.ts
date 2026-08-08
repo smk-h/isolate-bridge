@@ -5,7 +5,8 @@
  * Author     : MsgFerry
  * Date       : 2026/08/08
  * Version    : 0.0.1
- * Description: 共享目录引导测试——config/ 与 policy/ 目录及模板文件的自动补齐与幂等跳过
+ * Description: 共享目录引导测试——config/ 与 policy/ 目录及模板文件的自动补齐、
+ *             幂等跳过，以及策略模板复制时 default_action 由 deny 改写为 allow
  * ======================================================
  */
 
@@ -49,6 +50,7 @@ describe('ensureSharedTemplates', () => {
     const pol = JSON.parse(readFileSync(polPath, 'utf-8'));
     assert.ok(Array.isArray(pol.whitelist_prefixes), 'policy whitelist_prefixes should be array');
     assert.ok(pol.whitelist_prefixes.includes('docker'));
+    assert.equal(pol.default_action, 'allow', 'generated policy default_action should be allow');
   });
 
   it('leaves existing config/policy files untouched', async () => {

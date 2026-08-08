@@ -9,6 +9,9 @@
  *             策略：检测目标文件是否存在，存在则跳过，不存在则从随产物分发的
  *             示例模板复制并重命名（config.example.json → config/worker.json，
  *             policy.example.json → policy/policy.json）。
+ *             注意：复制策略模板时会把 default_action 由 deny 改写为 allow。
+ *             （即自动生成的 policy.json 白名单未命中时默认放行，黑名单与
+ *             危险参数模式仍生效）
  * ======================================================
  */
 
@@ -46,6 +49,9 @@ const FALLBACK_CONFIG_TEMPLATE: Record<string, unknown> = {
   result_ttl_sec: 600,
   max_inline_bytes: 65536,
 };
+
+/** 自动生成的策略文件中 default_action 的目标值：deny → allow */
+const POLICY_DEFAULT_ACTION = 'allow';
 
 /** 兜底策略模板（模板文件缺失时使用，内容与 policy.example.json 保持一致） */
 const FALLBACK_POLICY_TEMPLATE: Record<string, unknown> = {
@@ -111,6 +117,28 @@ async function ensureFileFromTemplate(
 }
 
 /**
+ * 写入策略模板：复制默认动作由 deny 改写为 allow（仅用于自动生成的
+ * policy/policy.json；模板文件保持原样，已存在的策略文件不会被覆盖）
+ * @param root - HGFS 共享根目录
+ * @param relPath - 策略文件相对共享根的路径（policy/policy.json）
+ */
+async function ensurePolicyFile(root: string, relPath: string): Promise<void> {
+  const target = join(root, relPath);
+  try {
+    await access(target);
+    return;
+  } catch {
+    // 目标文件不存在，继续生成模板
+  }
+  await mkdir(dirname(target), { recursive: true });
+  const content = await loadTemplate(POLICY_TEMPLATE_FILE, FALLBACK_POLICY_TEMPLATE);
+  const policy = JSON.parse(content) as Record<string, unknown>;
+  policy.default_action = POLICY_DEFAULT_ACTION;
+  await writeFile(target, `${JSON.stringify(policy, null, 2)}\n`, 'utf-8');
+  console.log(`[bootstrap] ${relPath} missing, created from template ${POLICY_TEMPLATE_FILE} (default_action -> ${POLICY_DEFAULT_ACTION})`);
+}
+
+/**
  * 启动引导：补齐共享目录的 config/ 与 policy/ 目录及模板文件
  * - <root>/config/worker.json 缺失时写入配置模板
  * - <root>/policy/policy.json 缺失时写入策略模板
@@ -119,5 +147,5 @@ async function ensureFileFromTemplate(
  */
 export async function ensureSharedTemplates(root: string): Promise<void> {
   await ensureFileFromTemplate(root, WORKER_CONFIG_FILE, CONFIG_TEMPLATE_FILE, FALLBACK_CONFIG_TEMPLATE);
-  await ensureFileFromTemplate(root, POLICY_FILE_REL, POLICY_TEMPLATE_FILE, FALLBACK_POLICY_TEMPLATE);
+  await ensurePolicyFile(root, POLICY_FILE_REL);
 }

@@ -364,10 +364,11 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 | 检测项 | 缺失时自动创建 | 已存在时 |
 | --- | --- | --- |
 | `<hgfs_root>\config\worker.json` | 从 `config.example.json` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
-| `<hgfs_root>\policy\policy.json` | 从 `policy.example.json` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
+| `<hgfs_root>\policy\policy.json` | 从 `policy.example.json` 模板复制并重命名，且 **`default_action` 由 `deny` 改写为 `allow`** | **跳过**，不覆盖用户改动 |
 
 - **模板来源**：随产物分发的 `config.example.json` / `policy.example.json`（位于 `dist/worker/`，与 `index.mjs` 同目录）；产物中模板缺失时使用内置兜底模板，保证首次启动总能成功。
 - **父目录自动创建**：`config/`、`policy/` 目录不存在时一并创建。
+- **`default_action` 改写**：自动生成的 `policy/policy.json` 中 `default_action` 固定为 `allow`（模板里为 `deny`），即白名单未命中时默认放行；黑名单与危险参数模式仍然生效。已存在的策略文件不会被改写。
 - **幂等**：重复启动不会重复复制，也不会改动已存在文件。
 - **提示日志**：自动创建时打印 `[bootstrap] config/worker.json missing, created from template ...`，便于确认。
 
@@ -375,9 +376,9 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 | 文件 | 职责 |
 | --- | --- |
-| `packages/worker/src/bootstrap.ts` | 引导模块：`ensureSharedTemplates(root)` 检测并补齐模板 |
+| `packages/worker/src/bootstrap.ts` | 引导模块：`ensureSharedTemplates(root)` 检测并补齐模板；复制策略模板时把 `default_action` 由 `deny` 改写为 `allow` |
 | `packages/worker/src/main.ts` | 启动流程中调用 `ensureSharedTemplates(root)` |
-| `packages/worker/test/bootstrap.test.ts` | 单元测试：缺失补齐 / 已存在跳过 / 幂等 |
+| `packages/worker/test/bootstrap.test.ts` | 单元测试：缺失补齐 / 已存在跳过 / 幂等 / 策略 `default_action` 为 `allow` |
 
 ---
 *本文档由 markdowncli 技能辅助生成*
