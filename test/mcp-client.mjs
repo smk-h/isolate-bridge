@@ -4,7 +4,7 @@
  * File name  : mcp-client.mjs
  * Author     : MsgFerry
  * Date       : 2026/08/08
- * Version    : 0.0.1
+ * Version    : 0.1.0
  * Description: 测试辅助脚本——以 MCP SDK Client 身份启动并连接 MCP Server，调用工具
  *
  * 用法：
@@ -20,7 +20,9 @@
  *   3. 列出全部工具（tools/list）
  *   4. 依次调用四个工具并打印结果：
  *      - check_bridge_health
- *      - submit_ssh_task（docker ps）
+ *      - submit_ssh_task（单条命令）
+ *      - submit_ssh_task（多条命令串联：换行分隔，验证 && / ; 等价场景）
+ *      - submit_ssh_task（多个独立任务连续提交）
  *      - query_task_status
  *      - cancel_task
  *   5. 测试完成后优雅退出
@@ -115,6 +117,51 @@ function printResult(label, result, assertFn) {
   }
 }
 
+/**
+ * 提交命令并打印结果（复用 submit_ssh_task 的期望/断言，供单条/多条场景共用）
+ * @param {Client} client - MCP Client
+ * @param {string} cmd - 待执行命令
+ * @param {object} extra - 附加参数（timeout_sec / task_id 等）
+ * @returns {object} 实际返回的 structuredContent
+ */
+async function runSubmitTask(client, cmd, extra = {}) {
+  const taskId = extra.task_id ?? randomUUID();
+  console.log(`\n  提交命令: ${cmd.replace(/\n/g, ' \\n ')}, task_id=${taskId}`);
+  printExpected('submit_ssh_task', {
+    task_id: '<string>',
+    status: '<completed | failed | cancelled | timeout>',
+    exit_code: '<number | null>',
+    stdout: '<string>',
+    stderr: '<string>',
+    error_msg: '<string | null>',
+    truncated: '<boolean>',
+    stdout_size: '<number>',
+    stderr_size: '<number>',
+    duration_ms: '<number>',
+    error_code: '<可选: worker_offline | duplicate_submit | execution_timeout>',
+  });
+  const result = await client.callTool({
+    name: 'submit_ssh_task',
+    arguments: {
+      cmd,
+      timeout_sec: extra.timeout_sec ?? 10,
+      task_id: taskId,
+    },
+  });
+  printResult('submit_ssh_task', result, (sc) => {
+    return sc?.task_id === taskId
+      && sc?.status === 'completed'
+      && typeof sc?.exit_code === 'number'
+      && typeof sc?.stdout === 'string'
+      && typeof sc?.stderr === 'string'
+      && typeof sc?.truncated === 'boolean'
+      && typeof sc?.stdout_size === 'number'
+      && typeof sc?.stderr_size === 'number'
+      && typeof sc?.duration_ms === 'number';
+  });
+  return result.structuredContent;
+}
+
 async function main() {
   separator('启动 MCP Server 并连接');
   console.log(`  脚本路径: ${mcpJs}`);
@@ -172,45 +219,35 @@ async function main() {
     return typeof sc?.online === 'boolean';
   });
 
-  // 2. submit_ssh_task
-  separator('工具调用 2: submit_ssh_task');
-  const taskId = randomUUID();
-  console.log(`  提交命令: docker ps, task_id=${taskId}`);
-  printExpected('submit_ssh_task', {
-    task_id: '<string>',
-    status: '<completed | failed | cancelled | timeout>',
-    exit_code: '<number | null>',
-    stdout: '<string>',
-    stderr: '<string>',
-    error_msg: '<string | null>',
-    truncated: '<boolean>',
-    stdout_size: '<number>',
-    stderr_size: '<number>',
-    duration_ms: '<number>',
-    error_code: '<可选: worker_offline | duplicate_submit | execution_timeout>',
-  });
-  const submitResult = await client.callTool({
-    name: 'submit_ssh_task',
-    arguments: {
-      cmd: 'docker ps',
-      timeout_sec: 10,
-      task_id: taskId,
-    },
-  });
-  printResult('submit_ssh_task', submitResult, (sc) => {
-    return sc?.task_id === taskId
-      && sc?.status === 'completed'
-      && typeof sc?.exit_code === 'number'
-      && typeof sc?.stdout === 'string'
-      && typeof sc?.stderr === 'string'
-      && typeof sc?.truncated === 'boolean'
-      && typeof sc?.stdout_size === 'number'
-      && typeof sc?.stderr_size === 'number'
-      && typeof sc?.duration_ms === 'number';
-  });
+  // 2. submit_ssh_task（单条命令）
+  separator('工具调用 2: submit_ssh_task（单条命令）');
+  await runSubmitTask(client, 'docker ps', { timeout_sec: 10 });
 
-  // 3. query_task_status
-  separator('工具调用 3: query_task_status');
+  // 3. submit_ssh_task（多条命令串联：换行分隔，验证 cd && pwd && ls 的真实场景）
+  separator('工具调用 3: submit_ssh_task（多条命令串联）');
+  const multiLineCmd = 'cd /tmp/ && pwd && ls\necho "asd"';
+  await runSubmitTask(client, multiLineCmd, { timeout_sec: 10 });
+
+  // 4. submit_ssh_task（多个独立任务连续提交）
+  separator('工具调用 4: submit_ssh_task（多任务连续提交）');
+  const multiTaskCmds = [
+    'ls -la /tmp',
+    'cat /etc/hostname',
+    'tail -3 /etc/os-release',
+  ];
+  const multiTaskResults = [];
+  for (const cmd of multiTaskCmds) {
+    const sc = await runSubmitTask(client, cmd, { timeout_sec: 10 });
+    multiTaskResults.push(sc);
+  }
+  const allCompleted = multiTaskResults.every(
+    (sc) => sc?.status === 'completed' && typeof sc?.stdout === 'string',
+  );
+  console.log(`\n  [多任务断言] ${allCompleted ? 'PASS' : 'FAIL'}（共 ${multiTaskResults.length} 个任务全部 completed）`);
+
+  // 5. query_task_status（回查最后一个任务的终态结果）
+  separator('工具调用 5: query_task_status');
+  const queryTaskId = multiTaskResults[multiTaskResults.length - 1]?.task_id ?? randomUUID();
   printExpected('query_task_status', {
     task_id: '<string>',
     status: '<pending | processing | completed | failed | cancelled>',
@@ -224,17 +261,17 @@ async function main() {
   const queryResult = await client.callTool({
     name: 'query_task_status',
     arguments: {
-      task_id: taskId,
+      task_id: queryTaskId,
     },
   });
   printResult('query_task_status', queryResult, (sc) => {
-    return sc?.task_id === taskId
+    return sc?.task_id === queryTaskId
       && sc?.status === 'completed'
       && typeof sc?.exit_code === 'number';
   });
 
-  // 4. cancel_task（对一个不存在的 task_id 调用，预期 not_found）
-  separator('工具调用 4: cancel_task');
+  // 6. cancel_task（对一个不存在的 task_id 调用，预期 not_found）
+  separator('工具调用 6: cancel_task');
   const cancelTaskId = randomUUID();
   console.log(`  对 task_id=${cancelTaskId} 调用 cancel_task（预期 not_found）`);
   printExpected('cancel_task (不存在的任务)', {

@@ -20,13 +20,15 @@
  *
  * 行为：
  *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
- *   2. 启动 Worker 进程（mock 模式），将 stderr 转发到当前进程
- *   3. 收到 SIGINT/SIGTERM 时优雅终止 Worker 并清理
+ *   2. 写入测试用宽松策略 policy/policy.json（default_action=allow），
+ *      放行多命令串联（cd /tmp && pwd && ls）、换行多条命令等真实场景
+ *   3. 启动 Worker 进程（mock 模式），将 stderr 转发到当前进程
+ *   4. 收到 SIGINT/SIGTERM 时优雅终止 Worker 并清理
  * ======================================================
  */
 
 import { spawn } from 'node:child_process';
-import { mkdirSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -82,6 +84,20 @@ if (!existsSync(workerJs)) {
 // 创建 test/temp 共享目录
 console.log(`[test_work] 创建共享目录: ${tempDir}`);
 mkdirSync(tempDir, { recursive: true });
+
+// 写入测试用宽松策略：default_action=allow 且不拦截 && / ; / | / > 等参数模式，
+// 便于 mcp-client 验证多命令串联（cd /tmp && pwd && ls、换行多条命令）等真实场景。
+// 黑名单仍保留，危险命令（rm -rf / 等）依旧会被拦截；策略安全细节由 worker 单测覆盖。
+const policyDir = join(tempDir, 'policy');
+mkdirSync(policyDir, { recursive: true });
+const testPolicy = {
+  whitelist_prefixes: ['docker', 'kubectl', 'systemctl', 'journalctl', 'cat', 'ls', 'tail'],
+  blacklist_patterns: ['rm -rf /', 'dd if=', 'mkfs', ':(){'],
+  dangerous_param_patterns: [],
+  default_action: 'allow',
+};
+writeFileSync(join(policyDir, 'policy.json'), JSON.stringify(testPolicy, null, 2), 'utf-8');
+console.log('[test_work] 已写入测试宽松策略: policy/policy.json (default_action=allow, 不拦截串联/管道/重定向)');
 
 // 组装 Worker 启动参数
 const workerArgs = ['--hgfs-root', tempDir, '--executor', opts.executor];
