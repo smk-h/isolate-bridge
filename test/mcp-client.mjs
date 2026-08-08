@@ -41,7 +41,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const mcpJs = resolve(projectRoot, 'packages', 'mcp-server', 'dist', 'main.js');
+const mcpJs = resolve(projectRoot, 'dist', 'mcp-server', 'index.mjs');
 
 // 解析命令行参数
 function parseArgs() {
@@ -67,7 +67,7 @@ const opts = parseArgs();
 
 // 检查 MCP Server 编译产物
 if (!existsSync(mcpJs)) {
-  console.error('[mcp-client] mcp-server 产物不存在，请先构建：cd packages/mcp-server && npx tsc');
+  console.error('[mcp-client] mcp-server 产物不存在，请先构建：pnpm build');
   process.exit(1);
 }
 

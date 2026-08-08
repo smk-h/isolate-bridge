@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const tempDir = join(__dirname, 'temp');
-const workerJs = resolve(projectRoot, 'packages', 'worker', 'dist', 'src', 'main.js');
+const workerJs = resolve(projectRoot, 'dist', 'worker', 'index.mjs');
 
 // 解析命令行参数
 function parseArgs() {
@@ -75,7 +75,7 @@ const opts = parseArgs();
 
 // 检查 Worker 编译产物
 if (!existsSync(workerJs)) {
-  console.error('[test_work] worker 产物不存在，请先构建：cd packages/worker && pnpm build');
+  console.error('[test_work] worker 产物不存在，请先构建：pnpm build');
   process.exit(1);
 }
 
