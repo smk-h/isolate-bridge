@@ -54,10 +54,12 @@ describe('ensureSharedTemplates', () => {
     assert.equal(cfg.devices?.['board-100']?.password, 'your_password');
     assert.equal(cfg.devices?.['board-100']?.private_key_path, undefined);
     assert.equal(cfg.devices?.['board-101']?.host, '192.168.1.101');
-    // 模板中 audit_log_dir / policy_file 应为相对共享根目录的路径，
+    // 模板中 policy_file 应为相对共享根目录的路径，
     // 由 Worker 按 --hgfs-root 解析为绝对路径，避免示例 Windows 绝对路径污染重启后配置
-    assert.equal(cfg.audit_log_dir, 'logs/worker');
     assert.equal(cfg.policy_file, 'policy/policy.json');
+    // hgfs_root / audit_log_dir 不再进配置文件（hgfs_root 仅命令行必填；audit_log_dir 暂固定与 log_dir 一致）
+    assert.equal(cfg.hgfs_root, undefined);
+    assert.equal(cfg.audit_log_dir, undefined);
 
     const pol = JSON.parse(readFileSync(polPath, 'utf-8'));
     assert.ok(Array.isArray(pol.whitelist_prefixes), 'policy whitelist_prefixes should be array');

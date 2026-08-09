@@ -31,8 +31,7 @@ const POLICY_FILE_REL = 'policy/policy.json';
 
 /** 兜底配置模板（模板文件缺失时使用，内容与 config.example.json 保持一致） */
 const FALLBACK_CONFIG_TEMPLATE: Record<string, unknown> = {
-  '//': 'Worker 配置文件示例（Worker 运行在外网 Windows 主机，本文件内路径均为 Windows 格式）。由 Worker 启动时自动写入共享目录 config/worker.json。worker 启动时只需 --hgfs-root 指向同一共享目录，其余参数自动从这里读取。优先级：命令行参数 > 环境变量 > 本文件 > 内置默认值。audit_log_dir / policy_file 建议省略或写相对共享根目录的路径（logs/worker、policy/policy.json），Worker 会依据 --hgfs-root 自动解析为绝对路径，避免示例绝对路径在重启后污染配置。',
-  hgfs_root: 'E:\\MyLinux\\VMware\\sharedir\\vm_share',
+  '//': 'Worker 配置文件示例（Worker 运行在外网 Windows 主机，本文件内路径均为 Windows 格式）。由 Worker 启动时自动写入共享目录 config/worker.json。worker 启动时只需 --hgfs-root 指向同一共享目录，其余参数自动从这里读取；日志使能与目录通过命令行 --log-save / --log-dir 传递，不在本文件体现。配置文件未定义的项走内置默认值。policy_file 建议省略或写相对共享根目录的路径（policy/policy.json），Worker 会依据 --hgfs-root 自动解析为绝对路径，避免示例绝对路径在重启后污染配置。',
   executor: 'ssh2',
   devices: {
     default: {
@@ -54,7 +53,6 @@ const FALLBACK_CONFIG_TEMPLATE: Record<string, unknown> = {
       password: 'another_password',
     },
   },
-  audit_log_dir: 'logs/worker',
   policy_file: 'policy/policy.json',
   polling: {
     initial_interval_ms: 500,
