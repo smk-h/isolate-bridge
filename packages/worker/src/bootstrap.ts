@@ -34,6 +34,12 @@ const FALLBACK_CONFIG_TEMPLATE: Record<string, unknown> = {
   hgfs_root: 'E:\\MyLinux\\VMware\\sharedir\\vm_share',
   executor: 'ssh2',
   devices: {
+    default: {
+      host: '192.168.1.100',
+      port: 22,
+      username: 'root',
+      password: 'your_password',
+    },
     'board-100': {
       host: '192.168.1.100',
       port: 22,

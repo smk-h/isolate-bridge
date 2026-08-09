@@ -46,6 +46,8 @@ describe('ensureSharedTemplates', () => {
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
     assert.equal(cfg.executor, 'ssh2');
     // 模板使用多设备结构（设备名 → 连接信息）
+    assert.equal(cfg.devices?.['default']?.host, '192.168.1.100');
+    assert.equal(cfg.devices?.['default']?.username, 'root');
     assert.equal(cfg.devices?.['board-100']?.host, '192.168.1.100');
     assert.equal(cfg.devices?.['board-100']?.username, 'root');
     // 模板 SSH 认证使用用户名 + 密码，不再携带 Windows 私钥文件路径
