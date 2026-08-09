@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 
 // 启动 MsgFerry Worker 进程（Windows）
 // 用法: node scripts/start-worker.mjs 或 pnpm start:worker
+// 只传 --hgfs-root（必填）；日志使能/目录可通过追加参数 --log-save / --log-dir 传入（默认关闭、<hgfs_root>/logs/worker）
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, '..');
 const workerEntry = join(repoRoot, 'dist', 'msgferry-worker', 'index.mjs');

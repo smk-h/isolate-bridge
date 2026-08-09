@@ -4,8 +4,9 @@
  * File name  : config.test.ts
  * Author     : MsgFerry
  * Date       : 2026/08/08
- * Version    : 0.0.1
- * Description: Worker 配置解析测试——覆盖“配置文件 / 环境变量 / 命令行参数”三级优先级
+ * Version    : 0.0.2
+ * Description: Worker 配置解析测试——覆盖“配置文件 / 内置默认值”两级取值，
+ *             以及命令行仅支持 --hgfs-root / --log-save / --log-dir
  * ======================================================
  */
 
@@ -16,6 +17,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { parseConfig, validateConfig, isValidDeviceName, findSshConfig } from '../src/config.js';
+
+import { stringify as stringifyYaml } from 'yaml';
 
 let roots: string[] = [];
 
@@ -28,7 +31,8 @@ function makeRoot(): string {
 function writeConfig(root: string, content: unknown): void {
   const dir = join(root, 'config');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'worker.json'), JSON.stringify(content, null, 2));
+  // 配置文件为 YAML（config/worker.yaml），兼容 JSON 输入（JSON 是 YAML 的子集）
+  writeFileSync(join(dir, 'worker.yaml'), typeof content === 'string' ? content : stringifyYaml(content));
 }
 
 afterEach(() => {
@@ -39,13 +43,13 @@ afterEach(() => {
 });
 
 describe('parseConfig from config file', () => {
-  it('reads ssh settings from <hgfs_root>/config/worker.json', () => {
+  it('reads ssh settings from <hgfs_root>/config/worker.yaml', () => {
     const root = makeRoot();
     writeConfig(root, {
       executor: 'ssh2',
       ssh: { host: '10.0.0.5', port: 2222, username: 'ops', password: 'secret' },
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.executor_type, 'ssh2');
     assert.equal(cfg.ssh_config?.host, '10.0.0.5');
     assert.equal(cfg.ssh_config?.port, 2222);
@@ -63,7 +67,7 @@ describe('parseConfig from config file', () => {
         'board-101': { host: '192.168.1.101', port: 2222, username: 'admin', private_key_path: '/k.pem' },
       },
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(Object.keys(cfg.devices).length, 2);
     assert.equal(cfg.devices['board-100']?.host, '192.168.1.100');
     assert.equal(cfg.devices['board-100']?.password, 'p1');
@@ -87,7 +91,7 @@ describe('parseConfig from config file', () => {
         'no-user': { host: '10.0.0.3' },
       },
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.deepEqual(Object.keys(cfg.devices), ['board-ok']);
   });
 
@@ -100,7 +104,7 @@ describe('parseConfig from config file', () => {
         'board-100': { host: '10.0.0.1', username: 'u' },
       },
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.ssh_config?.host, '10.0.0.9');
     assert.equal(cfg.devices.default?.host, '10.0.0.9');
     assert.equal(findSshConfig(cfg)?.host, '10.0.0.9');
@@ -115,110 +119,167 @@ describe('parseConfig from config file', () => {
       executor: 'ssh2',
       ssh: { host: '10.0.0.5', username: 'ops', private_key_path: '/k.pem' },
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.ssh_config?.private_key_path, '/k.pem');
     assert.equal(cfg.ssh_config?.password, null);
   });
 
   it('falls back to defaults when no config file exists', () => {
     const root = makeRoot();
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.executor_type, 'mock');
     assert.equal(cfg.ssh_config, null);
     assert.equal(cfg.heartbeat_interval_sec, 5);
     assert.equal(cfg.polling.initial_interval_ms, 500);
     assert.equal(cfg.max_inline_bytes, 65536);
-    assert.equal(cfg.audit_log_dir, join(root, 'logs', 'worker'));
     assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
+    // 日志/审计目录默认均为 <hgfs_root>/logs/worker
+    assert.equal(cfg.log_dir, join(root, 'logs', 'worker'));
+    assert.equal(cfg.audit_log_dir, cfg.log_dir);
+    assert.equal(cfg.log_save, false);
   });
 
-  it('resolves relative audit_log_dir/policy_file under hgfs_root', () => {
+  it('resolves relative policy_file under hgfs_root', () => {
     const root = makeRoot();
     writeConfig(root, {
-      audit_log_dir: 'logs',
       policy_file: 'policy/policy.json',
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
-    assert.equal(cfg.audit_log_dir, join(root, 'logs'));
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
   });
 
-  it('keeps absolute audit_log_dir/policy_file as-is', () => {
+  it('keeps absolute policy_file as-is', () => {
     const root = makeRoot();
     writeConfig(root, {
-      audit_log_dir: '/var/log/msgferry',
       policy_file: '/etc/msgferry/policy.json',
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
-    assert.equal(cfg.audit_log_dir, '/var/log/msgferry');
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.policy_file, '/etc/msgferry/policy.json');
   });
 
-  it('handles Windows drive-letter values per platform', () => {
+  it('supports comments and inline fields in YAML config', () => {
     const root = makeRoot();
-    const winLogs = 'E:\\MyLinux\\VMware\\sharedir\\vm_share\\logs';
-    writeConfig(root, {
-      audit_log_dir: winLogs,
-      policy_file: 'policy/policy.json',
-    });
-    const cfg = parseConfig(['--hgfs-root', root], {});
-    if (process.platform === 'win32') {
-      // Windows 上盘符路径被视为绝对路径，原样保留
-      assert.equal(cfg.audit_log_dir, 'E:\\MyLinux\\VMware\\sharedir\\vm_share\\logs');
-    } else {
-      // Linux 上盘符字符串被当作相对路径，基于共享根目录解析，不会落到 /workspace/E:... 这类错误位置
-      assert.equal(cfg.audit_log_dir, join(root, 'E:\\MyLinux\\VMware\\sharedir\\vm_share\\logs'));
-    }
-    assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
-  });
+    // YAML 支持注释；设备名与 key 均可含连字符
+    writeConfig(root, `
+# Worker 配置示例（YAML）
+executor: ssh2  # 行尾注释
 
-  it('resolves relative CLI --audit-dir/--policy-file under hgfs_root', () => {
-    const root = makeRoot();
-    const cfg = parseConfig(
-      ['--hgfs-root', root, '--audit-dir', 'logs', '--policy-file', 'policy/policy.json'],
-      {},
-    );
-    assert.equal(cfg.audit_log_dir, join(root, 'logs'));
-    assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
-  });
-
-  it('CLI args override config file values', () => {
-    const root = makeRoot();
-    writeConfig(root, { executor: 'ssh2', ssh: { host: '10.0.0.5', username: 'ops' } });
-    const cfg = parseConfig(
-      ['--hgfs-root', root, '--executor', 'mock'],
-      {},
-    );
-    assert.equal(cfg.executor_type, 'mock');
-    assert.equal(cfg.ssh_config, null);
-  });
-
-  it('env vars override config file values', () => {
-    const root = makeRoot();
-    writeConfig(root, { executor: 'ssh2', ssh: { host: '10.0.0.5', username: 'ops' } });
-    const cfg = parseConfig(['--hgfs-root', root], {
-      MSGFERRY_EXECUTOR: 'mock',
-    });
-    assert.equal(cfg.executor_type, 'mock');
-  });
-
-  it('respects explicit --config-file path', () => {
-    const root = makeRoot();
-    const custom = join(root, 'custom.json');
-    writeFileSync(custom, JSON.stringify({ executor: 'ssh2', ssh: { host: '10.1.1.1', username: 'u' } }));
-    const cfg = parseConfig(
-      ['--hgfs-root', root, '--config-file', custom],
-      {},
-    );
+ssh:
+  host: 10.0.0.5
+  port: 2222
+  username: ops
+  password: secret
+`);
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.equal(cfg.executor_type, 'ssh2');
-    assert.equal(cfg.ssh_config?.host, '10.1.1.1');
+    assert.equal(cfg.ssh_config?.host, '10.0.0.5');
+    assert.equal(cfg.ssh_config?.port, 2222);
+    assert.equal(cfg.ssh_config?.username, 'ops');
+    assert.equal(cfg.ssh_config?.password, 'secret');
   });
 
-  it('throws when config file is not valid JSON', () => {
+  it('keeps JSON content valid as YAML (backward compatible)', () => {
+    const root = makeRoot();
+    // JSON 是 YAML 的子集，旧 worker.json 内容仍可被 YAML 解析
+    writeConfig(root, {
+      executor: 'ssh2',
+      ssh: { host: '10.0.0.5', port: 2222, username: 'ops', password: 'secret' },
+    });
+    const cfg = parseConfig(['--hgfs-root', root]);
+    assert.equal(cfg.executor_type, 'ssh2');
+    assert.equal(cfg.ssh_config?.host, '10.0.0.5');
+  });
+
+  it('throws when config file is not valid YAML', () => {
     const root = makeRoot();
     mkdirSync(join(root, 'config'), { recursive: true });
-    writeFileSync(join(root, 'config', 'worker.json'), '{broken');
-    assert.throws(() => parseConfig(['--hgfs-root', root], {}), /not valid JSON/);
+    writeFileSync(join(root, 'config', 'worker.yaml'), '{{broken');
+    assert.throws(() => parseConfig(['--hgfs-root', root]), /not valid YAML/);
+  });
+});
+
+describe('parseConfig log settings from CLI', () => {
+  it('defaults log_save=false and log_dir=<hgfs_root>/logs/worker', () => {
+    const root = makeRoot();
+    const cfg = parseConfig(['--hgfs-root', root]);
+    assert.equal(cfg.log_save, false);
+    assert.equal(cfg.log_dir, join(root, 'logs', 'worker'));
+  });
+
+  it('enables log_save with --log-save 1/true', () => {
+    const root = makeRoot();
+    assert.equal(parseConfig(['--hgfs-root', root, '--log-save', '1']).log_save, true);
+    assert.equal(parseConfig(['--hgfs-root', root, '--log-save', 'true']).log_save, true);
+  });
+
+  it('keeps log_save disabled for other values', () => {
+    const root = makeRoot();
+    assert.equal(parseConfig(['--hgfs-root', root, '--log-save', '0']).log_save, false);
+    assert.equal(parseConfig(['--hgfs-root', root, '--log-save', 'yes']).log_save, false);
+  });
+
+  it('resolves relative --log-dir under hgfs_root', () => {
+    const root = makeRoot();
+    const cfg = parseConfig(['--hgfs-root', root, '--log-dir', 'logs/worker']);
+    assert.equal(cfg.log_dir, join(root, 'logs', 'worker'));
+    assert.equal(cfg.audit_log_dir, cfg.log_dir);
+  });
+
+  it('keeps absolute --log-dir as-is', () => {
+    const root = makeRoot();
+    const cfg = parseConfig(['--hgfs-root', root, '--log-dir', '/var/log/msgferry']);
+    assert.equal(cfg.log_dir, '/var/log/msgferry');
+    assert.equal(cfg.audit_log_dir, '/var/log/msgferry');
+  });
+
+  it('audit_log_dir always equals log_dir (not configurable for now)', () => {
+    const root = makeRoot();
+    // 配置文件即使写了 audit_log_dir 也不会被读取
+    writeConfig(root, { audit_log_dir: 'logs/custom' });
+    const cfg = parseConfig(['--hgfs-root', root, '--log-dir', 'logs/worker']);
+    assert.equal(cfg.log_dir, join(root, 'logs', 'worker'));
+    assert.equal(cfg.audit_log_dir, cfg.log_dir);
+  });
+});
+
+describe('CLI/env no longer affect non-log config', () => {
+  it('ignores legacy CLI flags like --executor/--ssh-*/--policy-file', () => {
+    const root = makeRoot();
+    const cfg = parseConfig([
+      '--hgfs-root', root,
+      '--executor', 'ssh2',
+      '--ssh-host', '10.0.0.5',
+      '--ssh-user', 'ops',
+      '--policy-file', 'custom/policy.json',
+      '--polling-initial', '100',
+    ]);
+    // 全部走默认值（无配置文件）
+    assert.equal(cfg.executor_type, 'mock');
+    assert.equal(cfg.ssh_config, null);
+    assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
+    assert.equal(cfg.polling.initial_interval_ms, 500);
+  });
+
+  it('ignores env vars (MSGFERRY_* / LOG_SAVE / LOG_DIR)', () => {
+    const root = makeRoot();
+    const cfg = parseConfig(['--hgfs-root', root]);
+    assert.equal(cfg.executor_type, 'mock');
+    assert.equal(cfg.log_save, false);
+    assert.equal(cfg.log_dir, join(root, 'logs', 'worker'));
+    // 验证函数本身不读取 env：即便进程环境里有值也不影响
+    process.env.MSGFERRY_EXECUTOR = 'ssh2';
+    process.env.LOG_SAVE = '1';
+    process.env.LOG_DIR = '/tmp/from-env';
+    try {
+      const cfg2 = parseConfig(['--hgfs-root', root]);
+      assert.equal(cfg2.executor_type, 'mock');
+      assert.equal(cfg2.log_save, false);
+      assert.equal(cfg2.log_dir, join(root, 'logs', 'worker'));
+    } finally {
+      delete process.env.MSGFERRY_EXECUTOR;
+      delete process.env.LOG_SAVE;
+      delete process.env.LOG_DIR;
+    }
   });
 });
 
@@ -249,19 +310,21 @@ describe('validateConfig', () => {
       heartbeat_interval_sec: 5,
       result_ttl_sec: 600,
       max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '',
     }), /hgfs_root is required/);
   });
 
   it('rejects ssh2 mode without host/username', () => {
     const root = makeRoot();
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.throws(() => validateConfig({ ...cfg, executor_type: 'ssh2' }), /ssh_config is required/);
   });
 
   it('passes for ssh2 config loaded from file', () => {
     const root = makeRoot();
     writeConfig(root, { executor: 'ssh2', ssh: { host: '10.0.0.5', username: 'ops' } });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.doesNotThrow(() => validateConfig(cfg));
   });
 
@@ -274,7 +337,7 @@ describe('validateConfig', () => {
         'board-101': { host: '10.0.0.2', username: 'u' },
       },
     });
-    const cfg = parseConfig(['--hgfs-root', root], {});
+    const cfg = parseConfig(['--hgfs-root', root]);
     assert.doesNotThrow(() => validateConfig(cfg));
   });
 });

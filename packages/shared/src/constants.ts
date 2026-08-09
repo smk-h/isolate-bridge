@@ -23,8 +23,9 @@ export const QUEUE_DIRS = {
 /** 心跳文件名（位于共享根目录） */
 export const HEARTBEAT_FILE = 'heartbeat.json' as const;
 
-/** Worker 配置文件相对路径（位于共享根目录下，可与 MCP 侧共享约定） */
-export const WORKER_CONFIG_FILE = 'config/worker.json' as const;
+/** Worker 配置文件相对路径（位于共享根目录下，可与 MCP 侧共享约定）。
+ * 使用 YAML 格式：支持注释，便于部署时填写说明。 */
+export const WORKER_CONFIG_FILE = 'config/worker.yaml' as const;
 
 /** 轮询退避参数（毫秒） */
 export const POLLING = {

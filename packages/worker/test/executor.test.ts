@@ -48,6 +48,8 @@ describe('createExecutor', () => {
       heartbeat_interval_sec: 5,
       result_ttl_sec: 600,
       max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
     };
     const exec = createExecutor(config);
     assert.ok(exec instanceof MockSshExecutor);
@@ -65,6 +67,8 @@ describe('createExecutor', () => {
       heartbeat_interval_sec: 5,
       result_ttl_sec: 600,
       max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
     };
     assert.throws(() => createExecutor(config), /ssh2 executor not implemented/);
   });

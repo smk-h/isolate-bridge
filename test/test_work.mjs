@@ -4,19 +4,15 @@
  * File name  : test_work.mjs
  * Author     : MsgFerry
  * Date       : 2026/08/08
- * Version    : 0.0.1
+ * Version    : 0.0.2
  * Description: 测试辅助脚本——创建 test/temp 共享目录并启动 Worker 进程
  *
  * 用法：
  *   node test/test_work.mjs [options]
  *
  * 选项：
- *   --executor mock|ssh2   SSH 执行器选择，默认 mock
- *   --ssh-host <host>      SSH 主机（ssh2 模式必填）
- *   --ssh-port <port>      SSH 端口，默认 22
- *   --ssh-user <user>      SSH 用户名
- *   --ssh-key <path>       SSH 私钥路径
- *   --ssh-password <pass>  SSH 密码
+ *   --log-save 1|true    业务日志使能（可选，默认不落盘）
+ *   --log-dir <path>     业务日志目录（可选，默认 <temp>/logs/worker）
  *
  * 行为：
  *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
@@ -24,6 +20,9 @@
  *      放行多命令串联（cd /tmp && pwd && ls）、换行多条命令等真实场景
  *   3. 启动 Worker 进程（mock 模式），将 stderr 转发到当前进程
  *   4. 收到 SIGINT/SIGTERM 时优雅终止 Worker 并清理
+ *
+ * 注意：Worker 配置已收敛，命令行只支持 --hgfs-root / --log-save / --log-dir；
+ *       executor 等其余配置统一从 config/worker.yaml 读取（本脚本写入 mock 配置）。
  * ======================================================
  */
 
@@ -41,32 +40,16 @@ const workerJs = resolve(projectRoot, 'dist', 'msgferry-worker', 'index.mjs');
 function parseArgs() {
   const args = process.argv.slice(2);
   const opts = {
-    executor: 'mock',
-    sshHost: undefined,
-    sshPort: undefined,
-    sshUser: undefined,
-    sshKey: undefined,
-    sshPassword: undefined,
+    logSave: undefined,
+    logDir: undefined,
   };
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
-      case '--executor':
-        opts.executor = args[++i];
+      case '--log-save':
+        opts.logSave = args[++i];
         break;
-      case '--ssh-host':
-        opts.sshHost = args[++i];
-        break;
-      case '--ssh-port':
-        opts.sshPort = args[++i];
-        break;
-      case '--ssh-user':
-        opts.sshUser = args[++i];
-        break;
-      case '--ssh-key':
-        opts.sshKey = args[++i];
-        break;
-      case '--ssh-password':
-        opts.sshPassword = args[++i];
+      case '--log-dir':
+        opts.logDir = args[++i];
         break;
     }
   }
@@ -99,25 +82,26 @@ const testPolicy = {
 writeFileSync(join(policyDir, 'policy.json'), JSON.stringify(testPolicy, null, 2), 'utf-8');
 console.log('[test_work] 已写入测试宽松策略: policy/policy.json (default_action=allow, 不拦截串联/管道/重定向)');
 
+// 写入测试用 worker 配置：mock 模式（executor 从配置文件读取，命令行不再支持 --executor）
+// 配置文件为 YAML（config/worker.yaml），支持注释
+const configDir = join(tempDir, 'config');
+mkdirSync(configDir, { recursive: true });
+const testConfig = `# 测试用 Worker 配置（mock 模式）
+executor: mock
+`;
+writeFileSync(join(configDir, 'worker.yaml'), testConfig, 'utf-8');
+console.log('[test_work] 已写入测试配置: config/worker.yaml (executor=mock)');
+
 // 组装 Worker 启动参数
-// 只传 --hgfs-root / --executor，不显式传 audit/policy 路径：
+// 只传 --hgfs-root / --log-save / --log-dir：
 // audit_log_dir / policy_file 由 Worker 依据共享根目录相对定位（<root>/logs/worker、<root>/policy/policy.json），
 // 即使 bootstrap 首次生成的 config/worker.json 里带的是相对路径，多次重启也始终指向 test/temp 下的正确位置。
-const workerArgs = ['--hgfs-root', tempDir, '--executor', opts.executor];
-if (opts.sshHost) {
-  workerArgs.push('--ssh-host', opts.sshHost);
+const workerArgs = ['--hgfs-root', tempDir];
+if (opts.logSave !== undefined) {
+  workerArgs.push('--log-save', opts.logSave);
 }
-if (opts.sshPort) {
-  workerArgs.push('--ssh-port', opts.sshPort);
-}
-if (opts.sshUser) {
-  workerArgs.push('--ssh-user', opts.sshUser);
-}
-if (opts.sshKey) {
-  workerArgs.push('--ssh-key', opts.sshKey);
-}
-if (opts.sshPassword) {
-  workerArgs.push('--ssh-password', opts.sshPassword);
+if (opts.logDir !== undefined) {
+  workerArgs.push('--log-dir', opts.logDir);
 }
 
 console.log(`[test_work] 启动 Worker: node ${workerJs} ${workerArgs.join(' ')}`);

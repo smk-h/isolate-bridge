@@ -4,11 +4,13 @@
  * File name  : config.ts
  * Author     : MsgFerry
  * Date       : 2026/08/07
- * Version    : 0.0.2
+ * Version    : 0.0.3
  * Description: Worker 启动配置解析与校验
- *   支持三种来源，优先级：命令行参数 > 环境变量 > 配置文件 > 内置默认值
- *   配置文件默认位于 <hgfs_root>/config/worker.json（相对路径由 shared 常量约定），
- *   也可用 --config-file / MSGFERRY_CONFIG_FILE 显式指定。
+ *   配置来源收敛为三类：
+ *     1. 命令行参数：仅 --hgfs-root（必填）、--log-save、--log-dir（日志两个字段）
+ *     2. 配置文件：<hgfs_root>/config/worker.yaml（其余全部可配置项）
+ *     3. 内置默认值：配置文件未定义的项兜底
+ *   不再支持任何环境变量配置（含 MSGFERRY_* 与日志 LOG_SAVE / LOG_DIR）。
  * ======================================================
  */
 
@@ -22,9 +24,7 @@ import {
   OUTPUT,
   WORKER_CONFIG_FILE,
   resolveUnderRoot,
-  readJsonConfigFile,
-  pickConfigValue,
-  pickConfigNumber,
+  readYamlConfigFile,
 } from '@smai-kit/msgferry-shared';
 
 /** SSH 连接配置（真实模式必填） */
@@ -44,8 +44,8 @@ export interface WorkerConfig {
   hgfs_root: string;                    // HGFS 共享根目录绝对路径
   executor_type: 'mock' | 'ssh2';       // SSH 执行器选择
   devices: DeviceSshMap;                // 多设备：设备名 → SSH 连接信息（设备名仅字母/数字/下划线/连字符）
-  ssh_config: SshConfig | null;          // 默认/兼容设备（旧 ssh 字段或 CLI/env 指定），真实模式必填，mock 模式 null
-  audit_log_dir: string;                // 审计日志目录
+  ssh_config: SshConfig | null;          // 默认/兼容设备（旧 ssh 字段），真实模式必填，mock 模式 null
+  audit_log_dir: string;                // 审计日志目录（当前固定与 log_dir 一致：<hgfs_root>/logs/worker）
   policy_file: string;                  // 策略文件路径
   polling: {
     initial_interval_ms: number;
@@ -54,6 +54,8 @@ export interface WorkerConfig {
   heartbeat_interval_sec: number;
   result_ttl_sec: number;
   max_inline_bytes: number;
+  log_save: boolean;                    // 业务日志使能（命令行 --log-save）
+  log_dir: string;                      // 业务日志目录（命令行 --log-dir，默认 <hgfs_root>/logs/worker）
 }
 
 /** 设备级 SSH 连接配置的原始（文件）结构 */
@@ -65,13 +67,11 @@ export interface DeviceSshFileShape {
   password?: string | null;
 }
 
-/** Worker 配置文件（<hgfs_root>/config/worker.json）的扁平结构 */
+/** Worker 配置文件（<hgfs_root>/config/worker.yaml）的扁平结构 */
 export interface WorkerConfigFileShape {
-  hgfs_root?: string;
   executor?: string;
   devices?: Record<string, DeviceSshFileShape>;  // 多设备（推荐）：设备名 → SSH 连接信息
   ssh?: DeviceSshFileShape;                      // 兼容旧字段：单默认设备
-  audit_log_dir?: string;
   policy_file?: string;
   polling?: {
     initial_interval_ms?: number | string;
@@ -96,8 +96,8 @@ export function isValidDeviceName(name: string): boolean {
   return DEVICE_NAME_RE.test(name);
 }
 
-/** 默认审计日志目录名（相对共享根目录） */
-const DEFAULT_AUDIT_DIR_NAME = join('logs', 'worker');
+/** 默认日志/审计目录名（相对共享根目录） */
+const DEFAULT_LOG_DIR_NAME = join('logs', 'worker');
 /** 默认策略文件名 */
 const DEFAULT_POLICY_FILE_NAME = 'policy.json';
 /** 默认策略子目录名（相对共享根目录） */
@@ -107,8 +107,8 @@ const DEFAULT_POLICY_DIR_NAME = 'policy';
  * 将配置来源的路径值解析为最终绝对路径
  * - 来源值缺省时：相对共享根目录的内置默认值（<root>/logs/worker、<root>/policy/policy.json）
  * - 来源值为相对路径时：基于共享根目录解析为绝对路径
- * - 来源值为绝对路径时：原样使用（保留 CLI/环境变量/配置文件的显式指定能力）
- * @param value - 配置来源值（CLI/env/配置文件，可能为 undefined）
+ * - 来源值为绝对路径时：原样使用（保留命令行/配置文件的显式指定能力）
+ * @param value - 配置来源值（命令行/配置文件，可能为 undefined）
  * @param hgfsRoot - HGFS 共享根目录绝对路径
  * @param defaultRel - 内置默认相对路径（如 logs、policy/policy.json）
  * @returns 解析后的绝对路径
@@ -125,61 +125,68 @@ function resolvePathUnderRoot(
 }
 
 /**
- * 解析配置文件路径：--config-file / MSGFERRY_CONFIG_FILE > 共享根目录下的默认约定
+ * 从命令行参数中取指定 flag 的下一个值
  * @param argv - 进程参数数组
- * @param env - 环境变量
- * @param hgfsRoot - HGFS 共享根目录
- * @returns 配置文件绝对路径
+ * @param flag - 形如 '--hgfs-root'
+ * @returns 命中时返回 flag 后的值，否则 undefined
  */
-function resolveConfigFilePath(
-  argv: string[],
-  env: NodeJS.ProcessEnv,
-  hgfsRoot: string,
-): string {
-  const explicit = pickConfigValue({
-    argv,
-    env,
-    flag: '--config-file',
-    envKey: 'MSGFERRY_CONFIG_FILE',
-  });
-  if (explicit) {
-    return explicit;
+function pickArg(argv: string[], flag: string): string | undefined {
+  const idx = argv.indexOf(flag);
+  if (idx !== -1 && idx + 1 < argv.length) {
+    return argv[idx + 1];
   }
-  return resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE);
+  return undefined;
 }
 
 /**
- * 解析启动参数、环境变量与配置文件，产出 WorkerConfig
+ * 数值型配置取值（仅配置文件 + 默认值），非法值回退到默认值
+ * @param fileValue - 配置文件中的原始值
+ * @param defaultValue - 内置默认值
+ * @returns 解析后的数值
+ */
+function pickNumber(fileValue: unknown, defaultValue: number): number {
+  if (fileValue === undefined || fileValue === null || fileValue === '') {
+    return defaultValue;
+  }
+  const n = Number(fileValue);
+  return Number.isFinite(n) ? n : defaultValue;
+}
+
+/**
+ * 字符串型配置取值（仅配置文件 + 默认值），空串视为未配置
+ * @param fileValue - 配置文件中的原始值
+ * @param defaultValue - 内置默认值
+ * @returns 解析后的字符串
+ */
+function pickString(fileValue: unknown, defaultValue?: string): string | undefined {
+  if (fileValue !== undefined && fileValue !== null && fileValue !== '') {
+    return String(fileValue);
+  }
+  return defaultValue;
+}
+
+/**
+ * 解析命令行参数与配置文件，产出 WorkerConfig
+ * - 命令行仅支持 --hgfs-root / --log-save / --log-dir
+ * - 其余全部从 <hgfs_root>/config/worker.yaml 读取，未定义项走内置默认值
+ * - 不再支持任何环境变量配置
  * @param argv - process.argv
- * @param env - process.env
  * @returns WorkerConfig 配置对象
  */
-export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfig {
-  // hgfs_root 仅来自命令行 / 环境变量（配置文件路径依赖它，存在循环依赖）
-  const hgfsRoot = pickConfigValue({
-    argv,
-    env,
-    flag: '--hgfs-root',
-    envKey: 'MSGFERRY_HGFS_ROOT',
-  }) ?? '';
+export function parseConfig(argv: string[]): WorkerConfig {
+  // hgfs_root 仅来自命令行（配置文件路径依赖它，存在循环依赖）
+  const hgfsRoot = pickArg(argv, '--hgfs-root') ?? '';
 
-  // 读取配置文件（存在才生效，否则全部走 CLI/env/默认值）
-  const configFilePath = resolveConfigFilePath(argv, env, hgfsRoot);
-  const file = readJsonConfigFile<WorkerConfigFileShape>(configFilePath);
+  // 读取配置文件（存在才生效，否则全部走 CLI/默认值）
+  const configFilePath = resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE);
+  const file = readYamlConfigFile<WorkerConfigFileShape>(configFilePath);
 
   const executorType = (
-    pickConfigValue({
-      argv,
-      env,
-      flag: '--executor',
-      envKey: 'MSGFERRY_EXECUTOR',
-      fileValue: file.executor,
-      defaultValue: 'mock',
-    }) ?? 'mock'
+    pickString(file.executor, 'mock') ?? 'mock'
   ) as 'mock' | 'ssh2';
 
   // 多设备解析：设备名 → SSH 连接信息
-  // 1. 默认设备（兼容旧用法）：CLI/env > 配置文件旧 ssh 字段 > 配置文件 devices.default > 无
+  // 1. 默认设备（兼容旧用法）：配置文件旧 ssh 字段 > 配置文件 devices.default > 无
   const devices: DeviceSshMap = {};
   const rawDevices = file.devices ?? {};
   for (const [name, dev] of Object.entries(rawDevices)) {
@@ -189,16 +196,11 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     if (!dev || typeof dev !== 'object') {
       continue;
     }
-    const host = pickConfigValue({ argv, env, fileValue: dev.host });
-    const port = pickConfigNumber({
-      argv,
-      env,
-      fileValue: dev.port,
-      defaultValue: 22,
-    });
-    const username = pickConfigValue({ argv, env, fileValue: dev.username });
-    const key = pickConfigValue({ argv, env, fileValue: dev.private_key_path });
-    const password = pickConfigValue({ argv, env, fileValue: dev.password });
+    const host = pickString(dev.host);
+    const port = pickNumber(dev.port, 22);
+    const username = pickString(dev.username);
+    const key = pickString(dev.private_key_path);
+    const password = pickString(dev.password);
     if (!host || !username) {
       continue;
     }
@@ -211,57 +213,21 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     };
   }
 
-  // 2. 默认设备（default 键或旧 ssh 字段 / CLI / env）：host 存在才构建
+  // 2. 默认设备（default 键或旧 ssh 字段）：host 存在才构建
   const defaultHost =
-    pickConfigValue({
-      argv,
-      env,
-      flag: '--ssh-host',
-      envKey: 'MSGFERRY_SSH_HOST',
-      fileValue: rawDevices.default?.host ?? file.ssh?.host,
-    }) ??
-    (rawDevices.default?.host !== undefined
-      ? String(rawDevices.default.host)
-      : file.ssh?.host !== undefined
-        ? String(file.ssh.host)
-        : undefined);
-  const defaultPort = pickConfigNumber({
-    argv,
-    env,
-    flag: '--ssh-port',
-    envKey: 'MSGFERRY_SSH_PORT',
-    fileValue: rawDevices.default?.port ?? file.ssh?.port,
-    defaultValue: 22,
-  });
+    pickString(rawDevices.default?.host) ??
+    (file.ssh?.host !== undefined ? String(file.ssh.host) : undefined);
+  const defaultPort = pickNumber(
+    rawDevices.default?.port ?? file.ssh?.port,
+    22,
+  );
   const defaultUser =
-    pickConfigValue({
-      argv,
-      env,
-      flag: '--ssh-user',
-      envKey: 'MSGFERRY_SSH_USER',
-      fileValue: rawDevices.default?.username ?? file.ssh?.username,
-    }) ??
-    (rawDevices.default?.username !== undefined
-      ? String(rawDevices.default.username)
-      : file.ssh?.username !== undefined
-        ? String(file.ssh.username)
-        : undefined);
-  const defaultKey = pickConfigValue({
-    argv,
-    env,
-    flag: '--ssh-key',
-    envKey: 'MSGFERRY_SSH_KEY',
-    fileValue: rawDevices.default?.private_key_path ?? file.ssh?.private_key_path,
-  });
-  const defaultPassword = pickConfigValue({
-    argv,
-    env,
-    flag: '--ssh-password',
-    envKey: 'MSGFERRY_SSH_PASSWORD',
-    fileValue: rawDevices.default?.password ?? file.ssh?.password,
-  });
+    pickString(rawDevices.default?.username) ??
+    (file.ssh?.username !== undefined ? String(file.ssh.username) : undefined);
+  const defaultKey = pickString(rawDevices.default?.private_key_path ?? file.ssh?.private_key_path);
+  const defaultPassword = pickString(rawDevices.default?.password ?? file.ssh?.password);
 
-  // 多设备场景下也允许同时提供“默认设备”，与旧 ssh 字段/CLI/env 一致
+  // 多设备场景下也允许同时提供“默认设备”，与旧 ssh 字段一致
   if (defaultHost && defaultUser) {
     devices.default = {
       host: defaultHost,
@@ -288,71 +254,54 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     ? devices.default
     : null;
 
-  const auditDir = pickConfigValue({
-    argv,
-    env,
-    flag: '--audit-dir',
-    envKey: 'MSGFERRY_AUDIT_DIR',
-    fileValue: file.audit_log_dir,
-  });
-  const policyFile = pickConfigValue({
-    argv,
-    env,
-    flag: '--policy-file',
-    envKey: 'MSGFERRY_POLICY_FILE',
-    fileValue: file.policy_file,
-  });
+  // 业务日志：使能与目录来自命令行（--log-save / --log-dir），配置文件不体现。
+  // 为保证日志模块能正常初始化和及时写入日志，日志配置必须在命令行就绪，
+  // 且由 main 在创建 Logger 前注入环境变量供共享 Logger 延迟初始化读取。
+  const logSaveRaw = pickArg(argv, '--log-save');
+  const logSave = logSaveRaw === '1' || logSaveRaw === 'true';
+  const logDir = resolvePathUnderRoot(
+    pickArg(argv, '--log-dir'),
+    hgfsRoot,
+    DEFAULT_LOG_DIR_NAME,
+  );
 
-  const pollingInitial = pickConfigNumber({
-    argv,
-    env,
-    flag: '--polling-initial',
-    envKey: 'MSGFERRY_POLLING_INITIAL',
-    fileValue: file.polling?.initial_interval_ms,
-    defaultValue: POLLING.initial_interval_ms,
-  });
-  const pollingMax = pickConfigNumber({
-    argv,
-    env,
-    flag: '--polling-max',
-    envKey: 'MSGFERRY_POLLING_MAX',
-    fileValue: file.polling?.max_interval_ms,
-    defaultValue: POLLING.max_interval_ms,
-  });
-  const heartbeatInterval = pickConfigNumber({
-    argv,
-    env,
-    flag: '--heartbeat-interval',
-    envKey: 'MSGFERRY_HEARTBEAT_INTERVAL',
-    fileValue: file.heartbeat_interval_sec,
-    defaultValue: HEARTBEAT.write_interval_sec,
-  });
-  const resultTtl = pickConfigNumber({
-    argv,
-    env,
-    flag: '--result-ttl',
-    envKey: 'MSGFERRY_RESULT_TTL',
-    fileValue: file.result_ttl_sec,
-    defaultValue: RETENTION.result_ttl_sec,
-  });
-  const maxInline = pickConfigNumber({
-    argv,
-    env,
-    flag: '--max-inline',
-    envKey: 'MSGFERRY_MAX_INLINE',
-    fileValue: file.max_inline_bytes,
-    defaultValue: OUTPUT.max_inline_bytes,
-  });
+  // 策略文件：仅配置文件读取，未定义走内置默认 <hgfs_root>/policy/policy.json
+  const policyFile = resolvePathUnderRoot(
+    pickString(file.policy_file),
+    hgfsRoot,
+    join(DEFAULT_POLICY_DIR_NAME, DEFAULT_POLICY_FILE_NAME),
+  );
+
+  const pollingInitial = pickNumber(
+    file.polling?.initial_interval_ms,
+    POLLING.initial_interval_ms,
+  );
+  const pollingMax = pickNumber(
+    file.polling?.max_interval_ms,
+    POLLING.max_interval_ms,
+  );
+  const heartbeatInterval = pickNumber(
+    file.heartbeat_interval_sec,
+    HEARTBEAT.write_interval_sec,
+  );
+  const resultTtl = pickNumber(
+    file.result_ttl_sec,
+    RETENTION.result_ttl_sec,
+  );
+  const maxInline = pickNumber(
+    file.max_inline_bytes,
+    OUTPUT.max_inline_bytes,
+  );
 
   return {
     hgfs_root: hgfsRoot,
     executor_type: executorType,
     devices,
     ssh_config: sshConfig,
-    // audit_log_dir / policy_file 默认依据共享根目录相对定位：
-    // 显式传入绝对路径则原样使用；相对路径或未传则解析为 <hgfs_root>/logs/worker、<hgfs_root>/policy/policy.json
-    audit_log_dir: resolvePathUnderRoot(auditDir, hgfsRoot, DEFAULT_AUDIT_DIR_NAME),
-    policy_file: resolvePathUnderRoot(policyFile, hgfsRoot, join(DEFAULT_POLICY_DIR_NAME, DEFAULT_POLICY_FILE_NAME)),
+    // audit_log_dir 保留但暂不与配置文件耦合：固定与业务日志目录一致（<hgfs_root>/logs/worker），
+    // 以后有需要再放开配置
+    audit_log_dir: logDir,
+    policy_file: policyFile,
     polling: {
       initial_interval_ms: pollingInitial,
       max_interval_ms: pollingMax,
@@ -360,6 +309,8 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     heartbeat_interval_sec: heartbeatInterval,
     result_ttl_sec: resultTtl,
     max_inline_bytes: maxInline,
+    log_save: logSave,
+    log_dir: logDir,
   };
 }
 
