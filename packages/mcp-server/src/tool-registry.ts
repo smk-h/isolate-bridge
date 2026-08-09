@@ -12,6 +12,8 @@
 import { fromJsonSchema } from '@modelcontextprotocol/server';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 
+import { logger } from '@smai-kit/msgferry-shared';
+
 /** 文本内容块类型 */
 export interface TextContent {
   type: 'text';
@@ -102,17 +104,17 @@ export function getErrorMessage(err: unknown): string {
 function withInvocationLog(name: string, handler: mcpToolCallback): mcpToolCallback {
   return async (args: unknown) => {
     const raw = args === undefined ? '' : JSON.stringify(args);
-    console.error(`[mcp-server] >>> Tool invocation begins! [${name}] args=${raw}`);
+    logger.info(`>>> Tool invocation begins! [${name}] args=${raw}`);
     const started = Date.now();
     try {
       const result = await handler(args);
       const ms = Date.now() - started;
-      console.error(`[mcp-server] <<< Tool invocation completed! [${name}] elapsed=${ms}ms`);
+      logger.info(`<<< Tool invocation completed!!! [${name}] elapsed=${ms}ms`);
       return result;
     } catch (err) {
       const msg = getErrorMessage(err);
       const ms = Date.now() - started;
-      console.error(`[mcp-server] <<< Tool invocation FAILED [${name}] elapsed=${ms}ms err=${msg}`);
+      logger.error(`<<< Tool invocation FAILED [${name}] elapsed=${ms}ms err=${msg}`);
       throw err;
     }
   };

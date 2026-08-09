@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 
+import { logger } from '@smai-kit/msgferry-shared';
+
 import type { McpServerConfig } from './config.js';
 import { createAllTools } from './tools/index.js';
 
@@ -97,5 +99,5 @@ export function createMcpServer(config: McpServerConfig, root: string): McpServe
 export async function startServer(server: McpServer): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('[mcp-server] stdio transport connected');
+  logger.info('[mcp-server] stdio transport connected');
 }

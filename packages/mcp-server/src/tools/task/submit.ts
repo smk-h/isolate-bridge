@@ -20,6 +20,7 @@ import {
   ErrorCode,
   HEARTBEAT,
   OUTPUT,
+  logger,
 } from '@smai-kit/msgferry-shared';
 
 import type { McpServerConfig } from '../../config.js';
@@ -179,10 +180,12 @@ export async function submitSshTask(
   // 组装任务并原子提交
   const task = makeCommandTask(taskId, params.cmd, timeoutSec);
   await submitTask(root, task);
+  logger.info(`[submit_ssh_task] task submitted: task_id=${taskId} timeout_sec=${timeoutSec} cmd=${params.cmd}`);
 
   // 阻塞轮询等待结果
   const backoff = createBackoff(config.polling.initial_interval_ms, config.polling.max_interval_ms);
   const deadline = Date.now() + config.max_wait_ms;
+  logger.info(`[submit_ssh_task] waiting for result: task_id=${taskId} max_wait_ms=${config.max_wait_ms}`);
 
   let result: CommandTask | null = null;
   let timedOut = false;
@@ -214,6 +217,7 @@ export async function submitSshTask(
 
   // 超时兜底：写取消标记并返回 execution_timeout
   if (timedOut) {
+    logger.warn(`[submit_ssh_task] timed out: task_id=${taskId} max_wait_ms=${config.max_wait_ms}`);
     await writeCancelMarker(root, taskId);
     return {
       ...baseResult,
@@ -225,6 +229,7 @@ export async function submitSshTask(
 
   // 结果为 null 但非超时（被取消标记命中）
   if (result === null) {
+    logger.warn(`[submit_ssh_task] cancelled: task_id=${taskId}`);
     return {
       ...baseResult,
       status: TaskStatus.Cancelled,
@@ -235,6 +240,7 @@ export async function submitSshTask(
 
   // 拼回大输出
   const overflowResult = await readOverflowIfTruncated(root, result);
+  logger.info(`[submit_ssh_task] result read: task_id=${taskId} status=${result.status} duration_ms=${durationMs}`);
 
   return {
     task_id: taskId,
