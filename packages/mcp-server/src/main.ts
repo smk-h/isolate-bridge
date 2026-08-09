@@ -14,6 +14,8 @@ import { initQueueDirs } from './queue.js';
 import { createMcpServer, startServer } from './server.js';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { pathToFileURL } from 'node:url';
+import { logger } from '@smai-kit/msgferry-shared';
+import { resolveLogDir } from '@smai-kit/msgferry-shared';
 
 /**
  * 优雅退出：关闭 server 后退出进程
@@ -23,8 +25,9 @@ async function gracefulShutdown(server: McpServer): Promise<void> {
   try {
     await server.close();
   } catch (e) {
-    console.error('[mcp-server] error during shutdown:', e);
+    logger.error('[mcp-server] error during shutdown:', e);
   }
+  logger.info('[mcp-server] shutdown complete');
   process.exit(0);
 }
 
@@ -35,7 +38,9 @@ export async function main(): Promise<void> {
   const config = parseConfig(process.argv, process.env);
   validateConfig(config);
 
-  console.error('[mcp-server] starting...');
+  logger.info(`MCP server starting... cwd: ${process.cwd()}`);
+  logger.info(`MCP server hgfs_root: ${config.hgfs_root}`);
+  logger.info(`MCP server log_dir: ${resolveLogDir({ hgfsRoot: config.hgfs_root, logDir: process.env.LOG_DIR })}`);
 
   // 初始化 HGFS 队列子目录
   await initQueueDirs(config.hgfs_root);
@@ -46,13 +51,15 @@ export async function main(): Promise<void> {
   // 连接 stdio transport，开始监听 Claude Code 请求
   await startServer(server);
 
-  console.error(`[mcp-server] ready, hgfs_root=${config.hgfs_root}`);
+  logger.info(`MCP server ready, hgfs_root=${config.hgfs_root}`);
 
   // 信号处理：收到 SIGINT/SIGTERM 后优雅退出
   process.on('SIGINT', () => {
+    logger.warn('[mcp-server] received SIGINT, shutting down...');
     void gracefulShutdown(server);
   });
   process.on('SIGTERM', () => {
+    logger.warn('[mcp-server] received SIGTERM, shutting down...');
     void gracefulShutdown(server);
   });
 }
@@ -60,7 +67,7 @@ export async function main(): Promise<void> {
 // 作为主模块运行时自动调用 main
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
-    console.error('[mcp-server] fatal:', err);
+    logger.error('[mcp-server] fatal:', err);
     process.exit(1);
   });
 }
