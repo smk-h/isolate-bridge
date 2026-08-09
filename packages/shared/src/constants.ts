@@ -59,3 +59,9 @@ export const WAIT = {
   /** 内网提交后阻塞等待结果的最大时长，超时则写 cancelled 取消标记 */
   default_max_wait_ms: 30000,
 } as const;
+
+/** 业务日志默认目录（相对共享根目录，未设置 LOG_DIR 时使用） */
+export const LOG_DIRS = {
+  /** mcp-server/worker 业务日志默认目录 */
+  mcpServer: 'logs/mcp-server',
+} as const;
