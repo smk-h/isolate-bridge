@@ -128,7 +128,7 @@ describe('parseConfig from config file', () => {
     assert.equal(cfg.heartbeat_interval_sec, 5);
     assert.equal(cfg.polling.initial_interval_ms, 500);
     assert.equal(cfg.max_inline_bytes, 65536);
-    assert.equal(cfg.audit_log_dir, join(root, 'logs'));
+    assert.equal(cfg.audit_log_dir, join(root, 'logs', 'worker'));
     assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
   });
 

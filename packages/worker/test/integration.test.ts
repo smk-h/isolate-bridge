@@ -43,7 +43,7 @@ beforeEach(async () => {
   root = mkdtempSync(join(tmpdir(), 'msgferry-it-'));
   await initQueueDirs(root);
   executor = new MockSshExecutor();
-  auditLogger = new AuditLogger(join(root, 'logs'));
+  auditLogger = new AuditLogger(join(root, 'logs', 'worker'));
 });
 
 afterEach(() => {

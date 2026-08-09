@@ -101,7 +101,7 @@ console.log('[test_work] 已写入测试宽松策略: policy/policy.json (defaul
 
 // 组装 Worker 启动参数
 // 只传 --hgfs-root / --executor，不显式传 audit/policy 路径：
-// audit_log_dir / policy_file 由 Worker 依据共享根目录相对定位（<root>/logs、<root>/policy/policy.json），
+// audit_log_dir / policy_file 由 Worker 依据共享根目录相对定位（<root>/logs/worker、<root>/policy/policy.json），
 // 即使 bootstrap 首次生成的 config/worker.json 里带的是相对路径，多次重启也始终指向 test/temp 下的正确位置。
 const workerArgs = ['--hgfs-root', tempDir, '--executor', opts.executor];
 if (opts.sshHost) {
@@ -121,7 +121,7 @@ if (opts.sshPassword) {
 }
 
 console.log(`[test_work] 启动 Worker: node ${workerJs} ${workerArgs.join(' ')}`);
-console.log(`[test_work]   audit_log_dir / policy_file 由 Worker 依据 --hgfs-root 相对定位（<root>/logs、<root>/policy/policy.json）`);
+console.log(`[test_work]   audit_log_dir / policy_file 由 Worker 依据 --hgfs-root 相对定位（<root>/logs/worker、<root>/policy/policy.json）`);
 
 const worker = spawn('node', [workerJs, ...workerArgs], {
   stdio: ['pipe', 'inherit', 'inherit'],

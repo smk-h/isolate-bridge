@@ -97,7 +97,7 @@ export function isValidDeviceName(name: string): boolean {
 }
 
 /** 默认审计日志目录名（相对共享根目录） */
-const DEFAULT_AUDIT_DIR_NAME = 'logs';
+const DEFAULT_AUDIT_DIR_NAME = join('logs', 'worker');
 /** 默认策略文件名 */
 const DEFAULT_POLICY_FILE_NAME = 'policy.json';
 /** 默认策略子目录名（相对共享根目录） */
@@ -105,7 +105,7 @@ const DEFAULT_POLICY_DIR_NAME = 'policy';
 
 /**
  * 将配置来源的路径值解析为最终绝对路径
- * - 来源值缺省时：相对共享根目录的内置默认值（<root>/logs、<root>/policy/policy.json）
+ * - 来源值缺省时：相对共享根目录的内置默认值（<root>/logs/worker、<root>/policy/policy.json）
  * - 来源值为相对路径时：基于共享根目录解析为绝对路径
  * - 来源值为绝对路径时：原样使用（保留 CLI/环境变量/配置文件的显式指定能力）
  * @param value - 配置来源值（CLI/env/配置文件，可能为 undefined）
@@ -350,7 +350,7 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     devices,
     ssh_config: sshConfig,
     // audit_log_dir / policy_file 默认依据共享根目录相对定位：
-    // 显式传入绝对路径则原样使用；相对路径或未传则解析为 <hgfs_root>/logs、<hgfs_root>/policy/policy.json
+    // 显式传入绝对路径则原样使用；相对路径或未传则解析为 <hgfs_root>/logs/worker、<hgfs_root>/policy/policy.json
     audit_log_dir: resolvePathUnderRoot(auditDir, hgfsRoot, DEFAULT_AUDIT_DIR_NAME),
     policy_file: resolvePathUnderRoot(policyFile, hgfsRoot, join(DEFAULT_POLICY_DIR_NAME, DEFAULT_POLICY_FILE_NAME)),
     polling: {

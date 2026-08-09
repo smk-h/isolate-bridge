@@ -390,7 +390,7 @@ Worker 运行在**外网 Windows 宿主机**、MCP 运行在**内网 Linux 虚�
 
 #### 3.1 配置中的路径处理规则
 
-- **Worker 侧**：SSH 认证推荐写**用户名 + 密码**（`username` / `password`），无需 Windows 私钥文件；多设备用 `devices` 字典，设备名下放连接信息（设备名仅限字母/数字/下划线/连字符，推荐约定 `board-xxx`）；若改用私钥认证，`private_key_path` 等 **Worker 本地**路径字段写 **Windows 路径**（如 `C:\Users\msgferry\.ssh\id_ed25519`），JSON 中反斜杠需转义为 `\\`；而 `audit_log_dir`、`policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），由 Worker 依据 `--hgfs-root` 自动解析为绝对路径。
+- **Worker 侧**：SSH 认证推荐写**用户名 + 密码**（`username` / `password`），无需 Windows 私钥文件；多设备用 `devices` 字典，设备名下放连接信息（设备名仅限字母/数字/下划线/连字符，推荐约定 `board-xxx`）；若改用私钥认证，`private_key_path` 等 **Worker 本地**路径字段写 **Windows 路径**（如 `C:\Users\msgferry\.ssh\id_ed25519`），JSON 中反斜杠需转义为 `\\`；而 `audit_log_dir`、`policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`logs/worker`、`policy/policy.json`），由 Worker 依据 `--hgfs-root` 自动解析为绝对路径。
 - **MCP 侧**：`.mcp.json` 的 `MSGFERRY_HGFS_ROOT` 环境变量写 **Linux 路径**（如 `/mnt/hgfs/sharedir/vm_share`），MCP 不读 `config/worker.json`，无其他路径配置。
 - 队列子目录、心跳文件等**相对路径约定由 shared 包统一定义**，代码层基于 `node:path` 的 `join` 拼接，自动适配两侧系统，无需人工区分。
 - 两侧唯一需要对齐的是「指向同一个物理目录」，路径写法可以不同，只要各自能正确访问该目录即可。
