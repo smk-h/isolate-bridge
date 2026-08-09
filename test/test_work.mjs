@@ -22,7 +22,7 @@
  *   4. 收到 SIGINT/SIGTERM 时优雅终止 Worker 并清理
  *
  * 注意：Worker 配置已收敛，命令行只支持 --hgfs-root / --log-save / --log-dir；
- *       executor 等其余配置统一从 config/worker.json 读取（本脚本写入 mock 配置）。
+ *       executor 等其余配置统一从 config/worker.yaml 读取（本脚本写入 mock 配置）。
  * ======================================================
  */
 
@@ -83,13 +83,14 @@ writeFileSync(join(policyDir, 'policy.json'), JSON.stringify(testPolicy, null, 2
 console.log('[test_work] 已写入测试宽松策略: policy/policy.json (default_action=allow, 不拦截串联/管道/重定向)');
 
 // 写入测试用 worker 配置：mock 模式（executor 从配置文件读取，命令行不再支持 --executor）
+// 配置文件为 YAML（config/worker.yaml），支持注释
 const configDir = join(tempDir, 'config');
 mkdirSync(configDir, { recursive: true });
-const testConfig = {
-  executor: 'mock',
-};
-writeFileSync(join(configDir, 'worker.json'), JSON.stringify(testConfig, null, 2), 'utf-8');
-console.log('[test_work] 已写入测试配置: config/worker.json (executor=mock)');
+const testConfig = `# 测试用 Worker 配置（mock 模式）
+executor: mock
+`;
+writeFileSync(join(configDir, 'worker.yaml'), testConfig, 'utf-8');
+console.log('[test_work] 已写入测试配置: config/worker.yaml (executor=mock)');
 
 // 组装 Worker 启动参数
 // 只传 --hgfs-root / --log-save / --log-dir：

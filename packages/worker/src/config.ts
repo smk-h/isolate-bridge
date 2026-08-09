@@ -8,7 +8,7 @@
  * Description: Worker 启动配置解析与校验
  *   配置来源收敛为三类：
  *     1. 命令行参数：仅 --hgfs-root（必填）、--log-save、--log-dir（日志两个字段）
- *     2. 配置文件：<hgfs_root>/config/worker.json（其余全部可配置项）
+ *     2. 配置文件：<hgfs_root>/config/worker.yaml（其余全部可配置项）
  *     3. 内置默认值：配置文件未定义的项兜底
  *   不再支持任何环境变量配置（含 MSGFERRY_* 与日志 LOG_SAVE / LOG_DIR）。
  * ======================================================
@@ -24,7 +24,7 @@ import {
   OUTPUT,
   WORKER_CONFIG_FILE,
   resolveUnderRoot,
-  readJsonConfigFile,
+  readYamlConfigFile,
 } from '@smai-kit/msgferry-shared';
 
 /** SSH 连接配置（真实模式必填） */
@@ -67,7 +67,7 @@ export interface DeviceSshFileShape {
   password?: string | null;
 }
 
-/** Worker 配置文件（<hgfs_root>/config/worker.json）的扁平结构 */
+/** Worker 配置文件（<hgfs_root>/config/worker.yaml）的扁平结构 */
 export interface WorkerConfigFileShape {
   executor?: string;
   devices?: Record<string, DeviceSshFileShape>;  // 多设备（推荐）：设备名 → SSH 连接信息
@@ -168,7 +168,7 @@ function pickString(fileValue: unknown, defaultValue?: string): string | undefin
 /**
  * 解析命令行参数与配置文件，产出 WorkerConfig
  * - 命令行仅支持 --hgfs-root / --log-save / --log-dir
- * - 其余全部从 <hgfs_root>/config/worker.json 读取，未定义项走内置默认值
+ * - 其余全部从 <hgfs_root>/config/worker.yaml 读取，未定义项走内置默认值
  * - 不再支持任何环境变量配置
  * @param argv - process.argv
  * @returns WorkerConfig 配置对象
@@ -179,7 +179,7 @@ export function parseConfig(argv: string[]): WorkerConfig {
 
   // 读取配置文件（存在才生效，否则全部走 CLI/默认值）
   const configFilePath = resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE);
-  const file = readJsonConfigFile<WorkerConfigFileShape>(configFilePath);
+  const file = readYamlConfigFile<WorkerConfigFileShape>(configFilePath);
 
   const executorType = (
     pickString(file.executor, 'mock') ?? 'mock'

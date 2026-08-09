@@ -13,7 +13,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** 任意扁平 JSON 配置对象 */
+import { parse as parseYaml } from 'yaml';
+
+/** 任意扁平配置对象 */
 export type ConfigFileShape = Record<string, unknown>;
 
 /**
@@ -29,7 +31,7 @@ export function resolveUnderRoot(root: string, relPath: string): string {
 /**
  * 读取 JSON 配置文件
  * - 文件不存在返回空对象（后续走默认值）
- * - 文件存在但解析失败 / 不是 JSON 对象时抛错
+ * - 文件存在但解析失败 / 不是对象时抛错
  * @param filePath - 配置文件绝对路径
  * @returns 解析后的配置对象
  */
@@ -46,6 +48,33 @@ export function readJsonConfigFile<T extends object>(filePath: string): T {
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new Error(`config file must be a JSON object: ${filePath}`);
+  }
+  return parsed as T;
+}
+
+/**
+ * 读取 YAML 配置文件（JSON 是 YAML 的子集，兼容旧 worker.json 内容）
+ * - 文件不存在返回空对象（后续走默认值）
+ * - 文件存在但解析失败 / 不是对象时抛错
+ * @param filePath - 配置文件绝对路径
+ * @returns 解析后的配置对象
+ */
+export function readYamlConfigFile<T extends object>(filePath: string): T {
+  if (!existsSync(filePath)) {
+    return {} as T;
+  }
+  const raw = readFileSync(filePath, 'utf-8');
+  let parsed: unknown;
+  try {
+    parsed = parseYaml(raw);
+  } catch (err) {
+    throw new Error(`config file is not valid YAML: ${filePath}: ${(err as Error).message}`);
+  }
+  if (parsed === undefined || parsed === null) {
+    return {} as T;
+  }
+  if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`config file must be a YAML object: ${filePath}`);
   }
   return parsed as T;
 }

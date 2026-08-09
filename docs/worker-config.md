@@ -2,7 +2,7 @@
 >
 > 核心结论：**启动 Worker 只需一个必填参数 `--hgfs-root`**（HGFS 共享根目录，Worker 视角的 Windows 绝对路径）。其余配置来源为：
 > - **命令行参数**：仅 `--hgfs-root`（必填）、`--log-save`、`--log-dir`（业务日志两个字段，为保证日志模块正常初始化与及时写入，必须走命令行）；
-> - **配置文件**：`<hgfs_root>/config/worker.json`（其余全部可配置项，如 `executor`、`devices`、`policy_file`、`polling` 等）；
+> - **配置文件**：`<hgfs_root>/config/worker.yaml`（其余全部可配置项，如 `executor`、`devices`、`policy_file`、`polling` 等）；
 > - **内置默认值**：配置文件未定义的项兜底。
 >
 > **不再支持任何环境变量配置**（含 `MSGFERRY_*` 与日志 `LOG_SAVE` / `LOG_DIR`）。
@@ -53,7 +53,7 @@ Worker 的全部可配置项其实分三类：
 :: mock 模式（联调，无需 SSH）
 msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
-:: ssh2 真实模式（SSH 信息从 config/worker.json 读取，无需再传任何 --ssh-*）
+:: ssh2 真实模式（SSH 信息从 config/worker.yaml 读取，无需再传任何 --ssh-*）
 msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 :: 需要业务日志落盘时，追加日志两个命令行参数
@@ -66,7 +66,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --log-save 1 --l
 
 - **一个必填参数**：`--hgfs-root`，指向 HGFS 共享根目录（Worker 侧填 Windows 路径）；
 - **两个日志参数**：`--log-save`（使能，取值 `1`/`true`）、`--log-dir`（日志目录，默认 `<hgfs_root>/logs/worker`），**不走配置文件**；
-- **一个配置文件**：`<hgfs_root>/config/worker.json`，承载其余全部可配置项，**文件内路径均为 Worker（Windows）视角**；
+- **一个配置文件**：`<hgfs_root>/config/worker.yaml`，承载其余全部可配置项，**文件内路径均为 Worker（Windows）视角**；
 - **一条取值链**：`命令行（仅 hgfs-root/log-save/log-dir） → 配置文件 → 内置默认值`；
 - **不再支持环境变量**：`MSGFERRY_*` 与日志 `LOG_SAVE` / `LOG_DIR` 均不读取。
 
@@ -77,7 +77,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --log-save 1 --l
 Worker 可配置项取值来源按优先级从高到低依次为：
 
 1. 命令行参数（仅 `--hgfs-root` / `--log-save` / `--log-dir`）；
-2. 配置文件（`<hgfs_root>/config/worker.json`，路径固定不可自定义）；
+2. 配置文件（`<hgfs_root>/config/worker.yaml`，路径固定不可自定义）；
 3. 内置默认值（定义在 `packages/shared/src/constants.ts` 的 `POLLING` / `HEARTBEAT` / `RETENTION` / `OUTPUT`）。
 
 所有数值型参数（如 `ssh.port`、`polling.*`、`heartbeat_interval_sec` 等）在解析时都会做数值转换，非法值（非数字）自动回退到默认值，不会导致启动失败。
@@ -91,7 +91,7 @@ Worker 可配置项取值来源按优先级从高到低依次为：
 | HGFS 共享根目录 | `--hgfs-root`（必填） | ❌ 不读取（避免循环依赖） | **无（必填）** | 唯一必填项；Worker 侧填 Windows 路径 |
 | 业务日志使能 | `--log-save` | ❌ 不体现 | 不启用 | 取 `1` / `true` 才写业务日志文件 |
 | 业务日志目录 | `--log-dir` | ❌ 不体现 | `<hgfs_root>/logs/worker` | 绝对原样 / 相对基于 hgfs_root |
-| 配置文件路径 | ❌ 不支持 | 固定 `<hgfs_root>/config/worker.json` | - | 不再支持 `--config-file` 自定义 |
+| 配置文件路径 | ❌ 不支持 | 固定 `<hgfs_root>/config/worker.yaml` | - | 不再支持 `--config-file` 自定义 |
 | 执行器类型 | ❌ 删除 | `executor` | `mock` | `mock` / `ssh2` |
 | 默认设备 | ❌ 删除 `--ssh-*` | `ssh.*` 或 `devices.default` | 无 | 默认设备 SSH 连接信息 |
 | 多设备 | ❌ | `devices` | 无 | 设备名 → 连接信息 |
@@ -109,7 +109,7 @@ Worker 可配置项取值来源按优先级从高到低依次为：
 
 #### 3.1 循环依赖
 
-配置文件路径本身依赖 `hgfs_root`（固定 `<hgfs_root>/config/worker.json`），如果把 `hgfs_root` 也放进配置文件，就形成了**循环依赖**——不先知道 `hgfs_root` 就读不到配置文件，读不到配置文件又拿不到 `hgfs_root`。
+配置文件路径本身依赖 `hgfs_root`（固定 `<hgfs_root>/config/worker.yaml`），如果把 `hgfs_root` 也放进配置文件，就形成了**循环依赖**——不先知道 `hgfs_root` 就读不到配置文件，读不到配置文件又拿不到 `hgfs_root`。
 
 #### 3.2 实际处理
 
@@ -127,7 +127,7 @@ Worker 运行在**外网 Windows 宿主机**上，HGFS 共享文件夹以 Window
 
 - 共享根目录：`E:\MyLinux\VMware\sharedir\vm_share`；
 - 队列子目录：`E:\MyLinux\VMware\sharedir\vm_share\pending`、`E:\MyLinux\VMware\sharedir\vm_share\completed` 等；
-- 配置文件：`E:\MyLinux\VMware\sharedir\vm_share\config\worker.json`；
+- 配置文件：`E:\MyLinux\VMware\sharedir\vm_share\config\worker.yaml`；
 - Worker 本地路径（私钥、策略文件）：同样按 Windows 格式写。
 
 #### 1.2 Linux（MCP）视角
@@ -142,62 +142,68 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 
 - **`--hgfs-root` 两侧各自填自己系统的路径**，但指向同一目录：Worker 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 填 `/mnt/hgfs/sharedir/vm_share`；
 - **配置文件由 Worker（Windows）消费**：SSH 认证推荐写**用户名 + 密码**（`ssh.username` / `ssh.password`），无需 Windows 私钥文件；若改用私钥认证，`ssh.private_key_path` 等 **Worker 本地**路径字段写 Windows 格式；而 `policy_file` 是**共享目录内**的路径字段，建议**省略或写相对共享根目录的相对路径**（`policy/policy.json`），Worker 会依据 `--hgfs-root` 自动解析为绝对路径，避免示例绝对路径在换机/重启后写错位置；
-- **JSON 中转义反斜杠**：若确需写 Windows 绝对路径（如 `C:\Users\...\id_ed25519`），JSON 中需写成双反斜杠 `\\`，详见下节示例；
+- **YAML 中转义反斜杠**：若确需写 Windows 绝对路径（如 `C:\Users\...\id_ed25519`），YAML 中需写成双反斜杠 `\\`（或用单引号包裹避免转义），详见下节示例；
 - 路径分隔符由 Node.js `node:path` 的 `join` 自动处理，代码层无需区分平台，只需保证**传入的值符合运行侧系统习惯**。
 
 ### 2. 配置文件路径（固定）
 
 ```
-<hgfs_root>\config\worker.json
+<hgfs_root>\config\worker.yaml
 ```
 
-- 相对路径常量 `WORKER_CONFIG_FILE = 'config/worker.json'` 定义在 `packages/shared/src/constants.ts`；
-- 由 shared 的 `resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE)` 拼接为绝对路径（Windows 下自动得到 `E:\MyLinux\VMware\sharedir\vm_share\config\worker.json`）；
+- 相对路径常量 `WORKER_CONFIG_FILE = 'config/worker.yaml'` 定义在 `packages/shared/src/constants.ts`；
+- 由 shared 的 `resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE)` 拼接为绝对路径（Windows 下自动得到 `E:\MyLinux\VMware\sharedir\vm_share\config\worker.yaml`）；
 - **不再支持 `--config-file` / `MSGFERRY_CONFIG_FILE` 自定义路径**。
 
 ### 3. 完整示例
 
-仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/msgferry-worker/config.example.json`）。`policy_file` 写**相对共享根目录的相对路径**（`policy/policy.json`），Worker 启动时按 `--hgfs-root` 解析为绝对路径；SSH 认证推荐使用**用户名 + 密码**，无需 Windows 私钥文件。多设备使用 `devices` 字典，设备名下放连接信息，后续可通过设备名查找到对应 IP 与账号：
+仓库内示例见 `packages/worker/config.example.yaml`（构建产物 `dist/msgferry-worker/config.example.yaml`）。`policy_file` 写**相对共享根目录的相对路径**（`policy/policy.json`），Worker 启动时按 `--hgfs-root` 解析为绝对路径；SSH 认证推荐使用**用户名 + 密码**，无需 Windows 私钥文件。多设备使用 `devices` 字典，设备名下放连接信息，后续可通过设备名查找到对应 IP 与账号：
 
-```json
-{
-  "executor": "ssh2",
-  "devices": {
-    "default": {
-      "host": "192.168.1.100",
-      "port": 22,
-      "username": "root",
-      "password": "your_password"
-    },
-    "board-100": {
-      "host": "192.168.1.100",
-      "port": 22,
-      "username": "root",
-      "password": "your_password"
-    },
-    "board-101": {
-      "host": "192.168.1.101",
-      "port": 22,
-      "username": "admin",
-      "password": "another_password"
-    }
-  },
-  "policy_file": "policy/policy.json",
-  "polling": {
-    "initial_interval_ms": 500,
-    "max_interval_ms": 3000
-  },
-  "heartbeat_interval_sec": 5,
-  "result_ttl_sec": 600,
-  "max_inline_bytes": 65536
-}
+```yaml
+# SSH 执行器：mock（本地模拟）| ssh2（真实 SSH）
+executor: ssh2
+
+# 多设备：设备名 → SSH 连接信息（设备名仅限字母/数字/下划线/连字符）
+devices:
+  default:
+    host: 192.168.1.100
+    port: 22
+    username: root
+    password: your_password
+  board-100:
+    host: 192.168.1.100
+    port: 22
+    username: root
+    password: your_password
+  board-101:
+    host: 192.168.1.101
+    port: 22
+    username: admin
+    password: another_password
+
+# 策略文件路径（建议写相对共享根目录的路径，由 Worker 解析为绝对路径）
+policy_file: policy/policy.json
+
+# 轮询退避参数（毫秒）
+polling:
+  initial_interval_ms: 500
+  max_interval_ms: 3000
+
+# 心跳写入间隔（秒）
+heartbeat_interval_sec: 5
+
+# 结果文件保留期（秒）
+result_ttl_sec: 600
+
+# stdout/stderr 内联字节数上限（超过则落 outputs/ 子目录）
+max_inline_bytes: 65536
 ```
 
 **设备命名规则**：约定推荐使用 `board-xxx`，但不强制校验前缀，支持用户自定义设备名；**只能使用字母、数字、下划线、连字符**，不能使用空格或任何特殊符号（`@`、`#`、`.`、`/`、中文等均不允许）。解析时会自动跳过非法设备名或缺少 `host`/`username` 的设备。
 
 > 若仍沿用旧的单设备 `ssh` 字段，会作为**默认设备**（等价于 `devices.default`），向后完全兼容（仅配置文件内兼容，CLI/env 的 `--ssh-*` 已删除）。
 
-> 若不用密码，也可改用私钥认证：配置 `private_key_path` 为 Worker 本地私钥的绝对路径（按 Worker 所在 Windows 主机视角写，如 `C:\\Users\\msgferry\\.ssh\\id_ed25519`，JSON 中反斜杠需转义为 `\\`），与 `password` 二选一。
+> 若不用密码，也可改用私钥认证：配置 `private_key_path` 为 Worker 本地私钥的绝对路径（按 Worker 所在 Windows 主机视角写，如 `C:\\Users\\msgferry\\.ssh\\id_ed25519`，YAML 中反斜杠需转义为 `\\`），与 `password` 二选一。
 
 ### 4. 字段说明
 
@@ -237,8 +243,8 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 | 场景 | 行为 |
 | --- | --- |
 | 文件不存在 | **不报错**，全部走 CLI/默认值（`executor` 默认 `mock`） |
-| 文件存在但 JSON 非法 | **启动即抛错**：`config file is not valid JSON: <路径>: <原因>` |
-| 文件内容不是 JSON 对象（如数组/字符串） | **启动即抛错**：`config file must be a JSON object: <路径>` |
+| 文件存在但 YAML 非法 | **启动即抛错**：`config file is not valid YAML: <路径>: <原因>` |
+| 文件内容不是 YAML 对象（如数组/字符串） | **启动即抛错**：`config file must be a YAML object: <路径>` |
 | 文件存在且合法 | 正常读取，缺失字段回退默认值 |
 
 ## 四、 配置解析
@@ -259,11 +265,11 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 | 文件 | 职责 |
 | --- | --- |
 | `packages/shared/src/constants.ts` | `WORKER_CONFIG_FILE` 路径常量、`POLLING` / `HEARTBEAT` / `RETENTION` / `OUTPUT` 默认值常量、`LOG_DIRS` 日志默认目录 |
-| `packages/shared/src/config-file.ts` | 通用配置文件工具：`resolveUnderRoot` / `readJsonConfigFile` |
+| `packages/shared/src/config-file.ts` | 通用配置文件工具：`resolveUnderRoot` / `readJsonConfigFile` / `readYamlConfigFile` |
 | `packages/worker/src/config.ts` | 解析与校验：`parseConfig`（命令行 + 配置文件 + 默认值）、`validateConfig` |
 | `packages/worker/src/main.ts` | 启动时把 `--log-save` / `--log-dir` 解析结果注入 `process.env.LOG_SAVE` / `LOG_DIR` / `MSGFERRY_HGFS_ROOT`，供共享 Logger 延迟初始化读取 |
-| `packages/worker/config.example.json` | 示例配置文件（Windows 路径），构建时拷贝到 `dist/msgferry-worker/config.example.json` |
-| `build/pack.ts` | 打包时自动把 `config.example.json` 拷入产物目录 |
+| `packages/worker/config.example.yaml` | 示例配置文件（Windows 路径），构建时拷贝到 `dist/msgferry-worker/config.example.yaml` |
+| `build/pack.ts` | 打包时自动把 `config.example.yaml` 拷入产物目录 |
 | `packages/worker/test/config.test.ts` | 单元测试：配置文件读取 / 默认值兜底 / CLI 与 env 不再生效 |
 
 ## 五、 启动方式
@@ -278,7 +284,7 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 :: mock 模式（联调，无真实 SSH）
 msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
-:: ssh2 真实模式（SSH 信息从 config/worker.json 读取）
+:: ssh2 真实模式（SSH 信息从 config/worker.yaml 读取）
 msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 ```
 
@@ -302,7 +308,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --log-save 1 --l
 msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 :: 2. 按需编辑自动生成的模板（文件在共享目录里，内网 Linux 侧也能直接改）
-notepad E:\MyLinux\VMware\sharedir\vm_share\config\worker.json
+notepad E:\MyLinux\VMware\sharedir\vm_share\config\worker.yaml
 notepad E:\MyLinux\VMware\sharedir\vm_share\policy\policy.json
 
 :: 3. 改完重启 Worker 生效
@@ -319,14 +325,14 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 | 检测项 | 缺失时自动创建 | 已存在时 |
 | --- | --- | --- |
-| `<hgfs_root>\config\worker.json` | 从 `config.example.json` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
+| `<hgfs_root>\config\worker.yaml` | 从 `config.example.yaml` 模板复制并重命名 | **跳过**，不覆盖用户改动 |
 | `<hgfs_root>\policy\policy.json` | 从 `policy.example.json` 模板复制并重命名，且 **`default_action` 由 `deny` 改写为 `allow`** | **跳过**，不覆盖用户改动 |
 
-- **模板来源**：随产物分发的 `config.example.json` / `policy.example.json`（位于 `dist/msgferry-worker/`，与 `index.mjs` 同目录）；产物中模板缺失时使用内置兜底模板，保证首次启动总能成功。
+- **模板来源**：随产物分发的 `config.example.yaml` / `policy.example.json`（位于 `dist/msgferry-worker/`，与 `index.mjs` 同目录）；产物中模板缺失时使用内置兜底模板，保证首次启动总能成功。
 - **父目录自动创建**：`config/`、`policy/` 目录不存在时一并创建。
 - **`default_action` 改写**：自动生成的 `policy/policy.json` 中 `default_action` 固定为 `allow`（模板里为 `deny`），即白名单未命中时默认放行；黑名单与危险参数模式仍然生效。已存在的策略文件不会被改写。
 - **幂等**：重复启动不会重复复制，也不会改动已存在文件。
-- **提示日志**：自动创建时打印 `[bootstrap] config/worker.json missing, created from template ...`，便于确认。
+- **提示日志**：自动创建时打印 `[bootstrap] config/worker.yaml missing, created from template ...`，便于确认。
 
 ### 2. 实现位置
 
@@ -340,11 +346,11 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 ### 1. MCP 侧与配置文件的边界
 
-**当前 MCP 侧完全不会读取 `<hgfs_root>/config/worker.json`**，该配置文件只有 Worker 会消费。本次配置收敛**只改 Worker**，MCP Server 的配置方式（`.mcp.json` 环境变量 + `--hgfs-root` 等命令行）保持不变。
+**当前 MCP 侧完全不会读取 `<hgfs_root>/config/worker.yaml`**，该配置文件只有 Worker 会消费。本次配置收敛**只改 Worker**，MCP Server 的配置方式（`.mcp.json` 环境变量 + `--hgfs-root` 等命令行）保持不变。
 
 原因：
 
-- `config/worker.json` 里装的都是 **Worker 专属参数**（`executor`、`devices`/`ssh.*`、`heartbeat_interval_sec`、`result_ttl_sec`、`max_inline_bytes` 等），MCP 侧根本不关心；
+- `config/worker.yaml` 里装的都是 **Worker 专属参数**（`executor`、`devices`/`ssh.*`、`heartbeat_interval_sec`、`result_ttl_sec`、`max_inline_bytes` 等），MCP 侧根本不关心；
 - MCP 侧（内网 Linux）启动只需一个必填项 `MSGFERRY_HGFS_ROOT`（填 Linux 路径 `/mnt/hgfs/sharedir/vm_share`），其余 `max_wait_ms`、`polling.*` 都有内置默认值，一般不用配；
 - shared 里的 `config-file.ts` 工具和 `WORKER_CONFIG_FILE` 常量是通用的，未来若想让 MCP 侧也读配置文件（如新增 `<hgfs_root>/config/mcp.json`），可直接复用。
 
@@ -352,13 +358,13 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 ### 2. 常见问题（FAQ）
 
-**Q1：不创建 `config/worker.json` 会怎样？**
+**Q1：不创建 `config/worker.yaml` 会怎样？**
 不报错。Worker 按「命令行 + 内置默认值」运行，`executor` 默认 `mock`。
 
 **Q2：`executor` 配成 `ssh2` 但没配任何设备（`devices` / `ssh.host` / `ssh.username`）会怎样？**
 启动校验失败：`ssh_config is required when executor_type is ssh2`。若提供了设备但某设备缺 `host`/`username`，会报 `device "<设备名>" requires host and username`；设备名非法会报 `invalid device name ...`。
 
-**Q3：改了 `config/worker.json` 需要重启 Worker 吗？**
+**Q3：改了 `config/worker.yaml` 需要重启 Worker 吗？**
 需要。配置文件只在**启动时读取一次**（`parseConfig`），运行中修改不会热加载，重启 Worker 生效。
 
 **Q4：配置文件里的数字写成字符串可以吗？**
@@ -370,14 +376,14 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 **Q5.1：多个 SSH 设备怎么配置？后续怎么按设备名查找？**
 在配置文件的 `devices` 字典中，每个设备名下放 `host`/`port`/`username`/`password`（或 `private_key_path`）等连接信息，设备名约定 `board-xxx`（不强制），但**只能使用字母、数字、下划线、连字符**，不能含空格或特殊符号。Worker 通过 `findSshConfig(config, 设备名)` 即可按设备名查到对应 IP 与账号；未指定设备名或未命中时回退到默认设备（`devices.default` 或旧 `ssh` 字段）。
 
-**Q6：`config.example.json` 和部署用的 `worker.json` 是什么关系？**
-`config.example.json` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。**Worker 启动时若发现 `<hgfs_root>\config\worker.json` 不存在，会自动从模板复制并重命名**（策略同理），无需手动操作；已存在则原样保留、不会被覆盖（详见「六、启动引导」）。
+**Q6：`config.example.yaml` 和部署用的 `worker.yaml` 是什么关系？**
+`config.example.yaml` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。**Worker 启动时若发现 `<hgfs_root>\config\worker.yaml` 不存在，会自动从模板复制并重命名**（策略同理），无需手动操作；已存在则原样保留、不会被覆盖（详见「六、启动引导」）。
 
 **Q7：配置里的路径该用 Windows 格式还是 Linux 格式？**
-看**谁消费、路径在哪**。`policy_file` 位于**共享目录内**，建议省略或写相对共享根目录的相对路径（`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析，Windows 侧得到 `E:\...\policy\policy.json`、Linux 侧得到 `/mnt/hgfs/.../policy/policy.json`，两侧一致；SSH 认证推荐用**用户名 + 密码**，不涉及私钥文件；若改用私钥认证，`ssh.private_key_path` 是 **Worker 本地**文件，按 Worker（Windows）视角写绝对路径（如 `C:\Users\...\id_ed25519`），JSON 中反斜杠要转义成 `\\`；MCP 侧（Linux）只需在 `.mcp.json` 环境变量里写 Linux 格式的 `MSGFERRY_HGFS_ROOT`（如 `/mnt/hgfs/sharedir/vm_share`），它不读这个配置文件。
+看**谁消费、路径在哪**。`policy_file` 位于**共享目录内**，建议省略或写相对共享根目录的相对路径（`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析，Windows 侧得到 `E:\...\policy\policy.json`、Linux 侧得到 `/mnt/hgfs/.../policy/policy.json`，两侧一致；SSH 认证推荐用**用户名 + 密码**，不涉及私钥文件；若改用私钥认证，`ssh.private_key_path` 是 **Worker 本地**文件，按 Worker（Windows）视角写绝对路径（如 `C:\Users\...\id_ed25519`），YAML 中反斜杠要转义成 `\\`；MCP 侧（Linux）只需在 `.mcp.json` 环境变量里写 Linux 格式的 `MSGFERRY_HGFS_ROOT`（如 `/mnt/hgfs/sharedir/vm_share`），它不读这个配置文件。
 
 **Q8：旧的 `--executor`、`--ssh-*`、`MSGFERRY_*` 环境变量还能用吗？**
-不能。Worker 已删除全部非日志命令行参数与全部环境变量配置。`--executor` 等旧参数会被忽略，配置一律写进 `config/worker.json`；日志用 `--log-save` / `--log-dir` 传。
+不能。Worker 已删除全部非日志命令行参数与全部环境变量配置。`--executor` 等旧参数会被忽略，配置一律写进 `config/worker.yaml`；日志用 `--log-save` / `--log-dir` 传。
 
 ---
 *本文档由 markdowncli 技能辅助生成*

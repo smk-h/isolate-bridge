@@ -18,6 +18,8 @@ import { join } from 'node:path';
 
 import { ensureSharedTemplates } from '../src/bootstrap.js';
 
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+
 let roots: string[] = [];
 
 function makeRoot(): string {
@@ -34,16 +36,16 @@ afterEach(() => {
 });
 
 describe('ensureSharedTemplates', () => {
-  it('creates config/worker.json and policy/policy.json when missing', async () => {
+  it('creates config/worker.yaml and policy/policy.json when missing', async () => {
     const root = makeRoot();
     await ensureSharedTemplates(root);
 
-    const cfgPath = join(root, 'config', 'worker.json');
+    const cfgPath = join(root, 'config', 'worker.yaml');
     const polPath = join(root, 'policy', 'policy.json');
-    assert.ok(existsSync(cfgPath), 'config/worker.json should be created');
+    assert.ok(existsSync(cfgPath), 'config/worker.yaml should be created');
     assert.ok(existsSync(polPath), 'policy/policy.json should be created');
 
-    const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
+    const cfg = parseYaml(readFileSync(cfgPath, 'utf-8')) as Record<string, any>;
     assert.equal(cfg.executor, 'ssh2');
     // 模板使用多设备结构（设备名 → 连接信息）
     assert.equal(cfg.devices?.['default']?.host, '192.168.1.100');
@@ -74,21 +76,21 @@ describe('ensureSharedTemplates', () => {
     mkdirSync(cfgDir, { recursive: true });
     mkdirSync(polDir, { recursive: true });
 
-    const customCfg = JSON.stringify({ executor: 'mock', '//': 'user customized' }, null, 2);
+    const customCfg = stringifyYaml({ executor: 'mock', note: 'user customized' });
     const customPol = JSON.stringify({ whitelist_prefixes: ['custom'], '//': 'user customized' }, null, 2);
-    writeFileSync(join(cfgDir, 'worker.json'), customCfg);
+    writeFileSync(join(cfgDir, 'worker.yaml'), customCfg);
     writeFileSync(join(polDir, 'policy.json'), customPol);
 
     await ensureSharedTemplates(root);
 
-    assert.equal(readFileSync(join(cfgDir, 'worker.json'), 'utf-8'), customCfg);
+    assert.equal(readFileSync(join(cfgDir, 'worker.yaml'), 'utf-8'), customCfg);
     assert.equal(readFileSync(join(polDir, 'policy.json'), 'utf-8'), customPol);
   });
 
   it('is idempotent when run twice', async () => {
     const root = makeRoot();
     await ensureSharedTemplates(root);
-    const cfgPath = join(root, 'config', 'worker.json');
+    const cfgPath = join(root, 'config', 'worker.yaml');
     const before = readFileSync(cfgPath, 'utf-8');
     await ensureSharedTemplates(root);
     assert.equal(readFileSync(cfgPath, 'utf-8'), before);

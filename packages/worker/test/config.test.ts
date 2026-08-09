@@ -18,6 +18,8 @@ import { join } from 'node:path';
 
 import { parseConfig, validateConfig, isValidDeviceName, findSshConfig } from '../src/config.js';
 
+import { stringify as stringifyYaml } from 'yaml';
+
 let roots: string[] = [];
 
 function makeRoot(): string {
@@ -29,7 +31,8 @@ function makeRoot(): string {
 function writeConfig(root: string, content: unknown): void {
   const dir = join(root, 'config');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'worker.json'), JSON.stringify(content, null, 2));
+  // 配置文件为 YAML（config/worker.yaml），兼容 JSON 输入（JSON 是 YAML 的子集）
+  writeFileSync(join(dir, 'worker.yaml'), typeof content === 'string' ? content : stringifyYaml(content));
 }
 
 afterEach(() => {
@@ -40,7 +43,7 @@ afterEach(() => {
 });
 
 describe('parseConfig from config file', () => {
-  it('reads ssh settings from <hgfs_root>/config/worker.json', () => {
+  it('reads ssh settings from <hgfs_root>/config/worker.yaml', () => {
     const root = makeRoot();
     writeConfig(root, {
       executor: 'ssh2',
@@ -154,11 +157,44 @@ describe('parseConfig from config file', () => {
     assert.equal(cfg.policy_file, '/etc/msgferry/policy.json');
   });
 
-  it('throws when config file is not valid JSON', () => {
+  it('supports comments and inline fields in YAML config', () => {
+    const root = makeRoot();
+    // YAML 支持注释；设备名与 key 均可含连字符
+    writeConfig(root, `
+# Worker 配置示例（YAML）
+executor: ssh2  # 行尾注释
+
+ssh:
+  host: 10.0.0.5
+  port: 2222
+  username: ops
+  password: secret
+`);
+    const cfg = parseConfig(['--hgfs-root', root]);
+    assert.equal(cfg.executor_type, 'ssh2');
+    assert.equal(cfg.ssh_config?.host, '10.0.0.5');
+    assert.equal(cfg.ssh_config?.port, 2222);
+    assert.equal(cfg.ssh_config?.username, 'ops');
+    assert.equal(cfg.ssh_config?.password, 'secret');
+  });
+
+  it('keeps JSON content valid as YAML (backward compatible)', () => {
+    const root = makeRoot();
+    // JSON 是 YAML 的子集，旧 worker.json 内容仍可被 YAML 解析
+    writeConfig(root, {
+      executor: 'ssh2',
+      ssh: { host: '10.0.0.5', port: 2222, username: 'ops', password: 'secret' },
+    });
+    const cfg = parseConfig(['--hgfs-root', root]);
+    assert.equal(cfg.executor_type, 'ssh2');
+    assert.equal(cfg.ssh_config?.host, '10.0.0.5');
+  });
+
+  it('throws when config file is not valid YAML', () => {
     const root = makeRoot();
     mkdirSync(join(root, 'config'), { recursive: true });
-    writeFileSync(join(root, 'config', 'worker.json'), '{broken');
-    assert.throws(() => parseConfig(['--hgfs-root', root]), /not valid JSON/);
+    writeFileSync(join(root, 'config', 'worker.yaml'), '{{broken');
+    assert.throws(() => parseConfig(['--hgfs-root', root]), /not valid YAML/);
   });
 });
 
