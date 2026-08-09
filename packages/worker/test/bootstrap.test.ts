@@ -46,6 +46,10 @@ describe('ensureSharedTemplates', () => {
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
     assert.equal(cfg.executor, 'ssh2');
     assert.equal(cfg.ssh?.host, '192.168.1.100');
+    assert.equal(cfg.ssh?.username, 'root');
+    // 模板 SSH 认证使用用户名 + 密码，不再携带 Windows 私钥文件路径
+    assert.equal(cfg.ssh?.password, 'your_password');
+    assert.equal(cfg.ssh?.private_key_path, undefined);
     // 模板中 audit_log_dir / policy_file 应为相对共享根目录的路径，
     // 由 Worker 按 --hgfs-root 解析为绝对路径，避免示例 Windows 绝对路径污染重启后配置
     assert.equal(cfg.audit_log_dir, 'logs');

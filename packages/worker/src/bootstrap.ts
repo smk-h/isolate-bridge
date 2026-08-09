@@ -37,7 +37,7 @@ const FALLBACK_CONFIG_TEMPLATE: Record<string, unknown> = {
     host: '192.168.1.100',
     port: 22,
     username: 'root',
-    private_key_path: 'C:\\Users\\msgferry\\.ssh\\id_ed25519',
+    password: 'your_password',
   },
   audit_log_dir: 'logs',
   policy_file: 'policy/policy.json',

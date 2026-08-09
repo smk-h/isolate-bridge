@@ -25,14 +25,14 @@ MsgFerry 的两侧进程物理上位于不同网络域，通过 **VMware HGFS �
 在引入配置文件之前，Worker 的所有参数都必须显式传入，SSH 真实模式下启动命令又长又难维护：
 
 ```bat
-msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 --ssh-host 192.168.1.100 --ssh-port 22 --ssh-user root --ssh-key C:\Users\msgferry\.ssh\id_ed25519 --heartbeat-interval 5 --result-ttl 600
+msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 --ssh-host 192.168.1.100 --ssh-port 22 --ssh-user root --ssh-password ****** --heartbeat-interval 5 --result-ttl 600
 ```
 
 问题：
 
 - 参数全部硬编码在启动脚本里，内网侧看不到、也改不了；
 - 每次调整 SSH 账号、轮询间隔都要改启动命令再重启；
-- SSH 私钥等敏感信息散落在命令行（任务管理器/`ps` 可见）与 shell 历史中。
+- SSH 密码等敏感信息散落在命令行（任务管理器/`ps` 可见）与 shell 历史中。
 
 ### 3. 方案思路
 
@@ -84,8 +84,8 @@ Worker 共有 14 个可配置项（其中 13 项可写入配置文件，`hgfs_ro
 | `ssh.host` | `--ssh-host` | `MSGFERRY_SSH_HOST` | 无（ssh2 必填） | SSH 目标主机 |
 | `ssh.port` | `--ssh-port` | `MSGFERRY_SSH_PORT` | `22` | SSH 端口 |
 | `ssh.username` | `--ssh-user` | `MSGFERRY_SSH_USER` | 无（ssh2 必填） | SSH 登录用户 |
-| `ssh.private_key_path` | `--ssh-key` | `MSGFERRY_SSH_KEY` | 无 | 私钥路径（与密码二选一），Windows 路径 |
-| `ssh.password` | `--ssh-password` | `MSGFERRY_SSH_PASSWORD` | 无 | 密码（与私钥二选一） |
+| `ssh.password` | `--ssh-password` | `MSGFERRY_SSH_PASSWORD` | 无 | SSH 登录密码（推荐，与私钥二选一） |
+| `ssh.private_key_path` | `--ssh-key` | `MSGFERRY_SSH_KEY` | 无 | 私钥路径（可选，与密码二选一），Windows 路径 |
 | `audit_log_dir` | `--audit-dir` | `MSGFERRY_AUDIT_DIR` | `<hgfs_root>/logs` | 审计日志目录；相对路径基于共享根目录解析，绝对路径原样使用 |
 | `policy_file` | `--policy-file` | `MSGFERRY_POLICY_FILE` | `<hgfs_root>/policy/policy.json` | 命令安全策略文件；相对路径基于共享根目录解析，绝对路径原样使用 |
 | `polling.initial_interval_ms` | `--polling-initial` | `MSGFERRY_POLLING_INITIAL` | `500` | 轮询起步间隔（ms），有任务后复位到此值 |
@@ -130,7 +130,7 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 #### 1.3 对齐原则与注意事项
 
 - **`--hgfs-root` / `MSGFERRY_HGFS_ROOT` 两侧各自填自己系统的路径**，但指向同一目录：Worker 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 填 `/mnt/hgfs/sharedir/vm_share`；
-- **配置文件由 Worker（Windows）消费**，其中 `ssh.private_key_path` 等 **Worker 本地**路径字段写 Windows 格式；而 `audit_log_dir`、`policy_file` 这两个**共享目录内**的路径字段建议**省略或写相对共享根目录的相对路径**（`logs`、`policy/policy.json`），Worker 会依据 `--hgfs-root` 自动解析为绝对路径，避免示例绝对路径在换机/重启后写错位置；
+- **配置文件由 Worker（Windows）消费**：SSH 认证推荐写**用户名 + 密码**（`ssh.username` / `ssh.password`），无需 Windows 私钥文件；若改用私钥认证，`ssh.private_key_path` 等 **Worker 本地**路径字段写 Windows 格式；而 `audit_log_dir`、`policy_file` 这两个**共享目录内**的路径字段建议**省略或写相对共享根目录的相对路径**（`logs`、`policy/policy.json`），Worker 会依据 `--hgfs-root` 自动解析为绝对路径，避免示例绝对路径在换机/重启后写错位置；
 - **JSON 中转义反斜杠**：若确需写 Windows 绝对路径（如 `C:\Users\...\id_ed25519`），JSON 中需写成双反斜杠 `\\`，详见下节示例；
 - 路径分隔符由 Node.js `node:path` 的 `join` 自动处理，代码层无需区分平台，只需保证**传入的值符合运行侧系统习惯**。
 
@@ -157,7 +157,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 
 ### 3. 完整示例
 
-仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/msgferry-worker/config.example.json`）。`audit_log_dir` / `policy_file` 写**相对共享根目录的相对路径**（`logs`、`policy/policy.json`），Worker 启动时按 `--hgfs-root` 解析为绝对路径；`ssh.private_key_path` 等 Worker 本地文件仍按 Worker 所在 Windows 主机的视角写绝对路径：
+仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/msgferry-worker/config.example.json`）。`audit_log_dir` / `policy_file` 写**相对共享根目录的相对路径**（`logs`、`policy/policy.json`），Worker 启动时按 `--hgfs-root` 解析为绝对路径；SSH 认证推荐使用**用户名 + 密码**，无需 Windows 私钥文件：
 
 ```json
 {
@@ -166,7 +166,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
     "host": "192.168.1.100",
     "port": 22,
     "username": "root",
-    "private_key_path": "C:\\Users\\msgferry\\.ssh\\id_ed25519"
+    "password": "your_password"
   },
   "audit_log_dir": "logs",
   "policy_file": "policy/policy.json",
@@ -180,9 +180,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 }
 ```
 
-> `audit_log_dir` / `policy_file` 亦可显式写绝对路径（Windows 或 Linux 均可），Worker 原样使用不做拼接；相对路径则一律基于 `--hgfs-root` 解析。
-
-> 提示：若 Worker 恰好不在 Windows（如临时在 Linux 上联调），`ssh.private_key_path` 等 Worker 本地路径改回 Linux 格式（`/home/user/.ssh/id_ed25519`）即可；`audit_log_dir` / `policy_file` 的**相对路径**则无需改动，Worker 会按 `--hgfs-root`（此时为 Linux 路径）自动解析，完全兼容。
+> 若不用密码，也可改用私钥认证：配置 `ssh.private_key_path` 为 Worker 本地私钥的绝对路径（按 Worker 所在 Windows 主机视角写，如 `C:\\Users\\msgferry\\.ssh\\id_ed25519`，JSON 中反斜杠需转义为 `\\`），与 `password` 二选一。
 
 ### 4. 字段说明
 
@@ -193,8 +191,8 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 | `ssh.host` | string | SSH 目标主机 IP 或域名；`ssh2` 模式必填 |
 | `ssh.port` | number/string | SSH 端口，默认 `22` |
 | `ssh.username` | string | SSH 登录用户名；`ssh2` 模式必填 |
-| `ssh.private_key_path` | string \| null | SSH 私钥文件绝对路径（Windows 格式）；与 `password` 二选一 |
-| `ssh.password` | string \| null | SSH 登录密码；与 `private_key_path` 二选一 |
+| `ssh.password` | string \| null | SSH 登录密码（推荐，与 `private_key_path` 二选一） |
+| `ssh.private_key_path` | string \| null | SSH 私钥文件绝对路径（可选，与 `password` 二选一），Windows 格式 |
 | `audit_log_dir` | string | 审计日志输出目录；**相对路径基于共享根目录解析**（默认 `logs`），绝对路径原样使用 |
 | `policy_file` | string | 命令安全策略 JSON 文件路径；**相对路径基于共享根目录解析**（默认 `policy/policy.json`），绝对路径原样使用 |
 | `polling.initial_interval_ms` | number/string | 轮询起步间隔（毫秒） |
@@ -205,9 +203,9 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 
 ### 5. 使用注意事项
 
-- **配置文件内路径分两类**：`audit_log_dir`、`policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析为绝对路径；`ssh.private_key_path` 是 **Worker 本地**路径，必须按 Worker 所在 Windows 主机填写绝对路径，注意 JSON 中反斜杠需转义（`\\`）；
+- **配置文件内路径分两类**：`audit_log_dir`、`policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析为绝对路径；SSH 认证推荐用**用户名 + 密码**（`ssh.username` / `ssh.password`），无需 Windows 私钥文件，若改用私钥认证则 `ssh.private_key_path` 是 **Worker 本地**路径，必须按 Worker 所在 Windows 主机填写绝对路径，注意 JSON 中反斜杠需转义（`\\`）；
 - **`ssh.*` 仅在 `executor` 为 `ssh2` 时生效**：mock 模式下即便配置了 `ssh.*` 字段也会被忽略（`ssh_config` 直接为 `null`）；
-- **私钥与密码二选一**：两者都配时优先使用私钥（见 `config.ts` 中 `private_key_path ?? null` / `password ?? null` 的处理）；两者都没配且 `executor=ssh2` 时，校验会报 `ssh_config.host and ssh_config.username are required`；
+- **密码与私钥二选一**：两者都配时优先使用私钥（见 `config.ts` 中 `private_key_path ?? null` / `password ?? null` 的处理）；两者都没配且 `executor=ssh2` 时，校验会报 `ssh_config.host and ssh_config.username are required`；
 - **`audit_log_dir` / `policy_file` 建议省略**：默认值即共享根目录下的 `logs`、`policy/policy.json`，且自动跟随 `--hgfs-root` 定位，不受进程工作目录影响，也避免绝对路径在换机后失效；
 - 配置文件里**多余的未知字段会被忽略**，不会报错，方便以后扩展。
 
@@ -256,7 +254,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 ```bat
 :: 旧脚本无需修改，继续可用
-msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 --ssh-host 192.168.1.100 --ssh-port 22 --ssh-user root --ssh-key C:\Users\msgferry\.ssh\id_ed25519 --heartbeat-interval 5
+msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 --ssh-host 192.168.1.100 --ssh-port 22 --ssh-user root --ssh-password ****** --heartbeat-interval 5
 ```
 
 ### 4. 代码实现位置速查
@@ -292,7 +290,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 ```bat
 :: ssh2 真实模式，全部参数显式给出（配置文件不存在时等效于这种方式）
-msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 --ssh-host 192.168.1.100 --ssh-port 22 --ssh-user root --ssh-key C:\Users\msgferry\.ssh\id_ed25519
+msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 --ssh-host 192.168.1.100 --ssh-port 22 --ssh-user root --ssh-password ******
 ```
 
 ### 3. 混合方式（配置文件 + 临时覆盖）
@@ -346,14 +344,14 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 **Q4：配置文件里的数字写成字符串可以吗？**
 可以。`pickConfigNumber` 会把字符串 `"500"` 转成数字 `500`；转不成数字则回退默认值。
 
-**Q5：私钥和密码都写了用哪个？**
-优先私钥。`ssh_config.private_key_path` 非空即用私钥，否则用密码。
+**Q5：密码和私钥都写了用哪个？**
+优先私钥。`ssh_config.private_key_path` 非空即用私钥，否则用密码。推荐在配置文件中只配**用户名 + 密码**，无需 Windows 私钥文件。
 
 **Q6：`config.example.json` 和部署用的 `worker.json` 是什么关系？**
 `config.example.json` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。**Worker 启动时若发现 `<hgfs_root>\config\worker.json` 不存在，会自动从模板复制并重命名**（策略同理），无需手动操作；已存在则原样保留、不会被覆盖（详见「七、启动引导」）。
 
 **Q7：配置里的路径该用 Windows 格式还是 Linux 格式？**
-看**谁消费、路径在哪**。`audit_log_dir` / `policy_file` 位于**共享目录内**，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析，Windows 侧得到 `E:\...\logs`、Linux 侧得到 `/mnt/hgfs/.../logs`，两侧一致；`ssh.private_key_path` 是 **Worker 本地**文件，按 Worker（Windows）视角写绝对路径（如 `C:\Users\...\id_ed25519`），JSON 中反斜杠要转义成 `\\`；MCP 侧（Linux）只需在 `.mcp.json` 环境变量里写 Linux 格式的 `MSGFERRY_HGFS_ROOT`（如 `/mnt/hgfs/sharedir/vm_share`），它不读这个配置文件。
+看**谁消费、路径在哪**。`audit_log_dir` / `policy_file` 位于**共享目录内**，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析，Windows 侧得到 `E:\...\logs`、Linux 侧得到 `/mnt/hgfs/.../logs`，两侧一致；SSH 认证推荐用**用户名 + 密码**，不涉及私钥文件；若改用私钥认证，`ssh.private_key_path` 是 **Worker 本地**文件，按 Worker（Windows）视角写绝对路径（如 `C:\Users\...\id_ed25519`），JSON 中反斜杠要转义成 `\\`；MCP 侧（Linux）只需在 `.mcp.json` 环境变量里写 Linux 格式的 `MSGFERRY_HGFS_ROOT`（如 `/mnt/hgfs/sharedir/vm_share`），它不读这个配置文件。
 
 ## 七、 启动引导：自动补齐模板
 

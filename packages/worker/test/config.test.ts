@@ -43,14 +43,26 @@ describe('parseConfig from config file', () => {
     const root = makeRoot();
     writeConfig(root, {
       executor: 'ssh2',
-      ssh: { host: '10.0.0.5', port: 2222, username: 'ops', private_key_path: '/k.pem' },
+      ssh: { host: '10.0.0.5', port: 2222, username: 'ops', password: 'secret' },
     });
     const cfg = parseConfig(['--hgfs-root', root], {});
     assert.equal(cfg.executor_type, 'ssh2');
     assert.equal(cfg.ssh_config?.host, '10.0.0.5');
     assert.equal(cfg.ssh_config?.port, 2222);
     assert.equal(cfg.ssh_config?.username, 'ops');
+    assert.equal(cfg.ssh_config?.password, 'secret');
+    assert.equal(cfg.ssh_config?.private_key_path, null);
+  });
+
+  it('keeps private_key_path as optional alternative to password', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      executor: 'ssh2',
+      ssh: { host: '10.0.0.5', username: 'ops', private_key_path: '/k.pem' },
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
     assert.equal(cfg.ssh_config?.private_key_path, '/k.pem');
+    assert.equal(cfg.ssh_config?.password, null);
   });
 
   it('falls back to defaults when no config file exists', () => {
