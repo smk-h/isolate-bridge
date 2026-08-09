@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm --filter @smai-kit/msgferry-build run build:dist",
     "dev": "pnpm -r --parallel run dev",
-    "clean": "pnpm -r exec rimraf dist",
+    "clean": "pnpm -r exec rimraf dist && rimraf dist",
     "clean:all": "pnpm -r exec rimraf dist node_modules && rimraf dist node_modules",
     "git-sync-force": "node scripts/sync-force.mjs"
   },
