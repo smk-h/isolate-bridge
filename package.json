@@ -9,6 +9,7 @@
     "dev": "pnpm -r --parallel run dev",
     "clean": "pnpm -r exec rimraf dist && rimraf dist",
     "clean:all": "pnpm -r exec rimraf dist node_modules && rimraf dist node_modules",
+    "clean-log": "node scripts/clean-log.mjs",
     "git-sync-force": "node scripts/sync-force.mjs"
   },
   "engines": {
