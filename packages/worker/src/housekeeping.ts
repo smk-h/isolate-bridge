@@ -12,6 +12,8 @@
 import { writeHeartbeat, gcResults } from './queue.js';
 import type { Heartbeat } from './queue.js';
 
+import { logger } from '@smai-kit/msgferry-shared';
+
 /** 心跳统计获取函数类型 */
 export type HeartbeatStatsGetter = () => { processedCount: number; queueDepth: number };
 
@@ -45,7 +47,7 @@ export function startHeartbeatLoop(
       await writeHeartbeat(root, hb);
     } catch {
       // 心跳写入失败不阻塞主循环，仅告警
-      console.warn('[housekeeping] heartbeat write failed');
+      logger.warn('[housekeeping] heartbeat write failed');
     }
   }, intervalSec * 1000);
 
@@ -74,7 +76,7 @@ export function startGcLoop(
       await gcResults(root, ttlSec);
     } catch {
       // GC 失败不阻塞主循环，仅告警
-      console.warn('[housekeeping] gc failed');
+      logger.warn('[housekeeping] gc failed');
     }
   }, intervalSec * 1000);
 

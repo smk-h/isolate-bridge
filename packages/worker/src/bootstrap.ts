@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { WORKER_CONFIG_FILE } from '@smai-kit/msgferry-shared';
+import { logger } from '@smai-kit/msgferry-shared';
 
 /** 随产物分发的配置模板文件名 */
 const CONFIG_TEMPLATE_FILE = 'config.example.json';
@@ -127,7 +128,7 @@ async function ensureFileFromTemplate(
   await mkdir(dirname(target), { recursive: true });
   const content = await loadTemplate(templateFile, fallback);
   await writeFile(target, content, 'utf-8');
-  console.log(`[bootstrap] ${relPath} missing, created from template ${templateFile}`);
+  logger.info(`[bootstrap] ${relPath} missing, created from template ${templateFile}`);
 }
 
 /**
@@ -149,7 +150,7 @@ async function ensurePolicyFile(root: string, relPath: string): Promise<void> {
   const policy = JSON.parse(content) as Record<string, unknown>;
   policy.default_action = POLICY_DEFAULT_ACTION;
   await writeFile(target, `${JSON.stringify(policy, null, 2)}\n`, 'utf-8');
-  console.log(`[bootstrap] ${relPath} missing, created from template ${POLICY_TEMPLATE_FILE} (default_action -> ${POLICY_DEFAULT_ACTION})`);
+  logger.info(`[bootstrap] ${relPath} missing, created from template ${POLICY_TEMPLATE_FILE} (default_action -> ${POLICY_DEFAULT_ACTION})`);
 }
 
 /**
