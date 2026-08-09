@@ -63,13 +63,13 @@ async function processTask(task: CommandTask, pid: number): Promise<void> {
     await logAudit(task, policyResult, task.end_time);
     return;
   }
-  const sshResult = await executor.execute(task.cmd, task.timeout_sec);
-  task.stdout = sshResult.stdout;
-  task.stderr = sshResult.stderr;
-  task.stdout_size = Buffer.byteLength(sshResult.stdout, 'utf-8');
-  task.stderr_size = Buffer.byteLength(sshResult.stderr, 'utf-8');
-  task.exit_code = sshResult.exit_code;
-  task.error_msg = sshResult.stderr || null;
+  const cmdResult = await executor.execute(task.cmd, task.timeout_sec);
+  task.stdout = cmdResult.stdout;
+  task.stderr = cmdResult.stderr;
+  task.stdout_size = Buffer.byteLength(cmdResult.stdout, 'utf-8');
+  task.stderr_size = Buffer.byteLength(cmdResult.stderr, 'utf-8');
+  task.exit_code = cmdResult.exit_code;
+  task.error_msg = cmdResult.stderr || null;
   task.end_time = Date.now();
   if (await checkCancelled(root, task.task_id)) {
     task.status = 'cancelled';
@@ -77,7 +77,7 @@ async function processTask(task: CommandTask, pid: number): Promise<void> {
     await logAudit(task, policyResult, task.end_time);
     return;
   }
-  task.status = sshResult.exit_code === 0 ? 'completed' : 'failed';
+  task.status = cmdResult.exit_code === 0 ? 'completed' : 'failed';
   await writeResult(root, task, 65536);
   await logAudit(task, policyResult, task.end_time);
 }

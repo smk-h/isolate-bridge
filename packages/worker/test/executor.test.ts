@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MockSshExecutor, createExecutor } from '../src/executor.js';
+import { MockSshExecutor, Ssh2Executor, createExecutor } from '../src/executor.js';
 import type { WorkerConfig } from '../src/config.js';
 
 describe('MockSshExecutor', () => {
@@ -55,7 +55,7 @@ describe('createExecutor', () => {
     assert.ok(exec instanceof MockSshExecutor);
   });
 
-  it('ssh2 模式应抛错（本章未实现）', () => {
+  it('ssh2 模式应返回 Ssh2Executor 实例', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
       executor_type: 'ssh2',
@@ -70,6 +70,7 @@ describe('createExecutor', () => {
       log_save: false,
       log_dir: '/tmp/logs',
     };
-    assert.throws(() => createExecutor(config), /ssh2 executor not implemented/);
+    const exec = createExecutor(config);
+    assert.ok(exec instanceof Ssh2Executor);
   });
 });

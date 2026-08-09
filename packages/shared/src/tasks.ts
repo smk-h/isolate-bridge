@@ -21,6 +21,7 @@ export interface CommandTask {
   batch_id: string | null;          // 批量归属，无批次为 null
   depends_on: string[];             // 依赖的 task_id 列表，空数组表示无依赖
   cmd: string;                     // 待执行 SSH 命令
+  device?: string;                  // 目标设备名（未指定走默认设备），由 submit 侧填写
   timeout_sec: number;              // 超时上限（秒）
   submit_time: number;              // 提交时间戳（ms epoch）
   start_time: number;               // 开始执行时间戳，未开始为 0

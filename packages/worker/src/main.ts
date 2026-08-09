@@ -28,7 +28,8 @@ import {
 import { loadPolicy, checkCommand, createPolicyWatcher } from './policy.js';
 import type { PolicyRule, PolicyResult } from './policy.js';
 import { createExecutor } from './executor.js';
-import type { SshExecutor } from './executor.js';
+import { Ssh2Executor } from './executor.js';
+import type { CmdExecutor } from './executor.js';
 import { AuditLogger, formatSystemTime } from './audit.js';
 import type { AuditEntry } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
@@ -52,7 +53,7 @@ async function processTask(
   task: CommandTask,
   pid: number,
   policyRule: PolicyRule,
-  executor: SshExecutor,
+  executor: CmdExecutor,
   auditLogger: AuditLogger,
 ): Promise<void> {
   const startTime = Date.now();
@@ -75,14 +76,18 @@ async function processTask(
 
   // SSH 执行
   logger.info(`[worker] ssh executing: task_id=${task.task_id} timeout_sec=${task.timeout_sec} cmd=${task.cmd}`);
-  const sshResult = await executor.execute(task.cmd, task.timeout_sec);
-  logger.info(`[worker] ssh executed: task_id=${task.task_id} exit_code=${sshResult.exit_code} timed_out=${sshResult.timed_out}`);
-  task.stdout = sshResult.stdout;
-  task.stderr = sshResult.stderr;
-  task.stdout_size = Buffer.byteLength(sshResult.stdout, 'utf-8');
-  task.stderr_size = Buffer.byteLength(sshResult.stderr, 'utf-8');
-  task.exit_code = sshResult.exit_code;
-  task.error_msg = sshResult.stderr || (sshResult.timed_out ? 'execution_timeout' : null);
+  const cmdResult = await executor.execute(task.cmd, task.timeout_sec, task.device);
+  // 取已建立会话 id 作为审计 ssh_target（Ssh2Executor 有，MockExecutor 无）
+  const sshTarget = executor instanceof Ssh2Executor
+    ? (executor.getSessionId(task.device) ?? null)
+    : null;
+  logger.info(`[worker] ssh executed: task_id=${task.task_id} exit_code=${cmdResult.exit_code} timed_out=${cmdResult.timed_out}`);
+  task.stdout = cmdResult.stdout;
+  task.stderr = cmdResult.stderr;
+  task.stdout_size = Buffer.byteLength(cmdResult.stdout, 'utf-8');
+  task.stderr_size = Buffer.byteLength(cmdResult.stderr, 'utf-8');
+  task.exit_code = cmdResult.exit_code;
+  task.error_msg = cmdResult.stderr || (cmdResult.timed_out ? 'execution_timeout' : null);
   task.end_time = Date.now();
 
   // 取消检查与孤儿回收
@@ -90,15 +95,15 @@ async function processTask(
   if (cancelled) {
     task.status = 'cancelled';
     await writeCancelledResult(root, task);
-    await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, true));
+    await auditLogger.log(makeAuditEntry(task, policyResult, sshTarget, startTime, true));
     logger.warn(`[worker] task cancelled: task_id=${task.task_id}`);
     return;
   }
 
   // 正常回写
-  task.status = sshResult.exit_code === 0 ? 'completed' : 'failed';
+  task.status = cmdResult.exit_code === 0 ? 'completed' : 'failed';
   await writeResult(root, task, config.max_inline_bytes);
-  await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
+  await auditLogger.log(makeAuditEntry(task, policyResult, sshTarget, startTime, false));
   logger.info(`[worker] task done: task_id=${task.task_id} status=${task.status} exit_code=${task.exit_code} duration_ms=${Date.now() - startTime}`);
 }
 
@@ -208,6 +213,10 @@ export async function main(): Promise<void> {
   await heartbeatLoop.stop();
   await gcLoop.stop();
   watcher.stop();
+  // 关闭所有已建立的 SSH 会话（仅 Ssh2Executor 有 close 能力）
+  if (executor instanceof Ssh2Executor) {
+    await executor.close();
+  }
   await writeHeartbeat(root, {
     pid: process.pid,
     last_beat: Date.now(),

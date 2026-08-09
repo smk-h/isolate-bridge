@@ -17,10 +17,10 @@ executor: ssh2
 # 多设备：设备名 → SSH 连接信息（设备名仅限字母/数字/下划线/连字符）
 devices:
   default:
-    host: 192.168.1.100
+    host: 192.168.16.107
     port: 22
     username: root
-    password: your_password
+    password: root
   board-100:
     host: 192.168.1.100
     port: 22
