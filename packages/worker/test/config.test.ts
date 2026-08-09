@@ -15,7 +15,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseConfig, validateConfig } from '../src/config.js';
+import { parseConfig, validateConfig, isValidDeviceName, findSshConfig } from '../src/config.js';
 
 let roots: string[] = [];
 
@@ -52,6 +52,61 @@ describe('parseConfig from config file', () => {
     assert.equal(cfg.ssh_config?.username, 'ops');
     assert.equal(cfg.ssh_config?.password, 'secret');
     assert.equal(cfg.ssh_config?.private_key_path, null);
+  });
+
+  it('parses multiple devices from devices map', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      executor: 'ssh2',
+      devices: {
+        'board-100': { host: '192.168.1.100', port: 22, username: 'root', password: 'p1' },
+        'board-101': { host: '192.168.1.101', port: 2222, username: 'admin', private_key_path: '/k.pem' },
+      },
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    assert.equal(Object.keys(cfg.devices).length, 2);
+    assert.equal(cfg.devices['board-100']?.host, '192.168.1.100');
+    assert.equal(cfg.devices['board-100']?.password, 'p1');
+    assert.equal(cfg.devices['board-101']?.host, '192.168.1.101');
+    assert.equal(cfg.devices['board-101']?.port, 2222);
+    assert.equal(cfg.devices['board-101']?.private_key_path, '/k.pem');
+    // 无 default/ssh 时 ssh_config 为 null，但 devices 可查
+    assert.equal(cfg.ssh_config, null);
+    assert.equal(findSshConfig(cfg, 'board-100')?.host, '192.168.1.100');
+    assert.equal(findSshConfig(cfg, 'board-101')?.port, 2222);
+  });
+
+  it('skips devices with invalid names or missing host/username', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      executor: 'ssh2',
+      devices: {
+        'board-ok': { host: '10.0.0.1', username: 'u' },
+        'bad name!': { host: '10.0.0.2', username: 'u' },
+        'no-host': { username: 'u' },
+        'no-user': { host: '10.0.0.3' },
+      },
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    assert.deepEqual(Object.keys(cfg.devices), ['board-ok']);
+  });
+
+  it('supports devices.default and legacy ssh fallback', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      executor: 'ssh2',
+      devices: {
+        default: { host: '10.0.0.9', username: 'def', password: 'pd' },
+        'board-100': { host: '10.0.0.1', username: 'u' },
+      },
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    assert.equal(cfg.ssh_config?.host, '10.0.0.9');
+    assert.equal(cfg.devices.default?.host, '10.0.0.9');
+    assert.equal(findSshConfig(cfg)?.host, '10.0.0.9');
+    assert.equal(findSshConfig(cfg, 'board-100')?.host, '10.0.0.1');
+    // 未命中时回退到默认设备
+    assert.equal(findSshConfig(cfg, 'unknown')?.host, '10.0.0.9');
   });
 
   it('keeps private_key_path as optional alternative to password', () => {
@@ -167,11 +222,26 @@ describe('parseConfig from config file', () => {
   });
 });
 
+describe('isValidDeviceName', () => {
+  it('accepts letters, digits, underscore and hyphen', () => {
+    for (const name of ['board-100', 'board_100', 'Board100', 'a-b_c', '123']) {
+      assert.equal(isValidDeviceName(name), true, name);
+    }
+  });
+
+  it('rejects special symbols and spaces', () => {
+    for (const name of ['board name', 'board@100', 'board#100', 'board.100', 'board/100', '中文', '', 'a b']) {
+      assert.equal(isValidDeviceName(name), false, name);
+    }
+  });
+});
+
 describe('validateConfig', () => {
   it('rejects missing hgfs_root', () => {
     assert.throws(() => validateConfig({
       hgfs_root: '',
       executor_type: 'mock',
+      devices: {},
       ssh_config: null,
       audit_log_dir: '',
       policy_file: '',
@@ -191,6 +261,19 @@ describe('validateConfig', () => {
   it('passes for ssh2 config loaded from file', () => {
     const root = makeRoot();
     writeConfig(root, { executor: 'ssh2', ssh: { host: '10.0.0.5', username: 'ops' } });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    assert.doesNotThrow(() => validateConfig(cfg));
+  });
+
+  it('passes for ssh2 config with multiple devices', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      executor: 'ssh2',
+      devices: {
+        'board-100': { host: '10.0.0.1', username: 'u' },
+        'board-101': { host: '10.0.0.2', username: 'u' },
+      },
+    });
     const cfg = parseConfig(['--hgfs-root', root], {});
     assert.doesNotThrow(() => validateConfig(cfg));
   });

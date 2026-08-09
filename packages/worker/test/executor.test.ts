@@ -40,6 +40,7 @@ describe('createExecutor', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
       executor_type: 'mock',
+      devices: {},
       ssh_config: null,
       audit_log_dir: '/tmp/logs',
       policy_file: '/tmp/policy.json',
@@ -56,6 +57,7 @@ describe('createExecutor', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
       executor_type: 'ssh2',
+      devices: {},
       ssh_config: { host: 'h', port: 22, username: 'u', private_key_path: null, password: null },
       audit_log_dir: '/tmp/logs',
       policy_file: '/tmp/policy.json',

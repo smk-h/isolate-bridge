@@ -81,11 +81,17 @@ Worker 共有 14 个可配置项（其中 13 项可写入配置文件，`hgfs_ro
 | --- | --- | --- | --- | --- |
 | `hgfs_root` | `--hgfs-root` | `MSGFERRY_HGFS_ROOT` | **无（必填）** | 共享根目录绝对路径（Worker 侧 Windows 路径）；**只从命令行/环境变量读取**，不读配置文件 |
 | `executor` | `--executor` | `MSGFERRY_EXECUTOR` | `mock` | `mock` / `ssh2` |
-| `ssh.host` | `--ssh-host` | `MSGFERRY_SSH_HOST` | 无（ssh2 必填） | SSH 目标主机 |
-| `ssh.port` | `--ssh-port` | `MSGFERRY_SSH_PORT` | `22` | SSH 端口 |
-| `ssh.username` | `--ssh-user` | `MSGFERRY_SSH_USER` | 无（ssh2 必填） | SSH 登录用户 |
-| `ssh.password` | `--ssh-password` | `MSGFERRY_SSH_PASSWORD` | 无 | SSH 登录密码（推荐，与私钥二选一） |
-| `ssh.private_key_path` | `--ssh-key` | `MSGFERRY_SSH_KEY` | 无 | 私钥路径（可选，与密码二选一），Windows 路径 |
+| `devices` | - | - | 无 | **多设备（推荐）**：设备名 → SSH 连接信息的字典，设备名仅限字母/数字/下划线/连字符（推荐约定 `board-xxx`，不强制） |
+| `devices.<设备名>.host` | - | - | 无（ssh2 必填） | 该设备 SSH 目标主机 |
+| `devices.<设备名>.port` | - | - | `22` | 该设备 SSH 端口 |
+| `devices.<设备名>.username` | - | - | 无（ssh2 必填） | 该设备 SSH 登录用户 |
+| `devices.<设备名>.password` | - | - | 无 | 该设备 SSH 登录密码（推荐，与私钥二选一） |
+| `devices.<设备名>.private_key_path` | - | - | 无 | 该设备私钥路径（可选，与密码二选一），Windows 路径 |
+| `ssh.host`（兼容旧字段） | `--ssh-host` | `MSGFERRY_SSH_HOST` | 无（ssh2 必填） | 默认设备 SSH 目标主机；也可用 `devices.default` 表达 |
+| `ssh.port`（兼容旧字段） | `--ssh-port` | `MSGFERRY_SSH_PORT` | `22` | 默认设备 SSH 端口 |
+| `ssh.username`（兼容旧字段） | `--ssh-user` | `MSGFERRY_SSH_USER` | 无（ssh2 必填） | 默认设备 SSH 登录用户 |
+| `ssh.password`（兼容旧字段） | `--ssh-password` | `MSGFERRY_SSH_PASSWORD` | 无 | 默认设备 SSH 登录密码（推荐，与私钥二选一） |
+| `ssh.private_key_path`（兼容旧字段） | `--ssh-key` | `MSGFERRY_SSH_KEY` | 无 | 默认设备私钥路径（可选，与密码二选一），Windows 路径 |
 | `audit_log_dir` | `--audit-dir` | `MSGFERRY_AUDIT_DIR` | `<hgfs_root>/logs` | 审计日志目录；相对路径基于共享根目录解析，绝对路径原样使用 |
 | `policy_file` | `--policy-file` | `MSGFERRY_POLICY_FILE` | `<hgfs_root>/policy/policy.json` | 命令安全策略文件；相对路径基于共享根目录解析，绝对路径原样使用 |
 | `polling.initial_interval_ms` | `--polling-initial` | `MSGFERRY_POLLING_INITIAL` | `500` | 轮询起步间隔（ms），有任务后复位到此值 |
@@ -157,16 +163,24 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 
 ### 3. 完整示例
 
-仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/msgferry-worker/config.example.json`）。`audit_log_dir` / `policy_file` 写**相对共享根目录的相对路径**（`logs`、`policy/policy.json`），Worker 启动时按 `--hgfs-root` 解析为绝对路径；SSH 认证推荐使用**用户名 + 密码**，无需 Windows 私钥文件：
+仓库内示例见 `packages/worker/config.example.json`（构建产物 `dist/msgferry-worker/config.example.json`）。`audit_log_dir` / `policy_file` 写**相对共享根目录的相对路径**（`logs`、`policy/policy.json`），Worker 启动时按 `--hgfs-root` 解析为绝对路径；SSH 认证推荐使用**用户名 + 密码**，无需 Windows 私钥文件。多设备使用 `devices` 字典，设备名下放连接信息，后续可通过设备名查找到对应 IP 与账号：
 
 ```json
 {
   "executor": "ssh2",
-  "ssh": {
-    "host": "192.168.1.100",
-    "port": 22,
-    "username": "root",
-    "password": "your_password"
+  "devices": {
+    "board-100": {
+      "host": "192.168.1.100",
+      "port": 22,
+      "username": "root",
+      "password": "your_password"
+    },
+    "board-101": {
+      "host": "192.168.1.101",
+      "port": 22,
+      "username": "admin",
+      "password": "another_password"
+    }
   },
   "audit_log_dir": "logs",
   "policy_file": "policy/policy.json",
@@ -180,7 +194,11 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 }
 ```
 
-> 若不用密码，也可改用私钥认证：配置 `ssh.private_key_path` 为 Worker 本地私钥的绝对路径（按 Worker 所在 Windows 主机视角写，如 `C:\\Users\\msgferry\\.ssh\\id_ed25519`，JSON 中反斜杠需转义为 `\\`），与 `password` 二选一。
+**设备命名规则**：约定推荐使用 `board-xxx`，但不强制校验前缀，支持用户自定义设备名；**只能使用字母、数字、下划线、连字符**，不能使用空格或任何特殊符号（`@`、`#`、`.`、`/`、中文等均不允许）。解析时会自动跳过非法设备名或缺少 `host`/`username` 的设备。
+
+> 若仍沿用旧的单设备 `ssh` 字段（或 CLI/env 的 `--ssh-*`），会作为**默认设备**（等价于 `devices.default`），向后完全兼容。
+
+> 若不用密码，也可改用私钥认证：配置 `private_key_path` 为 Worker 本地私钥的绝对路径（按 Worker 所在 Windows 主机视角写，如 `C:\\Users\\msgferry\\.ssh\\id_ed25519`，JSON 中反斜杠需转义为 `\\`），与 `password` 二选一。
 
 ### 4. 字段说明
 
@@ -188,11 +206,17 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 | --- | --- | --- |
 | `hgfs_root` | string | 仅作注释/参考，**实际不会读取**（见「二、3」） |
 | `executor` | string | `mock`（本地模拟，不发起真实 SSH）或 `ssh2`（真实 SSH 执行） |
-| `ssh.host` | string | SSH 目标主机 IP 或域名；`ssh2` 模式必填 |
-| `ssh.port` | number/string | SSH 端口，默认 `22` |
-| `ssh.username` | string | SSH 登录用户名；`ssh2` 模式必填 |
-| `ssh.password` | string \| null | SSH 登录密码（推荐，与 `private_key_path` 二选一） |
-| `ssh.private_key_path` | string \| null | SSH 私钥文件绝对路径（可选，与 `password` 二选一），Windows 格式 |
+| `devices` | object | **多设备字典（推荐）**：设备名 → SSH 连接信息；设备名仅限字母/数字/下划线/连字符（推荐 `board-xxx`，不强制） |
+| `devices.<设备名>.host` | string | 该设备 SSH 目标主机 IP 或域名；`ssh2` 模式必填 |
+| `devices.<设备名>.port` | number/string | 该设备 SSH 端口，默认 `22` |
+| `devices.<设备名>.username` | string | 该设备 SSH 登录用户名；`ssh2` 模式必填 |
+| `devices.<设备名>.password` | string \| null | 该设备 SSH 登录密码（推荐，与 `private_key_path` 二选一） |
+| `devices.<设备名>.private_key_path` | string \| null | 该设备 SSH 私钥文件绝对路径（可选，与 `password` 二选一），Windows 格式 |
+| `ssh.host`（兼容） | string | 默认设备 SSH 目标主机 IP 或域名；`ssh2` 模式必填 |
+| `ssh.port`（兼容） | number/string | 默认设备 SSH 端口，默认 `22` |
+| `ssh.username`（兼容） | string | 默认设备 SSH 登录用户名；`ssh2` 模式必填 |
+| `ssh.password`（兼容） | string \| null | 默认设备 SSH 登录密码（推荐，与 `private_key_path` 二选一） |
+| `ssh.private_key_path`（兼容） | string \| null | 默认设备 SSH 私钥文件绝对路径（可选，与 `password` 二选一），Windows 格式 |
 | `audit_log_dir` | string | 审计日志输出目录；**相对路径基于共享根目录解析**（默认 `logs`），绝对路径原样使用 |
 | `policy_file` | string | 命令安全策略 JSON 文件路径；**相对路径基于共享根目录解析**（默认 `policy/policy.json`），绝对路径原样使用 |
 | `polling.initial_interval_ms` | number/string | 轮询起步间隔（毫秒） |
@@ -203,9 +227,10 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --config-file C:
 
 ### 5. 使用注意事项
 
-- **配置文件内路径分两类**：`audit_log_dir`、`policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析为绝对路径；SSH 认证推荐用**用户名 + 密码**（`ssh.username` / `ssh.password`），无需 Windows 私钥文件，若改用私钥认证则 `ssh.private_key_path` 是 **Worker 本地**路径，必须按 Worker 所在 Windows 主机填写绝对路径，注意 JSON 中反斜杠需转义（`\\`）；
-- **`ssh.*` 仅在 `executor` 为 `ssh2` 时生效**：mock 模式下即便配置了 `ssh.*` 字段也会被忽略（`ssh_config` 直接为 `null`）；
-- **密码与私钥二选一**：两者都配时优先使用私钥（见 `config.ts` 中 `private_key_path ?? null` / `password ?? null` 的处理）；两者都没配且 `executor=ssh2` 时，校验会报 `ssh_config.host and ssh_config.username are required`；
+- **配置文件内路径分两类**：`audit_log_dir`、`policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`logs`、`policy/policy.json`），Worker 按 `--hgfs-root` 自动解析为绝对路径；SSH 认证推荐用**用户名 + 密码**（`username` / `password`），无需 Windows 私钥文件，若改用私钥认证则 `private_key_path` 是 **Worker 本地**路径，必须按 Worker 所在 Windows 主机填写绝对路径，注意 JSON 中反斜杠需转义（`\\`）；
+- **多设备推荐用 `devices` 字典**：每个设备名（`board-xxx` 等）下放 `host`/`port`/`username`/`password` 等连接信息，后续可通过设备名查询对应 IP 与账号（`findSshConfig`）；设备名**只能使用字母/数字/下划线/连字符**，非法设备名与缺 `host`/`username` 的设备会被自动跳过；
+- **`devices` / `ssh.*` 仅在 `executor` 为 `ssh2` 时生效**：mock 模式下即便配置了也会被忽略（`ssh_config` 直接为 `null`）；
+- **密码与私钥二选一**：两者都配时优先使用私钥（见 `config.ts` 中 `private_key_path ?? null` / `password ?? null` 的处理）；两者都没配且 `executor=ssh2` 时，校验会报错；
 - **`audit_log_dir` / `policy_file` 建议省略**：默认值即共享根目录下的 `logs`、`policy/policy.json`，且自动跟随 `--hgfs-root` 定位，不受进程工作目录影响，也避免绝对路径在换机后失效；
 - 配置文件里**多余的未知字段会被忽略**，不会报错，方便以后扩展。
 
@@ -324,7 +349,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 原因：
 
-- `config/worker.json` 里装的都是 **Worker 专属参数**（`executor`、`ssh.*`、`heartbeat_interval_sec`、`result_ttl_sec`、`max_inline_bytes` 等），MCP 侧根本不关心；
+- `config/worker.json` 里装的都是 **Worker 专属参数**（`executor`、`devices`/`ssh.*`、`heartbeat_interval_sec`、`result_ttl_sec`、`max_inline_bytes` 等），MCP 侧根本不关心；
 - MCP 侧（内网 Linux）启动只需一个必填项 `MSGFERRY_HGFS_ROOT`（填 Linux 路径 `/mnt/hgfs/sharedir/vm_share`），其余 `max_wait_ms`、`polling.*` 都有内置默认值，一般不用配；
 - shared 里的 `config-file.ts` 工具和 `WORKER_CONFIG_FILE` 常量是通用的，未来若想让 MCP 侧也读配置文件（如新增 `<hgfs_root>/config/mcp.json`），可直接复用。
 
@@ -335,8 +360,8 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 **Q1：不创建 `config/worker.json` 会怎样？**
 不报错。Worker 按「命令行参数 > 环境变量 > 内置默认值」运行，等价于旧用法；`executor` 默认 `mock`。
 
-**Q2：`executor` 配成 `ssh2` 但 `ssh.host` / `ssh.username` 没配会怎样？**
-启动校验失败：`ssh_config is required when executor_type is ssh2`（或 `ssh_config.host and ssh_config.username are required for ssh2 mode`）。
+**Q2：`executor` 配成 `ssh2` 但没配任何设备（`devices` / `ssh.host` / `ssh.username`）会怎样？**
+启动校验失败：`ssh_config is required when executor_type is ssh2`。若提供了设备但某设备缺 `host`/`username`，会报 `device "<设备名>" requires host and username`；设备名非法会报 `invalid device name ...`。
 
 **Q3：改了 `config/worker.json` 需要重启 Worker 吗？**
 需要。配置文件只在**启动时读取一次**（`parseConfig`），运行中修改不会热加载，重启 Worker 生效。
@@ -345,7 +370,10 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 可以。`pickConfigNumber` 会把字符串 `"500"` 转成数字 `500`；转不成数字则回退默认值。
 
 **Q5：密码和私钥都写了用哪个？**
-优先私钥。`ssh_config.private_key_path` 非空即用私钥，否则用密码。推荐在配置文件中只配**用户名 + 密码**，无需 Windows 私钥文件。
+优先私钥。`private_key_path` 非空即用私钥，否则用密码。推荐在配置文件中只配**用户名 + 密码**，无需 Windows 私钥文件。
+
+**Q5.1：多个 SSH 设备怎么配置？后续怎么按设备名查找？**
+在配置文件的 `devices` 字典中，每个设备名下放 `host`/`port`/`username`/`password`（或 `private_key_path`）等连接信息，设备名约定 `board-xxx`（不强制），但**只能使用字母、数字、下划线、连字符**，不能含空格或特殊符号。Worker 通过 `findSshConfig(config, 设备名)` 即可按设备名查到对应 IP 与账号；未指定设备名或未命中时回退到默认设备（`devices.default` 或旧 `ssh` 字段/CLI/env）。
 
 **Q6：`config.example.json` 和部署用的 `worker.json` 是什么关系？**
 `config.example.json` 只是**示例/模板**（随构建产物分发，便于参考），不会参与解析。**Worker 启动时若发现 `<hgfs_root>\config\worker.json` 不存在，会自动从模板复制并重命名**（策略同理），无需手动操作；已存在则原样保留、不会被覆盖（详见「七、启动引导」）。
