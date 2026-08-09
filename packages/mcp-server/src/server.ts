@@ -3,180 +3,89 @@
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
  * File name  : server.ts
  * Author     : MsgFerry
- * Date       : 2026/08/08
+ * Date       : 2026/08/09
  * Version    : 0.0.1
- * Description: McpServer 创建、工具注册、StdioServerTransport 连接
+ * Description: McpServer 创建、工具批量注册、StdioServerTransport 连接（不含任何工具业务）
  * ======================================================
  */
+
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { McpServer } from '@modelcontextprotocol/server';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 
-import { z } from 'zod';
-
 import type { McpServerConfig } from './config.js';
-import {
-  submitSshTask,
-  queryTaskStatus,
-  cancelTask,
-  checkBridgeHealth,
-} from './tools.js';
+import { createAllTools } from './tools/index.js';
 
-/** MCP Server 名称 */
-const SERVER_NAME = '@smai-kit/msgferry-mcp-server';
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** MCP Server 版本 */
-const SERVER_VERSION = '0.0.1';
-
-/** 文本内容块类型 */
-interface TextContent {
-  type: 'text';
-  text: string;
-}
-
-/** 错误响应结构 */
-interface ErrorStructuredContent {
-  error_code: string;
-  error_msg: string;
-}
+/** 兜底 Server 信息（读取失败时使用，正常情况从 package.json 读取） */
+const FALLBACK_PKG = {
+  name: '@smai-kit/msgferry-mcp-server',
+  version: '0.0.0',
+};
 
 /**
- * 构造文本内容块
- * @param text - 文本内容
- * @returns 文本内容块对象
+ * 从 package.json 读取 Server 名称与版本，避免硬编码漂移。
+ * bundle 产物模式下 package.json 与 index.mjs 同目录；
+ * 源码/tsx 直跑模式下位于 src/ 的上一级。
  */
-function makeTextContent(text: string): TextContent {
-  return { type: 'text', text };
+function readPkgInfo(): { name: string; version: string } {
+  const candidates = [
+    resolve(__dirname, 'package.json'),     // dist/msgferry-mcp-server/package.json
+    resolve(__dirname, '../package.json'),  // packages/mcp-server/package.json
+  ];
+  for (const p of candidates) {
+    try {
+      const pkg = JSON.parse(readFileSync(p, 'utf-8')) as {
+        name?: string;
+        version?: string;
+      };
+      if (pkg?.name && pkg?.version) {
+        return { name: pkg.name, version: pkg.version };
+      }
+    } catch {
+      // 当前候选路径不可读，尝试下一个
+    }
+  }
+  return FALLBACK_PKG;
 }
 
-/**
- * 构造成功响应（content + structuredContent）
- * @param data - 结构化数据
- * @returns MCP CallToolResult 格式的成功响应
- */
-function makeSuccessResult(data: unknown): {
-  content: TextContent[];
-  structuredContent: unknown;
-} {
-  return {
-    content: [makeTextContent(JSON.stringify(data, null, 2))],
-    structuredContent: data,
-  };
-}
+const pkgInfo = readPkgInfo();
+
+/** 向客户端说明 Server 能力与工具语义 */
+const INSTRUCTIONS = [
+  'MsgFerry 内网 MCP Server：在隔离网络环境下，通过 HGFS 共享目录文件队列，把 SSH 命令投递给外网 Worker 执行并回读结果。',
+  '可用工具：',
+  '- submit_ssh_task：提交 SSH 命令到外网 Worker 执行，阻塞等待结果返回；',
+  '- query_task_status：按 task_id 查询任务当前状态与已有结果；',
+  '- cancel_task：取消任务，写入取消标记触发 Worker 孤儿结果回收；',
+  '- check_bridge_health：检查外网 Worker 存活状态，读取心跳判断是否在线。',
+  '提示：submit_ssh_task 为阻塞式调用，命令执行耗时较长时请配合足够大的客户端调用超时；',
+  '任务结果中的 status 字段取值：pending / processing / completed / failed / cancelled / timeout。',
+].join(' ');
 
 /**
- * 构造错误响应（isError + error_code + error_msg）
- * @param errorCode - 错误码
- * @param errorMsg - 错误信息
- * @returns MCP CallToolResult 格式的错误响应
- */
-function makeErrorResult(errorCode: string, errorMsg: string): {
-  content: TextContent[];
-  isError: true;
-  structuredContent: ErrorStructuredContent;
-} {
-  return {
-    content: [makeTextContent(JSON.stringify({ error_code: errorCode, error_msg: errorMsg }, null, 2))],
-    isError: true,
-    structuredContent: { error_code: errorCode, error_msg: errorMsg },
-  };
-}
-
-/**
- * 创建 McpServer 实例并注册四个工具
+ * 创建 McpServer 实例并批量注册全部工具。
+ * 新增工具只需在 tools/ 下新增文件并在族 index.ts 数组加一行，本函数永不改动。
  * @param config - MCP Server 配置
  * @param root - HGFS 共享根目录
  * @returns 已注册工具的 McpServer 实例
  */
 export function createMcpServer(config: McpServerConfig, root: string): McpServer {
-  const server = new McpServer({
-    name: SERVER_NAME,
-    version: SERVER_VERSION,
-  });
-
-  // 注册 submit_ssh_task 工具
-  server.registerTool(
-    'submit_ssh_task',
+  const server = new McpServer(
+    { name: pkgInfo.name, version: pkgInfo.version },
     {
-      title: 'Submit SSH Task',
-      description: '提交 SSH 命令到外网 Worker 执行，阻塞等待结果返回',
-      inputSchema: z.object({
-        cmd: z.string().describe('待执行 SSH 命令'),
-        timeout_sec: z.number().optional().describe('命令超时秒数，默认 30'),
-        task_id: z.string().optional().describe('自定义任务标识，未提供则自动生成'),
-      }),
-    },
-    async (args) => {
-      try {
-        const result = await submitSshTask(config, root, {
-          cmd: args.cmd,
-          timeout_sec: args.timeout_sec,
-          task_id: args.task_id,
-        });
-        return makeSuccessResult(result);
-      } catch (e) {
-        return makeErrorResult('unknown', String(e));
-      }
+      capabilities: { logging: {} },
+      instructions: INSTRUCTIONS,
     },
   );
 
-  // 注册 query_task_status 工具
-  server.registerTool(
-    'query_task_status',
-    {
-      title: 'Query Task Status',
-      description: '按 task_id 查询任务当前状态与已有结果',
-      inputSchema: z.object({
-        task_id: z.string().describe('任务唯一标识'),
-      }),
-    },
-    async (args) => {
-      try {
-        const result = await queryTaskStatus(root, args.task_id);
-        return makeSuccessResult(result);
-      } catch (e) {
-        return makeErrorResult('unknown', String(e));
-      }
-    },
-  );
-
-  // 注册 cancel_task 工具
-  server.registerTool(
-    'cancel_task',
-    {
-      title: 'Cancel Task',
-      description: '取消任务，写入取消标记触发 Worker 孤儿结果回收',
-      inputSchema: z.object({
-        task_id: z.string().describe('任务唯一标识'),
-      }),
-    },
-    async (args) => {
-      try {
-        const result = await cancelTask(root, args.task_id);
-        return makeSuccessResult(result);
-      } catch (e) {
-        return makeErrorResult('unknown', String(e));
-      }
-    },
-  );
-
-  // 注册 check_bridge_health 工具
-  server.registerTool(
-    'check_bridge_health',
-    {
-      title: 'Check Bridge Health',
-      description: '检查外网 Worker 存活状态，读取心跳判断是否在线',
-      inputSchema: z.object({}),
-    },
-    async () => {
-      try {
-        const result = await checkBridgeHealth(root);
-        return makeSuccessResult(result);
-      } catch (e) {
-        return makeErrorResult('unknown', String(e));
-      }
-    },
-  );
+  for (const { name, config: toolConfig, handler } of createAllTools(config, root)) {
+    server.registerTool(name, toolConfig, handler);
+  }
 
   return server;
 }

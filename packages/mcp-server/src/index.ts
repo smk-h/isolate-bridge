@@ -13,5 +13,6 @@ export { main } from './main.js';
 export * from './config.js';
 export * from './queue.js';
 export * from './backoff.js';
-export * from './tools.js';
+export * from './tool-registry.js';
 export * from './server.js';
+export * from './tools/index.js';
