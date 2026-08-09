@@ -20,7 +20,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { WORKER_CONFIG_FILE } from '@smai-kit/msgferry-shared';
-import { logger } from '@smai-kit/msgferry-shared';
+import { logger } from './log.js';
 
 /** 随产物分发的配置模板文件名 */
 const CONFIG_TEMPLATE_FILE = 'config.example.json';

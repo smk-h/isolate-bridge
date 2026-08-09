@@ -12,7 +12,7 @@
 import { writeHeartbeat, gcResults } from './queue.js';
 import type { Heartbeat } from './queue.js';
 
-import { logger } from '@smai-kit/msgferry-shared';
+import { logger } from './log.js';
 
 /** 心跳统计获取函数类型 */
 export type HeartbeatStatsGetter = () => { processedCount: number; queueDepth: number };

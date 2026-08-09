@@ -33,7 +33,7 @@ import { AuditLogger, formatSystemTime } from './audit.js';
 import type { AuditEntry } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 
-import { logger } from '@smai-kit/msgferry-shared';
+import { logger } from './log.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 /**

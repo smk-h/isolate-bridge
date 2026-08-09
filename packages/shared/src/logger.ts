@@ -23,9 +23,19 @@ import { isLogSaveEnabled, resolveLogDir } from './log-config.js';
  * 提供 info / error / warn / block 方法，调用时同时写入日志文件和 stderr。
  * 日志文件在首次写入时延迟创建，避免依赖模块加载时的环境变量时序。
  */
-class Logger {
+export class Logger {
   private logFile: string | null = null;
   private initialized = false;
+
+  /**
+   * @param defaultRel - 未设置 LOG_DIR 时的默认相对日志目录
+   *                     （基于 hgfs_root 解析），缺省取 LOG_DIRS.mcpServer
+   * @param label      - 日志文件头部标识（默认 "Mcp Server"，worker 侧传 "Worker"）
+   */
+  constructor(
+    private readonly defaultRel?: string,
+    private readonly label: string = 'Mcp Server',
+  ) {}
 
   /** 延迟初始化（首次写入时触发，确保 LOG_SAVE / LOG_DIR 已设置） */
   private ensureInit(): void {
@@ -34,10 +44,11 @@ class Logger {
 
     if (!isLogSaveEnabled()) return;
 
-    // 目录解析：LOG_DIR（绝对原样 / 相对基于 hgfs_root）> 默认 <hgfs_root>/logs/mcp-server
+    // 目录解析：LOG_DIR（绝对原样 / 相对基于 hgfs_root）> 默认 <hgfs_root>/logs/<label>
     const dir = resolveLogDir({
       hgfsRoot: process.env.MSGFERRY_HGFS_ROOT,
       logDir: process.env.LOG_DIR,
+      defaultRel: this.defaultRel,
     });
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
@@ -52,7 +63,7 @@ class Logger {
       const ts = `${f.y}.${f.m}.${f.d} ${f.hh}:${f.mm}:${f.ss}`;
       appendFileSync(
         this.logFile,
-        `=~=~=~=~=~=~=~=~=~=~=~= Mcp Server log ${ts} =~=~=~=~=~=~=~=~=~=~=~=\n`,
+        `=~=~=~=~=~=~=~=~=~=~=~= ${this.label} log ${ts} =~=~=~=~=~=~=~=~=~=~=~=\n`,
       );
     }
   }

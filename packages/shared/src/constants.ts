@@ -62,6 +62,8 @@ export const WAIT = {
 
 /** 业务日志默认目录（相对共享根目录，未设置 LOG_DIR 时使用） */
 export const LOG_DIRS = {
-  /** mcp-server/worker 业务日志默认目录 */
+  /** mcp-server 业务日志默认目录 */
   mcpServer: 'logs/mcp-server',
+  /** worker 业务日志默认目录 */
+  worker: 'logs/worker',
 } as const;
