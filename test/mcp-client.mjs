@@ -43,7 +43,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const mcpJs = resolve(projectRoot, 'dist', 'mcp-server', 'index.mjs');
+const mcpJs = resolve(projectRoot, 'dist', 'msgferry-mcp-server', 'index.mjs');
 
 // 解析命令行参数
 function parseArgs() {

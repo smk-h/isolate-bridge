@@ -35,7 +35,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const tempDir = join(__dirname, 'temp');
-const workerJs = resolve(projectRoot, 'dist', 'worker', 'index.mjs');
+const workerJs = resolve(projectRoot, 'dist', 'msgferry-worker', 'index.mjs');
 
 // 解析命令行参数
 function parseArgs() {
