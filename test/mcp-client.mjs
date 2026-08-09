@@ -13,6 +13,8 @@
  * 选项：
  *   --hgfs-root <path>    HGFS 共享根目录，默认 test/temp
  *   --max-wait <ms>       任务最大等待时长，默认 30000
+ *   --log-save <0|1>      是否启用 MCP Server 业务日志落盘，默认 1
+ *   --log-dir <path>      业务日志目录，缺省 <hgfs_root>/logs/mcp-server（可由 LOG_DIR 自定义）
  *
  * 行为：
  *   1. 通过 StdioClientTransport 启动并连接 MCP Server 子进程
@@ -51,6 +53,8 @@ function parseArgs() {
   const opts = {
     hgfsRoot: join(__dirname, 'temp'),
     maxWait: '30000',
+    logSave: '1',
+    logDir: undefined,
   };
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
@@ -60,9 +64,39 @@ function parseArgs() {
       case '--max-wait':
         opts.maxWait = args[++i];
         break;
+      case '--log-save':
+        opts.logSave = args[++i];
+        break;
+      case '--log-dir':
+        opts.logDir = args[++i];
+        break;
     }
   }
   return opts;
+}
+
+/**
+ * 组装传给 MCP Server 子进程的环境变量
+ * StdioClientTransport 默认只继承白名单环境变量（HOME / PATH / USER 等），
+ * LOG_SAVE / LOG_DIR / MSGFERRY_HGFS_ROOT 不会自动透传，需在此显式指定，
+ * 否则 MCP Server 的业务日志只会打到 stderr、不写文件。
+ */
+function buildServerEnv(opts) {
+  const env = {
+    // 让 MCP Server 的 Logger 缺省目录解析到 <hgfs_root>/logs/mcp-server
+    MSGFERRY_HGFS_ROOT: opts.hgfsRoot,
+  };
+  if (opts.logSave !== undefined) {
+    env.LOG_SAVE = opts.logSave;
+  } else if (process.env.LOG_SAVE !== undefined) {
+    env.LOG_SAVE = process.env.LOG_SAVE;
+  }
+  if (opts.logDir !== undefined) {
+    env.LOG_DIR = opts.logDir;
+  } else if (process.env.LOG_DIR !== undefined) {
+    env.LOG_DIR = process.env.LOG_DIR;
+  }
+  return env;
 }
 
 const opts = parseArgs();
@@ -169,6 +203,7 @@ async function main() {
   console.log(`  最大等待: ${opts.maxWait}ms`);
 
   // StdioClientTransport 会自动 spawn MCP Server 子进程
+  // env 显式透传日志相关变量（LOG_SAVE / LOG_DIR / MSGFERRY_HGFS_ROOT）
   const transport = new StdioClientTransport({
     command: 'node',
     args: [
@@ -176,6 +211,7 @@ async function main() {
       '--hgfs-root', opts.hgfsRoot,
       '--max-wait', opts.maxWait,
     ],
+    env: buildServerEnv(opts),
     stderr: 'pipe',
   });
 
