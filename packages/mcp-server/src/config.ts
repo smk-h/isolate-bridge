@@ -4,8 +4,10 @@
  * File name  : config.ts
  * Author     : MsgFerry
  * Date       : 2026/08/08
- * Version    : 0.0.1
+ * Version    : 0.0.2
  * Description: MCP Server 启动配置解析与校验
+ *   配置来源收敛：全部由环境变量注入，不再支持任何命令行参数；
+ *   环境变量未定义时回退内置默认值。
  * ======================================================
  */
 
@@ -24,41 +26,53 @@ export interface McpServerConfig {
 }
 
 /**
- * 从 argv 解析单个参数值，未提供则查环境变量
- * @param argv - 进程参数数组
- * @param flag - 参数标志（如 '--hgfs-root'）
- * @param envKey - 环境变量名（备选）
- * @returns 参数值，未提供返回 undefined
+ * 从环境变量读取单个配置值（空串视为未配置）
+ * @param env - 进程环境变量
+ * @param key - 环境变量名（如 'MSGFERRY_HGFS_ROOT'）
+ * @returns 环境变量值，未设置返回 undefined
  */
-function getArg(argv: string[], flag: string, envKey?: string): string | undefined {
-  const idx = argv.indexOf(flag);
-  if (idx !== -1 && idx + 1 < argv.length) {
-    return argv[idx + 1];
-  }
-  if (envKey && process.env[envKey]) {
-    return process.env[envKey];
-  }
-  return undefined;
+function getEnv(env: NodeJS.ProcessEnv, key: string): string | undefined {
+  const value = env[key];
+  return value !== undefined && value !== '' ? value : undefined;
 }
 
 /**
- * 解析启动参数与环境变量，产出 McpServerConfig
- * @param argv - process.argv
+ * 从环境变量读取数值型配置，非法值回退内置默认值
+ * @param env - 进程环境变量
+ * @param key - 环境变量名
+ * @param defaultValue - 内置默认值
+ * @returns 解析后的数值
+ */
+function getEnvNumber(env: NodeJS.ProcessEnv, key: string, defaultValue: number): number {
+  const raw = getEnv(env, key);
+  if (raw === undefined) {
+    return defaultValue;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : defaultValue;
+}
+
+/**
+ * 解析环境变量，产出 McpServerConfig
+ * - 仅读取 MSGFERRY_HGFS_ROOT / MSGFERRY_MAX_WAIT_MS /
+ *   MSGFERRY_POLLING_INITIAL / MSGFERRY_POLLING_MAX，不解析任何命令行参数；
+ * - 环境变量未定义时回退内置默认值（WAIT / POLLING）。
+ * @param _argv - process.argv（保留签名，忽略命令行参数）
  * @param env - process.env
  * @returns McpServerConfig 配置对象
  */
-export function parseConfig(argv: string[], _env: NodeJS.ProcessEnv): McpServerConfig {
-  const hgfsRoot = getArg(argv, '--hgfs-root', 'MSGFERRY_HGFS_ROOT') ?? '';
-  const maxWait = getArg(argv, '--max-wait', 'MSGFERRY_MAX_WAIT_MS');
-  const pollingInitial = getArg(argv, '--polling-initial', 'MSGFERRY_POLLING_INITIAL');
-  const pollingMax = getArg(argv, '--polling-max', 'MSGFERRY_POLLING_MAX');
+export function parseConfig(_argv: string[], env: NodeJS.ProcessEnv): McpServerConfig {
+  const hgfsRoot = getEnv(env, 'MSGFERRY_HGFS_ROOT') ?? '';
+  const maxWait = getEnvNumber(env, 'MSGFERRY_MAX_WAIT_MS', WAIT.default_max_wait_ms);
+  const pollingInitial = getEnvNumber(env, 'MSGFERRY_POLLING_INITIAL', POLLING.initial_interval_ms);
+  const pollingMax = getEnvNumber(env, 'MSGFERRY_POLLING_MAX', POLLING.max_interval_ms);
 
   return {
     hgfs_root: hgfsRoot,
-    max_wait_ms: maxWait ? parseInt(maxWait, 10) : WAIT.default_max_wait_ms,
+    max_wait_ms: maxWait,
     polling: {
-      initial_interval_ms: pollingInitial ? parseInt(pollingInitial, 10) : POLLING.initial_interval_ms,
-      max_interval_ms: pollingMax ? parseInt(pollingMax, 10) : POLLING.max_interval_ms,
+      initial_interval_ms: pollingInitial,
+      max_interval_ms: pollingMax,
     },
   };
 }

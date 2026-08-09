@@ -23,7 +23,7 @@ MsgFerry 的两侧进程物理上位于不同网络域，通过 **VMware HGFS �
 - Windows 宿主机侧（Worker 视角）：HGFS 共享文件夹被映射为盘符，如 `E:\MyLinux\VMware\sharedir\vm_share`；
 - 内网 Linux 侧（MCP 视角）：同一目录被挂载到 HGFS 挂载点，如 `/mnt/hgfs/sharedir/vm_share`。
 
-因此 **`--hgfs-root` 的取值随运行侧不同而不同**：Worker 启动时填 Windows 路径（`E:\MyLinux\VMware\sharedir\vm_share`），MCP 启动时填 Linux 路径（`/mnt/hgfs/sharedir/vm_share`）。两者指向同一目录即完成「共享」。
+因此 **共享根目录的取值随运行侧不同而不同**：Worker 通过命令行 `--hgfs-root` 填 Windows 路径（`E:\MyLinux\VMware\sharedir\vm_share`），MCP 通过环境变量 `MSGFERRY_HGFS_ROOT` 填 Linux 路径（`/mnt/hgfs/sharedir/vm_share`）。两者指向同一目录即完成「共享」。
 
 ### 2. 以前的痛点
 
@@ -43,7 +43,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share --executor ssh2 
 
 Worker 的全部可配置项其实分三类：
 
-1. **必须与 MCP 侧对齐的唯一耦合点**：`--hgfs-root`（HGFS 共享根目录，两侧各用自己的系统路径写法）。这是两侧进程**唯一需要保持一致的目录**，必须显式给出。
+1. **必须与 MCP 侧对齐的唯一耦合点**：HGFS 共享根目录（Worker 侧用命令行 `--hgfs-root`，MCP 侧用环境变量 `MSGFERRY_HGFS_ROOT`，两侧各用自己的系统路径写法）。这是两侧进程**唯一需要保持一致的目录**，必须显式给出。
 2. **日志两个字段（使能 + 目录）**：为保证日志模块能正常初始化和及时写入日志，必须由命令行在进程启动第一时间传递，**不进入配置文件**。
 3. **其余都是 Worker 自身参数**（SSH 连接、策略、轮询、心跳、结果保留期、输出上限……），都有内置默认值，仅在需要调整时才要显式配置，统一收敛到配置文件。
 
@@ -136,11 +136,11 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 
 - 共享根目录：`/mnt/hgfs/sharedir/vm_share`；
 - 队列子目录：`/mnt/hgfs/sharedir/vm_share/pending`、`/mnt/hgfs/sharedir/vm_share/completed` 等；
-- `.mcp.json` 里的 `MSGFERRY_HGFS_ROOT` 环境变量填：`/mnt/hgfs/sharedir/vm_share`。
+- `.mcp.json` 里的 `MSGFERRY_HGFS_ROOT` 环境变量填：`/mnt/hgfs/sharedir/vm_share`（MCP Server 的全部配置均由环境变量注入，不再支持命令行参数）。
 
 #### 1.3 对齐原则与注意事项
 
-- **`--hgfs-root` 两侧各自填自己系统的路径**，但指向同一目录：Worker 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 填 `/mnt/hgfs/sharedir/vm_share`；
+- **共享根目录两侧各自填自己系统的路径**，但指向同一目录：Worker 用命令行 `--hgfs-root` 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 用环境变量 `MSGFERRY_HGFS_ROOT` 填 `/mnt/hgfs/sharedir/vm_share`；
 - **配置文件由 Worker（Windows）消费**：SSH 认证推荐写**用户名 + 密码**（`ssh.username` / `ssh.password`），无需 Windows 私钥文件；若改用私钥认证，`ssh.private_key_path` 等 **Worker 本地**路径字段写 Windows 格式；而 `policy_file` 是**共享目录内**的路径字段，建议**省略或写相对共享根目录的相对路径**（`policy/policy.json`），Worker 会依据 `--hgfs-root` 自动解析为绝对路径，避免示例绝对路径在换机/重启后写错位置；
 - **YAML 中转义反斜杠**：若确需写 Windows 绝对路径（如 `C:\Users\...\id_ed25519`），YAML 中需写成双反斜杠 `\\`（或用单引号包裹避免转义），详见下节示例；
 - 路径分隔符由 Node.js `node:path` 的 `join` 自动处理，代码层无需区分平台，只需保证**传入的值符合运行侧系统习惯**。
@@ -346,15 +346,15 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 
 ### 1. MCP 侧与配置文件的边界
 
-**当前 MCP 侧完全不会读取 `<hgfs_root>/config/worker.yaml`**，该配置文件只有 Worker 会消费。本次配置收敛**只改 Worker**，MCP Server 的配置方式（`.mcp.json` 环境变量 + `--hgfs-root` 等命令行）保持不变。
+**当前 MCP 侧完全不会读取 `<hgfs_root>/config/worker.yaml`**，该配置文件只有 Worker 会消费。**MCP Server 的配置方式为纯环境变量注入**：`.mcp.json` 里的 `MSGFERRY_*` / `LOG_SAVE` / `LOG_DIR` 提供全部配置，不再支持任何命令行参数（`--hgfs-root` / `--max-wait` 等已删除，环境变量未定义时走内置默认值）。
 
 原因：
 
 - `config/worker.yaml` 里装的都是 **Worker 专属参数**（`executor`、`devices`/`ssh.*`、`heartbeat_interval_sec`、`result_ttl_sec`、`max_inline_bytes` 等），MCP 侧根本不关心；
-- MCP 侧（内网 Linux）启动只需一个必填项 `MSGFERRY_HGFS_ROOT`（填 Linux 路径 `/mnt/hgfs/sharedir/vm_share`），其余 `max_wait_ms`、`polling.*` 都有内置默认值，一般不用配；
+- MCP 侧（内网 Linux）启动只需一个必填项 `MSGFERRY_HGFS_ROOT`（填 Linux 路径 `/mnt/hgfs/sharedir/vm_share`），其余 `MSGFERRY_MAX_WAIT_MS`、`MSGFERRY_POLLING_*` 都有内置默认值，一般不用配；
 - shared 里的 `config-file.ts` 工具和 `WORKER_CONFIG_FILE` 常量是通用的，未来若想让 MCP 侧也读配置文件（如新增 `<hgfs_root>/config/mcp.json`），可直接复用。
 
-**两侧唯一的耦合点始终是 `--hgfs-root` / `MSGFERRY_HGFS_ROOT` 指向同一个共享目录**（Worker 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 填 `/mnt/hgfs/sharedir/vm_share`）。
+**两侧唯一的耦合点始终是共享根目录指向同一个物理目录**（Worker 用命令行 `--hgfs-root` 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 用环境变量 `MSGFERRY_HGFS_ROOT` 填 `/mnt/hgfs/sharedir/vm_share`）。
 
 ### 2. 常见问题（FAQ）
 

@@ -8,13 +8,16 @@
  * Description: 测试辅助脚本——以 MCP SDK Client 身份启动并连接 MCP Server，调用工具
  *
  * 用法：
- *   node test/mcp-client.mjs [options]
+ *   node test/mcp-client.mjs
  *
- * 选项：
- *   --hgfs-root <path>    HGFS 共享根目录，默认 test/temp
- *   --max-wait <ms>       任务最大等待时长，默认 30000
- *   --log-save <0|1>      是否启用 MCP Server 业务日志落盘，默认 1
- *   --log-dir <path>      业务日志目录，缺省 <hgfs_root>/logs/mcp-server（可由 LOG_DIR 自定义）
+ * 说明：脚本内部会自动为 MCP Server 子进程主动赋值全部所需环境变量，
+ *   无需在外部自行配置。外部环境变量存在时以外部为准，否则用内置默认值：
+ *   MSGFERRY_HGFS_ROOT         HGFS 共享根目录，默认 test/temp
+ *   MSGFERRY_MAX_WAIT_MS       任务最大等待时长，默认 30000
+ *   MSGFERRY_POLLING_INITIAL   轮询起步间隔，默认 500
+ *   MSGFERRY_POLLING_MAX       轮询退避上限，默认 3000
+ *   LOG_SAVE                   是否启用 MCP Server 业务日志落盘，默认 1
+ *   LOG_DIR                    业务日志目录，缺省 <hgfs_root>/logs/mcp-server
  *
  * 行为：
  *   1. 通过 StdioClientTransport 启动并连接 MCP Server 子进程
@@ -47,59 +50,58 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const mcpJs = resolve(projectRoot, 'dist', 'msgferry-mcp-server', 'index.mjs');
 
-// 解析命令行参数
-function parseArgs() {
-  const args = process.argv.slice(2);
+// 解析配置：外部环境变量存在时以外部为准，否则脚本内部主动赋值内置默认值，
+// 保证 `node test/mcp-client.mjs` 无需任何外部配置即可直接运行。
+// （注：MCP Server 已收敛为纯环境变量注入，不再解析命令行参数。）
+function resolveEnvVar(name, fallback) {
+  return process.env[name] !== undefined && process.env[name] !== ''
+    ? process.env[name]
+    : fallback;
+}
+
+function parseOpts() {
   const opts = {
-    hgfsRoot: join(__dirname, 'temp'),
-    maxWait: '30000',
-    logSave: '1',
-    logDir: undefined,
+    hgfsRoot: resolveEnvVar('MSGFERRY_HGFS_ROOT', join(__dirname, 'temp')),
+    maxWait: resolveEnvVar('MSGFERRY_MAX_WAIT_MS', '30000'),
+    pollingInitial: resolveEnvVar('MSGFERRY_POLLING_INITIAL', '500'),
+    pollingMax: resolveEnvVar('MSGFERRY_POLLING_MAX', '3000'),
+    logSave: resolveEnvVar('LOG_SAVE', '1'),
+    logDir: resolveEnvVar('LOG_DIR', undefined),
   };
-  for (let i = 0; i < args.length; i++) {
-    switch (args[i]) {
-      case '--hgfs-root':
-        opts.hgfsRoot = args[++i];
-        break;
-      case '--max-wait':
-        opts.maxWait = args[++i];
-        break;
-      case '--log-save':
-        opts.logSave = args[++i];
-        break;
-      case '--log-dir':
-        opts.logDir = args[++i];
-        break;
-    }
-  }
   return opts;
 }
 
 /**
  * 组装传给 MCP Server 子进程的环境变量
  * StdioClientTransport 默认只继承白名单环境变量（HOME / PATH / USER 等），
- * LOG_SAVE / LOG_DIR / MSGFERRY_HGFS_ROOT 不会自动透传，需在此显式指定，
- * 否则 MCP Server 的业务日志只会打到 stderr、不写文件。
+ * MSGFERRY_* / LOG_SAVE / LOG_DIR 不会自动透传，需在此显式指定。
+ * 脚本在内部为全部所需环境变量主动赋值（外部未设置则用内置默认值），
+ * 无需用户在运行 `node test/mcp-client.mjs` 前自行配置任何环境变量。
  */
 function buildServerEnv(opts) {
   const env = {
-    // 让 MCP Server 的 Logger 缺省目录解析到 <hgfs_root>/logs/mcp-server
+    // HGFS 共享根目录（必填）与等待/轮询可调参数，均由脚本主动赋值
     MSGFERRY_HGFS_ROOT: opts.hgfsRoot,
+    MSGFERRY_MAX_WAIT_MS: opts.maxWait,
+    MSGFERRY_POLLING_INITIAL: opts.pollingInitial,
+    MSGFERRY_POLLING_MAX: opts.pollingMax,
+    // 业务日志：LOG_SAVE 默认落盘，LOG_DIR 缺省由 MCP Server 解析到
+    // <hgfs_root>/logs/mcp-server（也可在此显式覆盖）
+    LOG_SAVE: opts.logSave,
   };
-  if (opts.logSave !== undefined) {
-    env.LOG_SAVE = opts.logSave;
-  } else if (process.env.LOG_SAVE !== undefined) {
-    env.LOG_SAVE = process.env.LOG_SAVE;
-  }
   if (opts.logDir !== undefined) {
     env.LOG_DIR = opts.logDir;
-  } else if (process.env.LOG_DIR !== undefined) {
-    env.LOG_DIR = process.env.LOG_DIR;
   }
   return env;
 }
 
-const opts = parseArgs();
+const opts = parseOpts();
+
+// 打印最终生效的环境变量，便于排查（外部覆盖 / 内置默认一目了然）
+console.log('[mcp-client] 生效的环境变量:');
+for (const [k, v] of Object.entries(buildServerEnv(opts))) {
+  console.log(`  ${k}=${v}`);
+}
 
 // 检查 MCP Server 编译产物
 if (!existsSync(mcpJs)) {
@@ -201,16 +203,13 @@ async function main() {
   console.log(`  脚本路径: ${mcpJs}`);
   console.log(`  共享目录: ${opts.hgfsRoot}`);
   console.log(`  最大等待: ${opts.maxWait}ms`);
+  console.log(`  轮询间隔: ${opts.pollingInitial}ms ~ ${opts.pollingMax}ms`);
 
   // StdioClientTransport 会自动 spawn MCP Server 子进程
-  // env 显式透传日志相关变量（LOG_SAVE / LOG_DIR / MSGFERRY_HGFS_ROOT）
+  // 配置全部由 env 注入（MSGFERRY_* / LOG_SAVE / LOG_DIR），不再传命令行参数
   const transport = new StdioClientTransport({
     command: 'node',
-    args: [
-      mcpJs,
-      '--hgfs-root', opts.hgfsRoot,
-      '--max-wait', opts.maxWait,
-    ],
+    args: [mcpJs],
     env: buildServerEnv(opts),
     stderr: 'pipe',
   });
