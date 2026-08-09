@@ -79,14 +79,21 @@ const genPackageJson = (pkgName: string) => {
 /**
  * 从 pnpm 的 .pnpm 目录拷贝依赖（解引用符号链接，拷贝真实文件）
  * pnpm .pnpm 目录格式: pkg@version/node_modules/<name>，
- * 同目录下还包含该包的全部传递依赖符号链接，一并解引用拷贝，
- * 保证「解压即用」的产物不缺失运行时依赖
+ * 同目录下还包含该包的全部传递依赖符号链接，一并解引用拷贝。
+ *
+ * 传递依赖自身还可能有子依赖（如 asn1 -> safer-buffer），
+ * 这些住在各自独立的虚拟根里，因此需递归处理，防止产物缺失运行时依赖。
+ * 用 visited 集合按包名去重，避免版本冲突时重复拷贝覆盖。
  */
 const copyPnpmDep = async (
   depName: string,
   pnpmDir: string,
-  destModules: string
+  destModules: string,
+  visited: Set<string> = new Set()
 ) => {
+  if (visited.has(depName)) return;
+  visited.add(depName);
+
   // pnpm .pnpm 目录下包名格式: pkg@version 或 @scope+pkg@version
   const escapedName = depName.replace(/\//g, "+");
   const dirs = readdirSync(pnpmDir).filter((d) =>
@@ -97,7 +104,7 @@ const copyPnpmDep = async (
     const virtualRoot = resolve(pnpmDir, dir, "node_modules");
     if (!existsSync(virtualRoot)) continue;
 
-    // 拷贝该包及其全部传递依赖（虚拟 store 顶层的符号链接）
+    // 拷贝该包及其全部依赖（虚拟 store 顶层的符号链接）
     const entries = readdirSync(virtualRoot);
     for (const entry of entries) {
       const src = resolve(virtualRoot, entry);
@@ -106,6 +113,11 @@ const copyPnpmDep = async (
         await ensureDir(resolve(dest, ".."));
         await copy(src, dest, { dereference: true });
         console.log(picocolors.gray(`[${entry}] Copied from .pnpm`));
+      }
+
+      // 递归拷贝子依赖的虚拟根；entry 为包自身时跳过
+      if (entry !== depName) {
+        await copyPnpmDep(entry, pnpmDir, destModules, visited);
       }
     }
   }
