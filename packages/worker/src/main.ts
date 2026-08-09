@@ -33,6 +33,7 @@ import { AuditLogger, formatSystemTime } from './audit.js';
 import type { AuditEntry } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 
+import { logger } from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 /**
@@ -56,6 +57,7 @@ async function processTask(
 ): Promise<void> {
   const startTime = Date.now();
   await transitionToProcessing(root, task, pid);
+  logger.info(`[worker] task processing: task_id=${task.task_id} pid=${pid}`);
 
   // 安全策略校验
   const policyResult = checkCommand(policyRule, task.cmd);
@@ -66,11 +68,15 @@ async function processTask(
     task.end_time = Date.now();
     await writeResult(root, task, config.max_inline_bytes);
     await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
+    logger.warn(`[worker] task blocked by policy: task_id=${task.task_id} reason=${policyResult.reason} cmd=${task.cmd}`);
     return;
   }
+  logger.info(`[worker] policy check passed: task_id=${task.task_id}`);
 
   // SSH 执行
+  logger.info(`[worker] ssh executing: task_id=${task.task_id} timeout_sec=${task.timeout_sec} cmd=${task.cmd}`);
   const sshResult = await executor.execute(task.cmd, task.timeout_sec);
+  logger.info(`[worker] ssh executed: task_id=${task.task_id} exit_code=${sshResult.exit_code} timed_out=${sshResult.timed_out}`);
   task.stdout = sshResult.stdout;
   task.stderr = sshResult.stderr;
   task.stdout_size = Buffer.byteLength(sshResult.stdout, 'utf-8');
@@ -85,6 +91,7 @@ async function processTask(
     task.status = 'cancelled';
     await writeCancelledResult(root, task);
     await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, true));
+    logger.warn(`[worker] task cancelled: task_id=${task.task_id}`);
     return;
   }
 
@@ -92,6 +99,7 @@ async function processTask(
   task.status = sshResult.exit_code === 0 ? 'completed' : 'failed';
   await writeResult(root, task, config.max_inline_bytes);
   await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
+  logger.info(`[worker] task done: task_id=${task.task_id} status=${task.status} exit_code=${task.exit_code} duration_ms=${Date.now() - startTime}`);
 }
 
 /**
@@ -123,6 +131,14 @@ export async function main(): Promise<void> {
   const config = parseConfig(process.argv, process.env);
   validateConfig(config);
   const root = config.hgfs_root;
+
+  logger.info(`[worker] starting... cwd: ${process.cwd()}`);
+  logger.info(`[worker] hgfs_root: ${root}`);
+  logger.info(`[worker] executor: ${config.executor_type}`);
+  logger.info(`[worker] audit_log_dir: ${config.audit_log_dir}`);
+  logger.info(`[worker] policy_file: ${config.policy_file}`);
+  logger.info(`[worker] heartbeat_interval_sec: ${config.heartbeat_interval_sec}`);
+  logger.info(`[worker] result_ttl_sec: ${config.result_ttl_sec}`);
 
   // 启动引导：自动补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
   await ensureSharedTemplates(root);
@@ -165,20 +181,22 @@ export async function main(): Promise<void> {
           if (!locked) {
             continue;
           }
+          logger.info(`[worker] task acquired: task_id=${taskId}`);
           const task = await readTask(root, taskId);
           await processTask(config, root, task, process.pid, policyRule, executor, auditLogger);
           processedCount++;
         } catch (err) {
-          console.error(`[main] task ${taskId} failed:`, err);
+          logger.error(`[worker] task ${taskId} failed:`, err);
         }
       }
     } catch (err) {
-      console.error('[main] loop error:', err);
+      logger.error('[worker] loop error:', err);
       await sleep(backoff.next());
     }
   }
 
   // 优雅退出
+  logger.info(`[worker] shutting down... processed=${processedCount}`);
   await heartbeatLoop.stop();
   await gcLoop.stop();
   watcher.stop();
@@ -191,6 +209,7 @@ export async function main(): Promise<void> {
   });
   await auditLogger.flush();
   await auditLogger.close();
+  logger.info('[worker] shutdown complete');
   process.exit(0);
 }
 
@@ -202,7 +221,7 @@ function sleep(ms: number): Promise<void> {
 // 作为主模块运行时自动调用 main
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
-    console.error('[main] fatal:', err);
+    logger.error('[worker] fatal:', err);
     process.exit(1);
   });
 }
