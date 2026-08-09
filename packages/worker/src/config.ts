@@ -13,7 +13,7 @@
  */
 
 import { existsSync, accessSync, constants } from 'node:fs';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import {
   POLLING,
@@ -74,12 +74,33 @@ export interface WorkerConfigFileShape {
   max_inline_bytes?: number | string;
 }
 
-/** 默认审计日志目录名 */
+/** 默认审计日志目录名（相对共享根目录） */
 const DEFAULT_AUDIT_DIR_NAME = 'logs';
 /** 默认策略文件名 */
 const DEFAULT_POLICY_FILE_NAME = 'policy.json';
-/** 默认策略子目录名 */
+/** 默认策略子目录名（相对共享根目录） */
 const DEFAULT_POLICY_DIR_NAME = 'policy';
+
+/**
+ * 将配置来源的路径值解析为最终绝对路径
+ * - 来源值缺省时：相对共享根目录的内置默认值（<root>/logs、<root>/policy/policy.json）
+ * - 来源值为相对路径时：基于共享根目录解析为绝对路径
+ * - 来源值为绝对路径时：原样使用（保留 CLI/环境变量/配置文件的显式指定能力）
+ * @param value - 配置来源值（CLI/env/配置文件，可能为 undefined）
+ * @param hgfsRoot - HGFS 共享根目录绝对路径
+ * @param defaultRel - 内置默认相对路径（如 logs、policy/policy.json）
+ * @returns 解析后的绝对路径
+ */
+function resolvePathUnderRoot(
+  value: string | undefined,
+  hgfsRoot: string,
+  defaultRel: string,
+): string {
+  if (value !== undefined && value !== '') {
+    return isAbsolute(value) ? value : join(hgfsRoot, value);
+  }
+  return join(hgfsRoot, defaultRel);
+}
 
 /**
  * 解析配置文件路径：--config-file / MSGFERRY_CONFIG_FILE > 共享根目录下的默认约定
@@ -186,6 +207,7 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     envKey: 'MSGFERRY_POLICY_FILE',
     fileValue: file.policy_file,
   });
+
   const pollingInitial = pickConfigNumber({
     argv,
     env,
@@ -242,8 +264,10 @@ export function parseConfig(argv: string[], env: NodeJS.ProcessEnv): WorkerConfi
     hgfs_root: hgfsRoot,
     executor_type: executorType,
     ssh_config: sshConfig,
-    audit_log_dir: auditDir ?? join(hgfsRoot, DEFAULT_AUDIT_DIR_NAME),
-    policy_file: policyFile ?? join(hgfsRoot, DEFAULT_POLICY_DIR_NAME, DEFAULT_POLICY_FILE_NAME),
+    // audit_log_dir / policy_file 默认依据共享根目录相对定位：
+    // 显式传入绝对路径则原样使用；相对路径或未传则解析为 <hgfs_root>/logs、<hgfs_root>/policy/policy.json
+    audit_log_dir: resolvePathUnderRoot(auditDir, hgfsRoot, DEFAULT_AUDIT_DIR_NAME),
+    policy_file: resolvePathUnderRoot(policyFile, hgfsRoot, join(DEFAULT_POLICY_DIR_NAME, DEFAULT_POLICY_FILE_NAME)),
     polling: {
       initial_interval_ms: pollingInitial,
       max_interval_ms: pollingMax,

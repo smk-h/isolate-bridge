@@ -65,6 +65,56 @@ describe('parseConfig from config file', () => {
     assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
   });
 
+  it('resolves relative audit_log_dir/policy_file under hgfs_root', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      audit_log_dir: 'logs',
+      policy_file: 'policy/policy.json',
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    assert.equal(cfg.audit_log_dir, join(root, 'logs'));
+    assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
+  });
+
+  it('keeps absolute audit_log_dir/policy_file as-is', () => {
+    const root = makeRoot();
+    writeConfig(root, {
+      audit_log_dir: '/var/log/msgferry',
+      policy_file: '/etc/msgferry/policy.json',
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    assert.equal(cfg.audit_log_dir, '/var/log/msgferry');
+    assert.equal(cfg.policy_file, '/etc/msgferry/policy.json');
+  });
+
+  it('handles Windows drive-letter values per platform', () => {
+    const root = makeRoot();
+    const winLogs = 'E:\\MyLinux\\VMware\\sharedir\\vm_share\\logs';
+    writeConfig(root, {
+      audit_log_dir: winLogs,
+      policy_file: 'policy/policy.json',
+    });
+    const cfg = parseConfig(['--hgfs-root', root], {});
+    if (process.platform === 'win32') {
+      // Windows 上盘符路径被视为绝对路径，原样保留
+      assert.equal(cfg.audit_log_dir, 'E:\\MyLinux\\VMware\\sharedir\\vm_share\\logs');
+    } else {
+      // Linux 上盘符字符串被当作相对路径，基于共享根目录解析，不会落到 /workspace/E:... 这类错误位置
+      assert.equal(cfg.audit_log_dir, join(root, 'E:\\MyLinux\\VMware\\sharedir\\vm_share\\logs'));
+    }
+    assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
+  });
+
+  it('resolves relative CLI --audit-dir/--policy-file under hgfs_root', () => {
+    const root = makeRoot();
+    const cfg = parseConfig(
+      ['--hgfs-root', root, '--audit-dir', 'logs', '--policy-file', 'policy/policy.json'],
+      {},
+    );
+    assert.equal(cfg.audit_log_dir, join(root, 'logs'));
+    assert.equal(cfg.policy_file, join(root, 'policy', 'policy.json'));
+  });
+
   it('CLI args override config file values', () => {
     const root = makeRoot();
     writeConfig(root, { executor: 'ssh2', ssh: { host: '10.0.0.5', username: 'ops' } });

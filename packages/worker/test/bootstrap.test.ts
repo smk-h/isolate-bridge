@@ -46,6 +46,10 @@ describe('ensureSharedTemplates', () => {
     const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
     assert.equal(cfg.executor, 'ssh2');
     assert.equal(cfg.ssh?.host, '192.168.1.100');
+    // 模板中 audit_log_dir / policy_file 应为相对共享根目录的路径，
+    // 由 Worker 按 --hgfs-root 解析为绝对路径，避免示例 Windows 绝对路径污染重启后配置
+    assert.equal(cfg.audit_log_dir, 'logs');
+    assert.equal(cfg.policy_file, 'policy/policy.json');
 
     const pol = JSON.parse(readFileSync(polPath, 'utf-8'));
     assert.ok(Array.isArray(pol.whitelist_prefixes), 'policy whitelist_prefixes should be array');
