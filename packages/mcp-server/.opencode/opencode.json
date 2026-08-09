@@ -10,7 +10,8 @@
         "MSGFERRY_HGFS_ROOT": "/mnt/hgfs/sharedir/vm_share",
         "MSGFERRY_MAX_WAIT_MS": "30000",
         "MSGFERRY_POLLING_INITIAL": "500",
-        "MSGFERRY_POLLING_MAX": "3000"
+        "MSGFERRY_POLLING_MAX": "3000",
+        "LOG_SAVE": "1"
       }
     }
   }
