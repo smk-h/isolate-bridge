@@ -1,0 +1,61 @@
+@startuml 文件交换服务器模式框架图
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #7A93BE
+  BorderThickness 1
+  FontColor #1F2933
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #E0B400
+  FontColor #5C4A00
+  FontSize 10
+}
+
+title 文件交换服务器模式（exchange）总体框架
+
+rectangle "内网侧 MCP Server\n(本地 hgfs_root)" as mcp #DCE9FB {
+  rectangle "同步适配层 sync.ts\npush/pull 模板命令" as sync #DDF3E4
+  rectangle "队列层 queue.ts\noutbound/inbound 读写" as q
+  rectangle "工具层\nsubmit / query / cancel / health" as tools
+}
+
+rectangle "文件交换服务器\n(单向信箱)" as fs #FFF3D6 {
+  rectangle "outbound/\ntask_<id>.json\ncancel_<id>.marker" as out
+  rectangle "inbound/\nresult_<id>.json\n<id>.stdout\nheartbeat.json" as inbound
+}
+
+rectangle "外网侧 Worker\n(挂载 vm_shared)" as worker #DCE9FB {
+  rectangle "queue_mode=exchange\n扫 outbound/ 领任务" as wq
+  rectangle "SSH / mock 执行器" as exec
+  rectangle "结果回写 inbound/\n心跳双写" as wr
+}
+
+mcp -down-> fs : -pd 单文件 push\n(内网→服务器)
+fs -down-> worker : 服务器天然同步\n(Windows 挂载)
+worker -right-> fs : -g 整目录 pull\n(worker→inbound)
+fs -up-> mcp : -g 整目录拉回\n(服务器→内网)
+
+note bottom of mcp
+  内网本地目录：
+  outbound/（只写）
+  inbound/（只读镜像，禁写）
+end note
+
+note bottom of worker
+  Worker 直接读写服务器：
+  扫 outbound/ 领任务
+  结果回写 inbound/
+  processing/lock 为本地中间态
+end note
+
+@enduml
