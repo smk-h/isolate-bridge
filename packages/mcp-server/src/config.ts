@@ -13,7 +13,10 @@
 
 import { existsSync, accessSync, constants } from 'node:fs';
 
-import { WAIT, POLLING } from '@smai-kit/msgferry-shared';
+import { WAIT, POLLING, SYNC } from '@smai-kit/msgferry-shared';
+
+/** 同步模式：shared = 共享目录（免同步）；exchange = 文件交换服务器（手动同步） */
+export type SyncMode = 'shared' | 'exchange';
 
 /** MCP Server 启动配置 */
 export interface McpServerConfig {
@@ -23,6 +26,11 @@ export interface McpServerConfig {
     initial_interval_ms: number;        // 轮询起步间隔
     max_interval_ms: number;            // 轮询退避上限
   };
+  sync_mode: SyncMode;                  // 同步模式：共享目录 / 文件交换服务器
+  sync_push_cmd?: string;               // push 模板命令（含 {src}/{dst} 占位符），exchange 模式必填
+  sync_pull_cmd?: string;               // pull 静态命令（整目录拉回），exchange 模式必填
+  sync_timeout_ms: number;              // 单次同步命令超时（毫秒）
+  sync_retries: number;                 // 同步失败退避重试次数
 }
 
 /**
@@ -55,8 +63,11 @@ function getEnvNumber(env: NodeJS.ProcessEnv, key: string, defaultValue: number)
 /**
  * 解析环境变量，产出 McpServerConfig
  * - 仅读取 MSGFERRY_HGFS_ROOT / MSGFERRY_MAX_WAIT_MS /
- *   MSGFERRY_POLLING_INITIAL / MSGFERRY_POLLING_MAX，不解析任何命令行参数；
- * - 环境变量未定义时回退内置默认值（WAIT / POLLING）。
+ *   MSGFERRY_POLLING_INITIAL / MSGFERRY_POLLING_MAX /
+ *   MSGFERRY_SYNC_PUSH_CMD / MSGFERRY_SYNC_PULL_CMD /
+ *   MSGFERRY_SYNC_TIMEOUT_MS / MSGFERRY_SYNC_RETRIES，不解析任何命令行参数；
+ * - 配置了任一同步命令 → sync_mode='exchange'（文件交换服务器模式）；
+ * - 未配置任何同步命令 → sync_mode='shared'（共享目录模式，同步全部短路）。
  * @param _argv - process.argv（保留签名，忽略命令行参数）
  * @param env - process.env
  * @returns McpServerConfig 配置对象
@@ -67,6 +78,14 @@ export function parseConfig(_argv: string[], env: NodeJS.ProcessEnv): McpServerC
   const pollingInitial = getEnvNumber(env, 'MSGFERRY_POLLING_INITIAL', POLLING.initial_interval_ms);
   const pollingMax = getEnvNumber(env, 'MSGFERRY_POLLING_MAX', POLLING.max_interval_ms);
 
+  // 文件交换服务器模式：任一同步命令被配置即进入 exchange，共享目录模式全部短路
+  const syncPushCmd = getEnv(env, 'MSGFERRY_SYNC_PUSH_CMD');
+  const syncPullCmd = getEnv(env, 'MSGFERRY_SYNC_PULL_CMD');
+  const syncMode: SyncMode =
+    syncPushCmd !== undefined || syncPullCmd !== undefined ? 'exchange' : 'shared';
+  const syncTimeout = getEnvNumber(env, 'MSGFERRY_SYNC_TIMEOUT_MS', SYNC.timeout_ms);
+  const syncRetries = getEnvNumber(env, 'MSGFERRY_SYNC_RETRIES', SYNC.retries);
+
   return {
     hgfs_root: hgfsRoot,
     max_wait_ms: maxWait,
@@ -74,6 +93,11 @@ export function parseConfig(_argv: string[], env: NodeJS.ProcessEnv): McpServerC
       initial_interval_ms: pollingInitial,
       max_interval_ms: pollingMax,
     },
+    sync_mode: syncMode,
+    sync_push_cmd: syncPushCmd,
+    sync_pull_cmd: syncPullCmd,
+    sync_timeout_ms: syncTimeout,
+    sync_retries: syncRetries,
   };
 }
 
