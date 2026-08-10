@@ -6,4 +6,5 @@ dist/
 .env.local
 *.tsbuildinfo
 test/temp
+test/temp_server
 .pnpm-store/

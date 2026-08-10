@@ -11,7 +11,7 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, existsSync, utimesSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, existsSync, utimesSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -27,6 +27,15 @@ import {
   writeHeartbeat,
   readHeartbeat,
   gcResults,
+  initExchangeDirs,
+  listOutbound,
+  readOutboundTask,
+  writeResultExchange,
+  checkCancelledExchange,
+  writeCancelledResultExchange,
+  writeHeartbeatExchange,
+  removeCancelMarker,
+  gcInboundResults,
 } from '../src/queue.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
@@ -193,5 +202,133 @@ describe('queue gcResults', () => {
     const cleaned = await gcResults(testRoot, 600);
     assert.equal(cleaned, 0);
     assert.ok(existsSync(join(testRoot, 'completed', 'g2.json')));
+  });
+});
+
+// ────────────────────────────────────────────────────────────────
+// 文件交换服务器模式（exchange）：单向信箱目录操作
+// ────────────────────────────────────────────────────────────────
+
+describe('exchange initExchangeDirs', () => {
+  it('应创建 outbound/ 与 inbound/ 目录', async () => {
+    await initExchangeDirs(testRoot);
+    assert.ok(existsSync(join(testRoot, 'outbound')));
+    assert.ok(existsSync(join(testRoot, 'inbound')));
+  });
+});
+
+describe('exchange listOutbound', () => {
+  it('应列出 .json 任务并过滤 .tmp 与取消标记', async () => {
+    await initExchangeDirs(testRoot);
+    writeFileSync(join(testRoot, 'outbound', 't1.json'), '{}');
+    writeFileSync(join(testRoot, 'outbound', 't2.tmp'), '{}');
+    writeFileSync(join(testRoot, 'outbound', 'cancel_t3.marker'), '');
+    assert.deepEqual(await listOutbound(testRoot), ['t1']);
+  });
+});
+
+describe('exchange readOutboundTask', () => {
+  it('应正确读取 outbound 任务 JSON', async () => {
+    await initExchangeDirs(testRoot);
+    const task = makeTask({ task_id: 'e1' });
+    writeFileSync(join(testRoot, 'outbound', 'e1.json'), JSON.stringify(task));
+    const result = await readOutboundTask(testRoot, 'e1');
+    assert.equal(result.task_id, 'e1');
+    assert.equal(result.cmd, 'docker ps');
+  });
+});
+
+describe('exchange writeResultExchange', () => {
+  it('小输出应内联写入 inbound/result_<id>.json', async () => {
+    await initExchangeDirs(testRoot);
+    const task = makeTask({ task_id: 'ew1', status: 'completed', stdout: 'ok', stdout_size: 2 });
+    await writeResultExchange(testRoot, task, 65536);
+    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ew1.json')));
+    const saved = JSON.parse(readFileSync(join(testRoot, 'inbound', 'result_ew1.json'), 'utf-8'));
+    assert.equal(saved.status, 'completed');
+  });
+
+  it('大输出应随结果批次同目录（不写 outputs/）', async () => {
+    await initExchangeDirs(testRoot);
+    const big = 'x'.repeat(70000);
+    const task = makeTask({ task_id: 'ew2', status: 'completed', stdout: big, stdout_size: 70000 });
+    await writeResultExchange(testRoot, task, 65536);
+    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ew2.json')));
+    assert.ok(existsSync(join(testRoot, 'inbound', 'ew2.stdout')));
+    assert.ok(!existsSync(join(testRoot, 'outputs', 'ew2.stdout')));
+    assert.equal(task.truncated, true);
+    assert.ok(task.stdout_overflow_path?.includes('inbound/ew2.stdout'));
+  });
+
+  it('failed 状态也应写入 inbound/result_<id>.json', async () => {
+    await initExchangeDirs(testRoot);
+    const task = makeTask({ task_id: 'ew3', status: 'failed' });
+    await writeResultExchange(testRoot, task, 65536);
+    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ew3.json')));
+  });
+});
+
+describe('exchange checkCancelledExchange', () => {
+  it('无标记返回 false', async () => {
+    await initExchangeDirs(testRoot);
+    assert.equal(await checkCancelledExchange(testRoot, 'ec1'), false);
+  });
+
+  it('有标记返回 true', async () => {
+    await initExchangeDirs(testRoot);
+    writeFileSync(join(testRoot, 'outbound', 'cancel_ec2.marker'), '');
+    assert.equal(await checkCancelledExchange(testRoot, 'ec2'), true);
+  });
+});
+
+describe('exchange writeCancelledResultExchange', () => {
+  it('应写入 inbound/result_<id>.result', async () => {
+    await initExchangeDirs(testRoot);
+    const task = makeTask({ task_id: 'ecc1', status: 'cancelled' });
+    await writeCancelledResultExchange(testRoot, task);
+    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ecc1.result')));
+  });
+});
+
+describe('exchange heartbeat', () => {
+  it('writeHeartbeatExchange 应写入 inbound/heartbeat.json', async () => {
+    await initExchangeDirs(testRoot);
+    await writeHeartbeatExchange(testRoot, {
+      pid: 42, last_beat: 1000, processed_count: 7, queue_depth: 3, shutdown_at: null,
+    });
+    const hb = JSON.parse(readFileSync(join(testRoot, 'inbound', 'heartbeat.json'), 'utf-8'));
+    assert.equal(hb?.pid, 42);
+    assert.equal(hb?.processed_count, 7);
+  });
+});
+
+describe('exchange removeCancelMarker', () => {
+  it('应删除已消费任务的取消标记', async () => {
+    await initExchangeDirs(testRoot);
+    writeFileSync(join(testRoot, 'outbound', 'cancel_rm1.marker'), '');
+    await removeCancelMarker(testRoot, 'rm1');
+    assert.ok(!existsSync(join(testRoot, 'outbound', 'cancel_rm1.marker')));
+  });
+
+  it('标记不存在时静默忽略', async () => {
+    await initExchangeDirs(testRoot);
+    await removeCancelMarker(testRoot, 'rm2');
+    assert.ok(true);
+  });
+});
+
+describe('exchange gcInboundResults', () => {
+  it('应清理过期结果文件并保留心跳', async () => {
+    await initExchangeDirs(testRoot);
+    await writeResultExchange(testRoot, makeTask({ task_id: 'gx1', status: 'completed' }), 65536);
+    await writeHeartbeatExchange(testRoot, {
+      pid: 1, last_beat: Date.now(), processed_count: 0, queue_depth: 0, shutdown_at: null,
+    });
+    const oldTime = new Date(Date.now() - 3600 * 1000);
+    utimesSync(join(testRoot, 'inbound', 'result_gx1.json'), oldTime, oldTime);
+    const cleaned = await gcInboundResults(testRoot, 600);
+    assert.ok(cleaned >= 1);
+    assert.ok(!existsSync(join(testRoot, 'inbound', 'result_gx1.json')));
+    assert.ok(existsSync(join(testRoot, 'inbound', 'heartbeat.json')));
   });
 });
