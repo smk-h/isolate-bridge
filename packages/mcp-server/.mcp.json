@@ -13,6 +13,23 @@
         "MSGFERRY_POLLING_MAX": "3000",
         "LOG_SAVE": "1"
       }
+    },
+    "msgferry-bridge-exchange": {
+      "command": "node",
+      "args": [
+        "./index.mjs"
+      ],
+      "env": {
+        "MSGFERRY_HGFS_ROOT": "/mnt/hgfs/sharedir/vm_share",
+        "MSGFERRY_MAX_WAIT_MS": "120000",
+        "MSGFERRY_POLLING_INITIAL": "500",
+        "MSGFERRY_POLLING_MAX": "3000",
+        "MSGFERRY_SYNC_PUSH_CMD": "file_transfer -pd {src} {dst}",
+        "MSGFERRY_SYNC_PULL_CMD": "file_transfer -g nfs/vm_shared/inbound /mnt/hgfs/sharedir/vm_share/inbound",
+        "MSGFERRY_SYNC_TIMEOUT_MS": "30000",
+        "MSGFERRY_SYNC_RETRIES": "3",
+        "LOG_SAVE": "1"
+      }
     }
   }
 }
