@@ -30,7 +30,7 @@ import {
 export function createTaskTools(config: McpServerConfig, root: string): ToolEntry[] {
   return [
     mcpDefineTool('submit_ssh_task', submitSshTaskConfig, createSubmitSshTaskHandler(config, root)),
-    mcpDefineTool('query_task_status', queryTaskStatusConfig, createQueryTaskStatusHandler(root)),
-    mcpDefineTool('cancel_task', cancelTaskConfig, createCancelTaskHandler(root)),
+    mcpDefineTool('query_task_status', queryTaskStatusConfig, createQueryTaskStatusHandler(config, root)),
+    mcpDefineTool('cancel_task', cancelTaskConfig, createCancelTaskHandler(config, root)),
   ];
 }

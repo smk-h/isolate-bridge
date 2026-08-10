@@ -12,14 +12,15 @@
 import { mcpDefineTool } from '../../tool-registry.js';
 import type { ToolEntry } from '../../tool-registry.js';
 
+import type { McpServerConfig } from '../../config.js';
 import {
   checkBridgeHealthConfig,
   createCheckBridgeHealthHandler,
 } from './check.js';
 
 /** 健康检查族工具列表（bridge_health） */
-export function createHealthTools(root: string): ToolEntry[] {
+export function createHealthTools(config: McpServerConfig, root: string): ToolEntry[] {
   return [
-    mcpDefineTool('check_bridge_health', checkBridgeHealthConfig, createCheckBridgeHealthHandler(root)),
+    mcpDefineTool('check_bridge_health', checkBridgeHealthConfig, createCheckBridgeHealthHandler(config, root)),
   ];
 }

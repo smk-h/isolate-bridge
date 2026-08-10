@@ -59,13 +59,14 @@ const pkgInfo = readPkgInfo();
 
 /** 向客户端说明 Server 能力与工具语义 */
 const INSTRUCTIONS = [
-  'MsgFerry 内网 MCP Server：在隔离网络环境下，通过 HGFS 共享目录文件队列，把 SSH 命令投递给外网 Worker 执行并回读结果。',
+  'MsgFerry 内网 MCP Server：在隔离网络环境下，通过 HGFS 共享目录文件队列（或文件交换服务器单向信箱），把 SSH 命令投递给外网 Worker 执行并回读结果。',
   '可用工具：',
   '- submit_ssh_task：提交 SSH 命令到外网 Worker 执行，阻塞等待结果返回；',
   '- query_task_status：按 task_id 查询任务当前状态与已有结果；',
   '- cancel_task：取消任务，写入取消标记触发 Worker 孤儿结果回收；',
   '- check_bridge_health：检查外网 Worker 存活状态，读取心跳判断是否在线。',
   '提示：submit_ssh_task 为阻塞式调用，命令执行耗时较长时请配合足够大的客户端调用超时；',
+  '交换服务器模式（配置了 MSGFERRY_SYNC_PUSH_CMD / MSGFERRY_SYNC_PULL_CMD）下，阻塞等待时长 = 同步往返 × 2~3 + 命令执行时间；',
   '任务结果中的 status 字段取值：pending / processing / completed / failed / cancelled / timeout。',
 ].join(' ');
 
