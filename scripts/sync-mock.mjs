@@ -19,6 +19,9 @@
  * 相对目录名（outbound/、inbound/）基于服务器根目录解析，
  * 与真实 file_transfer「远程路径不校验、由命令自带上下文」的语义一致。
  *
+ * 模拟同步延时：默认 1000ms，用环境变量 MSGFERRY_SYNC_MOCK_DELAY_MS（毫秒）覆盖，
+ * 便于测试不同网络/同步延迟场景。设为 0 可完全关闭延时。
+ *
  * 退出码：成功 0；参数/环境错误 2；cp 失败 1。
  * ======================================================
  */
@@ -34,6 +37,16 @@ const serverRoot = process.env.MSGFERRY_SYNC_MOCK_SERVER;
 if (!serverRoot) {
   console.error('[sync-mock] 环境变量 MSGFERRY_SYNC_MOCK_SERVER 未设置（模拟交换服务器根目录）');
   process.exit(2);
+}
+
+/** 模拟同步延时（毫秒），默认 1000ms 近似真实交换服务器一次同步的开销 */
+const SYNC_DELAY_MS = Number(process.env.MSGFERRY_SYNC_MOCK_DELAY_MS ?? 1000);
+
+/** 等待模拟延时（非正数时直接跳过，避免引入无意义 setTimeout(0)） */
+async function simulateSyncDelay() {
+  if (SYNC_DELAY_MS > 0) {
+    await new Promise((resolve) => setTimeout(resolve, SYNC_DELAY_MS));
+  }
 }
 
 const [, , flag, src, dst] = process.argv;
@@ -63,6 +76,7 @@ async function doPull(srcDir, dstDir) {
   await rm(dstDir, { recursive: true, force: true });
   await mkdir(dstDir, { recursive: true });
   await cp(serverSrc, dstDir, { recursive: true, force: true });
+  await simulateSyncDelay();
   console.log(`[sync-mock] pull ${serverSrc} -> ${dstDir}`);
   process.exit(0);
 }
@@ -72,6 +86,7 @@ async function doPush(srcFile, dstDir) {
   const serverDst = resolvePath(dstDir);
   await mkdir(serverDst, { recursive: true });
   await copyFile(srcFile, join(serverDst, srcFile.split(/[\\/]/).pop()));
+  await simulateSyncDelay();
   console.log(`[sync-mock] push ${srcFile} -> ${serverDst}`);
   process.exit(0);
 }
