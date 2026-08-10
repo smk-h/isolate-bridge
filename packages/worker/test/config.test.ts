@@ -301,6 +301,7 @@ describe('validateConfig', () => {
   it('rejects missing hgfs_root', () => {
     assert.throws(() => validateConfig({
       hgfs_root: '',
+      queue_mode: 'shared',
       executor_type: 'mock',
       devices: {},
       ssh_config: null,

@@ -42,6 +42,7 @@ export type DeviceSshMap = Record<string, SshConfig>;
 /** Worker 启动配置 */
 export interface WorkerConfig {
   hgfs_root: string;                    // HGFS 共享根目录绝对路径
+  queue_mode: 'shared' | 'exchange';    // 队列模式：shared=共享目录 / exchange=文件交换服务器
   executor_type: 'mock' | 'ssh2';       // SSH 执行器选择
   devices: DeviceSshMap;                // 多设备：设备名 → SSH 连接信息（设备名仅字母/数字/下划线/连字符）
   ssh_config: SshConfig | null;          // 默认/兼容设备（旧 ssh 字段），真实模式必填，mock 模式 null
@@ -69,6 +70,7 @@ export interface DeviceSshFileShape {
 
 /** Worker 配置文件（<hgfs_root>/config/worker.yaml）的扁平结构 */
 export interface WorkerConfigFileShape {
+  queue_mode?: string;
   executor?: string;
   devices?: Record<string, DeviceSshFileShape>;  // 多设备（推荐）：设备名 → SSH 连接信息
   ssh?: DeviceSshFileShape;                      // 兼容旧字段：单默认设备
@@ -185,6 +187,14 @@ export function parseConfig(argv: string[]): WorkerConfig {
     pickString(file.executor, 'mock') ?? 'mock'
   ) as 'mock' | 'ssh2';
 
+  // 队列模式：shared（共享目录，默认）| exchange（文件交换服务器单向信箱）
+  const queueMode = (
+    pickString(file.queue_mode, 'shared') ?? 'shared'
+  ) as 'shared' | 'exchange';
+  if (queueMode !== 'shared' && queueMode !== 'exchange') {
+    throw new Error(`invalid queue_mode "${queueMode}": must be shared or exchange`);
+  }
+
   // 多设备解析：设备名 → SSH 连接信息
   // 1. 默认设备（兼容旧用法）：配置文件旧 ssh 字段 > 配置文件 devices.default > 无
   const devices: DeviceSshMap = {};
@@ -295,6 +305,7 @@ export function parseConfig(argv: string[]): WorkerConfig {
 
   return {
     hgfs_root: hgfsRoot,
+    queue_mode: queueMode,
     executor_type: executorType,
     devices,
     ssh_config: sshConfig,

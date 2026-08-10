@@ -9,7 +9,7 @@
  * ======================================================
  */
 
-import { writeHeartbeat, gcResults } from './queue.js';
+import { writeHeartbeat, gcResults, writeHeartbeatExchange, gcInboundResults } from './queue.js';
 import type { Heartbeat } from './queue.js';
 
 import { logger } from './log.js';
@@ -27,12 +27,14 @@ interface LoopHandle {
  * @param root - HGFS 共享根目录
  * @param intervalSec - 心跳写入间隔（秒）
  * @param getStats - 获取统计数据的回调
+ * @param queueMode - 队列模式（exchange 额外落一份 inbound/heartbeat.json）
  * @returns 带 stop 方法的句柄
  */
 export function startHeartbeatLoop(
   root: string,
   intervalSec: number,
   getStats: HeartbeatStatsGetter,
+  queueMode: 'shared' | 'exchange' = 'shared',
 ): LoopHandle {
   const timer = setInterval(async () => {
     try {
@@ -45,6 +47,10 @@ export function startHeartbeatLoop(
         shutdown_at: null,
       };
       await writeHeartbeat(root, hb);
+      // exchange 模式：心跳额外落 inbound/heartbeat.json，随结果批次被内网 -g 拉回
+      if (queueMode === 'exchange') {
+        await writeHeartbeatExchange(root, hb);
+      }
     } catch {
       // 心跳写入失败不阻塞主循环，仅告警
       logger.warn('[housekeeping] heartbeat write failed');
@@ -64,16 +70,22 @@ export function startHeartbeatLoop(
  * @param root - HGFS 共享根目录
  * @param ttlSec - 结果保留期（秒）
  * @param intervalSec - GC 扫描间隔（秒）
+ * @param queueMode - 队列模式（exchange 扫 inbound/，shared 扫 completed/failed）
  * @returns 带 stop 方法的句柄
  */
 export function startGcLoop(
   root: string,
   ttlSec: number,
   intervalSec: number,
+  queueMode: 'shared' | 'exchange' = 'shared',
 ): LoopHandle {
   const timer = setInterval(async () => {
     try {
-      await gcResults(root, ttlSec);
+      if (queueMode === 'exchange') {
+        await gcInboundResults(root, ttlSec);
+      } else {
+        await gcResults(root, ttlSec);
+      }
     } catch {
       // GC 失败不阻塞主循环，仅告警
       logger.warn('[housekeeping] gc failed');

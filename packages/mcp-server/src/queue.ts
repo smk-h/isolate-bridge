@@ -358,6 +358,10 @@ export async function gcInboundResults(root: string, ttlSec: number): Promise<nu
     if (name.endsWith(TMP_SUFFIX)) {
       continue;
     }
+    // 心跳文件不参与结果 GC（内网健康检查依赖它）
+    if (name === HEARTBEAT_FILE) {
+      continue;
+    }
     const filePath = join(inboundDir, name);
     try {
       const fileStat = await stat(filePath);

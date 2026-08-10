@@ -39,6 +39,7 @@ describe('createExecutor', () => {
   it('mock 模式应返回 MockSshExecutor 实例', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
+      queue_mode: 'shared',
       executor_type: 'mock',
       devices: {},
       ssh_config: null,
@@ -58,6 +59,7 @@ describe('createExecutor', () => {
   it('ssh2 模式应返回 Ssh2Executor 实例', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
+      queue_mode: 'shared',
       executor_type: 'ssh2',
       devices: {},
       ssh_config: { host: 'h', port: 22, username: 'u', private_key_path: null, password: null },

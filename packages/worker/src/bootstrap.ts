@@ -38,6 +38,11 @@ const FALLBACK_CONFIG_TEMPLATE = `# Worker 配置文件示例（YAML 格式，�
 # policy_file 建议省略或写相对共享根目录的路径（policy/policy.json），
 # Worker 会依据 --hgfs-root 自动解析为绝对路径，避免示例绝对路径在重启后污染配置。
 
+# 队列模式：shared（共享目录，免同步，默认）| exchange（文件交换服务器单向信箱）
+# exchange 模式下 worker 扫描 outbound/ 领取任务，结果回写 inbound/，
+# 心跳额外落 inbound/heartbeat.json；结果保留期建议调大到 3600。
+queue_mode: shared
+
 # SSH 执行器：mock（本地模拟）| ssh2（真实 SSH）
 executor: ssh2
 
@@ -71,6 +76,8 @@ polling:
 heartbeat_interval_sec: 5
 
 # 结果文件保留期（秒）
+# 交换服务器模式（queue_mode: exchange）下内网拉回周期可能较长，
+# 建议调大到 3600，避免结果没拉回就被 GC 清掉。
 result_ttl_sec: 600
 
 # stdout/stderr 内联字节数上限（超过则落 outputs/ 子目录）
