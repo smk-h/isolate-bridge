@@ -24,6 +24,14 @@ import {
   checkCancelled,
   writeCancelledResult,
   writeHeartbeat,
+  writeHeartbeatExchange,
+  initExchangeDirs,
+  listOutbound,
+  readOutboundTask,
+  writeResultExchange,
+  checkCancelledExchange,
+  writeCancelledResultExchange,
+  removeCancelMarker,
 } from './queue.js';
 import { loadPolicy, checkCommand, createPolicyWatcher } from './policy.js';
 import type { PolicyRule, PolicyResult } from './policy.js';
@@ -57,7 +65,8 @@ async function processTask(
   auditLogger: AuditLogger,
 ): Promise<void> {
   const startTime = Date.now();
-  await transitionToProcessing(root, task, pid);
+  // 按队列模式流转：exchange 从 outbound/ 领取，shared 从 pending/ 领取
+  await transitionToProcessing(root, task, pid, config.queue_mode === 'exchange' ? 'outbound' : 'pending');
   logger.info(`[worker] task processing: task_id=${task.task_id} pid=${pid}`);
 
   // 安全策略校验
@@ -67,7 +76,12 @@ async function processTask(
     task.policy_blocked = true;
     task.error_msg = 'blocked_by_policy';
     task.end_time = Date.now();
-    await writeResult(root, task, config.max_inline_bytes);
+    // 按队列模式回写：exchange 写 inbound/，shared 写 failed/
+    if (config.queue_mode === 'exchange') {
+      await writeResultExchange(root, task, config.max_inline_bytes);
+    } else {
+      await writeResult(root, task, config.max_inline_bytes);
+    }
     await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
     logger.warn(`[worker] task blocked by policy: task_id=${task.task_id} reason=${policyResult.reason} cmd=${task.cmd}`);
     return;
@@ -90,19 +104,30 @@ async function processTask(
   task.error_msg = cmdResult.stderr || (cmdResult.timed_out ? 'execution_timeout' : null);
   task.end_time = Date.now();
 
-  // 取消检查与孤儿回收
-  const cancelled = await checkCancelled(root, task.task_id);
+  // 取消检查与孤儿回收（按队列模式：exchange 查 outbound/cancel_<id>.marker）
+  const cancelled = config.queue_mode === 'exchange'
+    ? await checkCancelledExchange(root, task.task_id)
+    : await checkCancelled(root, task.task_id);
   if (cancelled) {
     task.status = 'cancelled';
-    await writeCancelledResult(root, task);
+    // 按模式回写取消结果：exchange 写 inbound/result_<id>.result
+    if (config.queue_mode === 'exchange') {
+      await writeCancelledResultExchange(root, task);
+    } else {
+      await writeCancelledResult(root, task);
+    }
     await auditLogger.log(makeAuditEntry(task, policyResult, sshTarget, startTime, true));
     logger.warn(`[worker] task cancelled: task_id=${task.task_id}`);
     return;
   }
 
-  // 正常回写
+  // 正常回写（按队列模式：exchange 写 inbound/，shared 写 completed|failed/）
   task.status = cmdResult.exit_code === 0 ? 'completed' : 'failed';
-  await writeResult(root, task, config.max_inline_bytes);
+  if (config.queue_mode === 'exchange') {
+    await writeResultExchange(root, task, config.max_inline_bytes);
+  } else {
+    await writeResult(root, task, config.max_inline_bytes);
+  }
   await auditLogger.log(makeAuditEntry(task, policyResult, sshTarget, startTime, false));
   logger.info(`[worker] task done: task_id=${task.task_id} status=${task.status} exit_code=${task.exit_code} duration_ms=${Date.now() - startTime}`);
 }
@@ -136,7 +161,6 @@ export async function main(): Promise<void> {
   const config = parseConfig(process.argv);
   validateConfig(config);
   const root = config.hgfs_root;
-
   // 注入业务日志相关环境变量，供共享 Logger 延迟初始化读取（仅 worker 进程内生效，不改 mcp）：
   // - MSGFERRY_HGFS_ROOT：相对日志目录基于共享根目录解析的基准
   // - LOG_SAVE：业务日志使能开关（来自 --log-save）
@@ -147,6 +171,7 @@ export async function main(): Promise<void> {
 
   logger.info(`[worker] starting... cwd: ${process.cwd()}`);
   logger.info(`[worker] hgfs_root: ${root}`);
+  logger.info(`[worker] queue_mode: ${config.queue_mode}`);
   logger.info(`[worker] executor: ${config.executor_type}`);
   logger.info(`[worker] audit_log_dir: ${config.audit_log_dir}`);
   logger.info(`[worker] policy_file: ${config.policy_file}`);
@@ -157,6 +182,10 @@ export async function main(): Promise<void> {
   await ensureSharedTemplates(root);
 
   await initQueueDirs(root);
+  // exchange 模式额外初始化 outbound/inbound 单向信箱目录
+  if (config.queue_mode === 'exchange') {
+    await initExchangeDirs(root);
+  }
   let policyRule = await loadPolicy(config.policy_file);
   const watcher = createPolicyWatcher(config.policy_file, 10000, (r) => {
     policyRule = r;
@@ -166,8 +195,8 @@ export async function main(): Promise<void> {
 
   let processedCount = 0;
   const getStats = () => ({ processedCount, queueDepth: 0 });
-  const heartbeatLoop = startHeartbeatLoop(root, config.heartbeat_interval_sec, getStats);
-  const gcLoop = startGcLoop(root, config.result_ttl_sec, 60);
+  const heartbeatLoop = startHeartbeatLoop(root, config.heartbeat_interval_sec, getStats, config.queue_mode);
+  const gcLoop = startGcLoop(root, config.result_ttl_sec, 60, config.queue_mode);
 
   let shuttingDown = false;
   process.on('SIGINT', () => { shuttingDown = true; });
@@ -175,10 +204,12 @@ export async function main(): Promise<void> {
 
   const backoff = createBackoff(config.polling.initial_interval_ms, config.polling.max_interval_ms);
 
-  // 主循环
+  // 主循环：按队列模式分支（shared=扫 pending/，exchange=扫 outbound/）
   while (!shuttingDown) {
     try {
-      const tasks = await listPending(root);
+      const tasks = config.queue_mode === 'exchange'
+        ? await listOutbound(root)
+        : await listPending(root);
       if (tasks.length === 0) {
         await sleep(backoff.next());
         continue;
@@ -195,8 +226,15 @@ export async function main(): Promise<void> {
             continue;
           }
           logger.info(`[worker] task acquired: task_id=${taskId}`);
-          const task = await readTask(root, taskId);
+          // 按模式读取任务：exchange 读 outbound/，shared 读 pending/
+          const task = config.queue_mode === 'exchange'
+            ? await readOutboundTask(root, taskId)
+            : await readTask(root, taskId);
           await processTask(config, root, task, process.pid, policyRule, executor, auditLogger);
+          // exchange 模式：任务消费后清理其取消标记（避免残留被下次整目录同步再看到）
+          if (config.queue_mode === 'exchange') {
+            await removeCancelMarker(root, taskId);
+          }
           processedCount++;
         } catch (err) {
           logger.error(`[worker] task ${taskId} failed:`, err);
@@ -224,6 +262,16 @@ export async function main(): Promise<void> {
     queue_depth: 0,
     shutdown_at: Date.now(),
   });
+  // exchange 模式：退出心跳也落一份到 inbound/
+  if (config.queue_mode === 'exchange') {
+    await writeHeartbeatExchange(root, {
+      pid: process.pid,
+      last_beat: Date.now(),
+      processed_count: processedCount,
+      queue_depth: 0,
+      shutdown_at: Date.now(),
+    });
+  }
   await auditLogger.flush();
   await auditLogger.close();
   logger.info('[worker] shutdown complete');

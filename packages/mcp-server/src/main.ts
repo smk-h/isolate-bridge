@@ -10,7 +10,8 @@
  */
 
 import { parseConfig, validateConfig } from './config.js';
-import { initQueueDirs } from './queue.js';
+import { initQueueDirs, initExchangeDirs } from './queue.js';
+import { isExchangeMode } from './sync.js';
 import { createMcpServer, startServer } from './server.js';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { pathToFileURL } from 'node:url';
@@ -41,9 +42,13 @@ export async function main(): Promise<void> {
   logger.info(`MCP server starting... cwd: ${process.cwd()}`);
   logger.info(`MCP server hgfs_root: ${config.hgfs_root}`);
   logger.info(`MCP server log_dir: ${resolveLogDir({ hgfsRoot: config.hgfs_root, logDir: process.env.LOG_DIR })}`);
+  logger.info(`MCP server sync_mode: ${config.sync_mode}`);
 
-  // 初始化 HGFS 队列子目录
+  // 初始化 HGFS 队列子目录（交换模式额外初始化 outbound/inbound 单向信箱）
   await initQueueDirs(config.hgfs_root);
+  if (isExchangeMode(config)) {
+    await initExchangeDirs(config.hgfs_root);
+  }
 
   // 创建 McpServer 实例并注册工具
   const server = createMcpServer(config, config.hgfs_root);

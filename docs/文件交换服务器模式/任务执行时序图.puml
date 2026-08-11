@@ -1,0 +1,72 @@
+@startuml 文件交换服务器模式任务执行时序图
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam SequenceParticipantBorderColor #7A93BE
+skinparam SequenceParticipantBackgroundColor #DCE9FB
+skinparam SequenceParticipantFontColor #1F2933
+skinparam SequenceLifeLineBorderColor #7A93BE
+skinparam SequenceGroupBackgroundColor #F7F9FC
+skinparam SequenceGroupBorderColor #7A93BE
+skinparam NoteBackgroundColor #FFFBE6
+skinparam NoteBorderColor #E0B400
+skinparam NoteFontColor #5C4A00
+
+title submit_ssh_task 阻塞同步执行时序（exchange 模式）
+
+participant "Claude\n(调用方)" as C
+participant "MCP Server\n(内网)" as M
+participant "文件交换服务器\n(单向信箱)" as F
+participant "Worker\n(外网挂载)" as W
+
+== 阶段一：提交任务（阻塞） ==
+
+C -> M : submit_ssh_task(cmd)
+M -> F : syncPull（-g 整目录拉回 inbound/）
+F --> M : 返回心跳 heartbeat.json
+M -> M : 心跳判定放宽\n（心跳存在 && shutdown_at==null）
+M -> M : 幂等检查\n（outbound/+sent/ 已存在则拒绝）
+M -> M : 原子写本地 outbound/<id>.json\n（.tmp → rename）
+M -> F : syncPush 单文件 -pd\n（{src}=task 文件, {dst}=outbound/）
+M -> M : push 成功后移入 sent/ 留痕
+
+note over M
+  模板命令渲染：
+  file_transfer -pd {src} {dst}
+  spawn + 超时 + 退避重试 3 次
+end note
+
+== 阶段二：阻塞轮询结果 ==
+
+M -> F : syncPull（-g 整目录拉回 inbound/）
+F --> M : 返回结果快照
+M -> M : 查本地 inbound/result_<id>.json\n（过滤 .tmp，按 task_id 匹配）
+alt 找到结果
+  M --> C : 返回 { status, exit_code, stdout, stderr }
+else 未找到且未超时
+  M -> M : sleep 后继续轮询
+else 超过 max_wait_ms（建议 120s）
+  M -> F : 写 cancel_<id>.marker + syncPush
+  M --> C : 只返回 timeout（不误标 cancelled）
+end
+
+== 阶段三：Worker 侧执行（并行） ==
+
+F --> W : 轮询到 outbound/<id>.json\n（服务器天然同步可见）
+W -> W : acquireLock 抢锁（processing/ 去重）
+W -> W : 策略校验 → SSH/mock 执行
+W -> F : 结果回写 inbound/result_<id>.json\n大输出 inbound/<id>.stdout
+W -> F : 心跳双写 inbound/heartbeat.json
+
+note over W
+  Worker queue_mode=exchange：
+  扫 outbound/ 领任务
+  结果回写 inbound/
+  GC 扫 inbound/（心跳不参与）
+end note
+
+@enduml

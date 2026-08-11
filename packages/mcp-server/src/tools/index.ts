@@ -25,6 +25,6 @@ import { createHealthTools } from './health/index.js';
 export function createAllTools(config: McpServerConfig, root: string): ToolEntry[] {
   return [
     ...createTaskTools(config, root),
-    ...createHealthTools(root),
+    ...createHealthTools(config, root),
   ];
 }

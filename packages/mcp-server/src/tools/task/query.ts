@@ -12,13 +12,17 @@
 import { fromJsonSchema } from '@modelcontextprotocol/server';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 
-import { TaskStatus, ErrorCode } from '@smai-kit/msgferry-shared';
+import { TaskStatus, ErrorCode, logger } from '@smai-kit/msgferry-shared';
 
+import type { McpServerConfig } from '../../config.js';
 import {
   readResult,
   checkCancelMarker,
   readTaskFromDir,
+  readResultExchange,
+  exchangeTaskPending,
 } from '../../queue.js';
+import { isExchangeMode, syncPull } from '../../sync.js';
 import { readOverflowIfTruncated } from '../../shared/task-result.js';
 import {
   mcpToolConfig,
@@ -46,14 +50,59 @@ export interface QueryTaskStatusResult {
 
 /**
  * 查询任务当前状态（核心业务逻辑）
+ * - shared 模式：直接查本地目录；
+ * - exchange 模式：先 syncPull 拉回服务器 inbound/ 再查本地镜像；
+ *   任务在本地 outbound/+sent/ 仍可找到 → pending（不再误报 not_found/Cancelled）。
+ * @param config - MCP Server 配置
  * @param root - HGFS 共享根目录
  * @param taskId - 任务唯一标识
  * @returns 任务状态与已有结果字段
  */
 export async function queryTaskStatus(
+  config: McpServerConfig,
   root: string,
   taskId: string,
 ): Promise<QueryTaskStatusResult> {
+  // 交换服务器模式：先拉取服务器 inbound/ 到本地镜像再查询
+  if (isExchangeMode(config)) {
+    try {
+      await syncPull(config);
+    } catch (err) {
+      logger.warn(`[query_task_status] syncPull failed: ${(err as Error).message}`);
+    }
+
+    // 优先检查 inbound/ 镜像中的结果
+    const result = await readResultExchange(root, taskId);
+    if (result !== null) {
+      const overflow = await readOverflowIfTruncated(root, result);
+      return {
+        task_id: taskId,
+        status: result.status,
+        exit_code: result.exit_code,
+        stdout: overflow.stdout,
+        stderr: overflow.stderr,
+        error_msg: overflow.error_msg,
+        truncated: overflow.truncated,
+      };
+    }
+
+    // 任务仍在本地上传区（outbound/ 或 sent/ 留痕）→ 尚未被 Worker 领取，判定 pending
+    if (await exchangeTaskPending(root, taskId)) {
+      return {
+        task_id: taskId,
+        status: TaskStatus.Pending,
+      };
+    }
+
+    // 本地无结果、无上传痕迹 → 可能已执行但结果尚未拉回，返回 pending 而非误报 not_found
+    return {
+      task_id: taskId,
+      status: TaskStatus.Pending,
+    };
+  }
+
+  // ── 共享目录模式（现状，免同步） ──
+
   // 优先检查终态结果文件（completed/failed/cancelled.result）
   const result = await readResult(root, taskId);
   if (result !== null) {
@@ -123,15 +172,17 @@ export const queryTaskStatusConfig: mcpToolConfig = {
 
 /**
  * 创建 query_task_status 工具回调
+ * @param config - MCP Server 配置
  * @param root - HGFS 共享根目录
  * @returns 工具回调
  */
 export function createQueryTaskStatusHandler(
+  config: McpServerConfig,
   root: string,
 ): (args: QueryTaskStatusParams) => Promise<CallToolResult> {
   return async (args: QueryTaskStatusParams) => {
     try {
-      const result = await queryTaskStatus(root, args.task_id);
+      const result = await queryTaskStatus(config, root, args.task_id);
       return makeSuccessResult(result);
     } catch (e) {
       return makeErrorResult(ErrorCode.Unknown, getErrorMessage(e));

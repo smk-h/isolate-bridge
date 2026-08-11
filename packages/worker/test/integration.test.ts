@@ -17,6 +17,7 @@ import { join } from 'node:path';
 
 import { initQueueDirs, listPending, acquireLock, readTask } from '../src/queue.js';
 import { transitionToProcessing, writeResult, checkCancelled, writeCancelledResult } from '../src/queue.js';
+import { initExchangeDirs, listOutbound, readOutboundTask, writeResultExchange, checkCancelledExchange, writeCancelledResultExchange } from '../src/queue.js';
 import { loadPolicy, checkCommand } from '../src/policy.js';
 import { MockSshExecutor } from '../src/executor.js';
 import { AuditLogger, formatSystemTime } from '../src/audit.js';
@@ -143,6 +144,58 @@ describe('集成：取消回收', () => {
     assert.ok(existsSync(join(root, 'cancelled', 'cancel-1.result')));
     assert.ok(!existsSync(join(root, 'completed', 'cancel-1.json')));
     const result = JSON.parse(readFileSync(join(root, 'cancelled', 'cancel-1.result'), 'utf-8'));
+    assert.equal(result.status, 'cancelled');
+  });
+});
+
+describe('集成：exchange 模式任务全流程', () => {
+  it('outbound 领取 -> 结果写回 inbound/result_<id>.json', async () => {
+    await initExchangeDirs(root);
+    const task = makeTask({ task_id: 'ex-1' });
+    writeFileSync(join(root, 'outbound', 'ex-1.json'), JSON.stringify(task));
+
+    const outbound = await listOutbound(root);
+    assert.equal(outbound[0], 'ex-1');
+    const locked = await acquireLock(root, 'ex-1', 400);
+    assert.equal(locked, true);
+    const readed = await readOutboundTask(root, 'ex-1');
+
+    // 模拟 processTask 的 exchange 分支：transition 从 outbound 领取
+    await transitionToProcessing(root, readed, 400, 'outbound');
+    assert.ok(!existsSync(join(root, 'outbound', 'ex-1.json')));
+
+    const cmdResult = await executor.execute(readed.cmd, readed.timeout_sec);
+    readed.stdout = cmdResult.stdout;
+    readed.stderr = cmdResult.stderr;
+    readed.stdout_size = Buffer.byteLength(cmdResult.stdout, 'utf-8');
+    readed.stderr_size = Buffer.byteLength(cmdResult.stderr, 'utf-8');
+    readed.exit_code = cmdResult.exit_code;
+    readed.end_time = Date.now();
+    readed.status = 'completed';
+    await writeResultExchange(root, readed, 65536);
+
+    assert.ok(existsSync(join(root, 'inbound', 'result_ex-1.json')));
+    const result = JSON.parse(readFileSync(join(root, 'inbound', 'result_ex-1.json'), 'utf-8'));
+    assert.equal(result.status, 'completed');
+    assert.ok(result.stdout.includes('[mock]'));
+    assert.equal(result.exit_code, 0);
+  });
+
+  it('outbound 取消标记 -> 结果写回 inbound/result_<id>.result', async () => {
+    await initExchangeDirs(root);
+    const task = makeTask({ task_id: 'ex-cancel-1' });
+    writeFileSync(join(root, 'outbound', 'ex-cancel-1.json'), JSON.stringify(task));
+    writeFileSync(join(root, 'outbound', 'cancel_ex-cancel-1.marker'), '');
+
+    assert.equal(await checkCancelledExchange(root, 'ex-cancel-1'), true);
+    await acquireLock(root, 'ex-cancel-1', 500);
+    const readed = await readOutboundTask(root, 'ex-cancel-1');
+    await transitionToProcessing(root, readed, 500, 'outbound');
+    readed.status = 'cancelled';
+    await writeCancelledResultExchange(root, readed);
+
+    assert.ok(existsSync(join(root, 'inbound', 'result_ex-cancel-1.result')));
+    const result = JSON.parse(readFileSync(join(root, 'inbound', 'result_ex-cancel-1.result'), 'utf-8'));
     assert.equal(result.status, 'cancelled');
   });
 });

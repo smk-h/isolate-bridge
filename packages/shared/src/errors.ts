@@ -19,6 +19,7 @@ export const ErrorCode = {
   DuplicateSubmit: 'duplicate_submit',
   OrphanedResult: 'orphaned_result',
   OverflowReadFailed: 'overflow_read_failed',
+  SyncFailed: 'sync_failed',
   Unknown: 'unknown',
 } as const;
 
@@ -34,6 +35,7 @@ export const ERROR_CODE_DESCRIPTIONS: Readonly<Record<ErrorCode, string>> = {
   [ErrorCode.DuplicateSubmit]: '任务重复提交',
   [ErrorCode.OrphanedResult]: '孤儿结果：内网已取消但 Worker 回写',
   [ErrorCode.OverflowReadFailed]: '大输出指针文件读取失败',
+  [ErrorCode.SyncFailed]: '文件同步失败',
   [ErrorCode.Unknown]: '未知错误',
 };
 
@@ -43,6 +45,7 @@ export const RETRYABLE_ERROR_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>(
   ErrorCode.WorkerOffline,
   ErrorCode.ExecutionTimeout,
   ErrorCode.SshConnectionFailed,
+  ErrorCode.SyncFailed,
 ]);
 
 /** 不可重试错误码集合：确定性故障，重试无意义 */

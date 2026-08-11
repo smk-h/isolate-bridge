@@ -68,3 +68,23 @@ export const LOG_DIRS = {
   /** worker 业务日志默认目录 */
   worker: 'logs/worker',
 } as const;
+
+/** 文件交换服务器模式（exchange）下的单向信箱目录名 */
+export const EXCHANGE_DIRS = {
+  /** 内网只写、Worker 只读：任务文件与取消标记的上传方向 */
+  outbound: 'outbound',
+  /** Worker 只写、内网只读：结果文件与心跳的拉取方向 */
+  inbound: 'inbound',
+  /** 内网 push 成功后本地留痕（同步范围之外，绝无二次上行） */
+  sent: 'sent',
+} as const;
+
+/** 文件同步参数（交换服务器模式，MCP 侧 sync.ts 使用） */
+export const SYNC = {
+  /** 每次 push/pull 失败后的退避重试次数 */
+  retries: 3,
+  /** 各次重试前的等待间隔（毫秒） */
+  retry_delays_ms: [1000, 2000, 4000] as const,
+  /** 单次同步命令的超时上限（毫秒） */
+  timeout_ms: 30000,
+} as const;

@@ -136,11 +136,11 @@ MCP 运行在**内网 Linux 虚拟机**上，同一目录以 HGFS 挂载路径�
 
 - 共享根目录：`/mnt/hgfs/sharedir/vm_share`；
 - 队列子目录：`/mnt/hgfs/sharedir/vm_share/pending`、`/mnt/hgfs/sharedir/vm_share/completed` 等；
-- `.mcp.json` 里的 `MSGFERRY_HGFS_ROOT` 环境变量填：`/mnt/hgfs/sharedir/vm_share`（MCP Server 的全部配置均由环境变量注入，不再支持命令行参数）。
+- `.mcp.json` 里的 `MSGFERRY_HGFS_ROOT` 环境变量填：`/mnt/hgfs/sharedir/vm_share`（MCP Server 的全部配置均由环境变量注入，不再支持命令行参数）。MCP 侧同时支持 `$HOME/.msgferry/vm_share` / `~/.msgferry/vm_share` 这类写法，启动时内部用 `os.homedir()` 自动展开为家目录绝对路径；**若 `MSGFERRY_HGFS_ROOT` 指向的目录不存在，MCP 启动时会自动 `mkdir` 创建**。
 
 #### 1.3 对齐原则与注意事项
 
-- **共享根目录两侧各自填自己系统的路径**，但指向同一目录：Worker 用命令行 `--hgfs-root` 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 用环境变量 `MSGFERRY_HGFS_ROOT` 填 `/mnt/hgfs/sharedir/vm_share`；
+- **共享根目录两侧各自填自己系统的路径**，但指向同一目录：Worker 用命令行 `--hgfs-root` 填 `E:\MyLinux\VMware\sharedir\vm_share`，MCP 用环境变量 `MSGFERRY_HGFS_ROOT` 填 `/mnt/hgfs/sharedir/vm_share`（或用 `$HOME/.msgferry/vm_share` 让 MCP 自动展开到家目录，目录缺失自动创建）；
 - **配置文件由 Worker（Windows）消费**：SSH 认证推荐写**用户名 + 密码**（`ssh.username` / `ssh.password`），无需 Windows 私钥文件；若改用私钥认证，`ssh.private_key_path` 等 **Worker 本地**路径字段写 Windows 格式；而 `policy_file` 是**共享目录内**的路径字段，建议**省略或写相对共享根目录的相对路径**（`policy/policy.json`），Worker 会依据 `--hgfs-root` 自动解析为绝对路径，避免示例绝对路径在换机/重启后写错位置；
 - **YAML 中转义反斜杠**：若确需写 Windows 绝对路径（如 `C:\Users\...\id_ed25519`），YAML 中需写成双反斜杠 `\\`（或用单引号包裹避免转义），详见下节示例；
 - 路径分隔符由 Node.js `node:path` 的 `join` 自动处理，代码层无需区分平台，只需保证**传入的值符合运行侧系统习惯**。

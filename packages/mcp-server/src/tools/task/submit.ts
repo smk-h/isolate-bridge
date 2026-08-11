@@ -31,8 +31,15 @@ import {
   checkCancelMarker,
   writeCancelMarker,
   readHeartbeat,
+  writeOutboundTask,
+  archiveSentTask,
+  writeOutboundCancelMarker,
+  readResultExchange,
+  readHeartbeatExchange,
+  exchangeTaskPending,
 } from '../../queue.js';
 import { createBackoff } from '../../backoff.js';
+import { isExchangeMode, syncPush, syncPull } from '../../sync.js';
 import {
   readOverflowIfTruncated,
 } from '../../shared/task-result.js';
@@ -141,6 +148,13 @@ export async function submitSshTask(
     duration_ms: 0,
   };
 
+  // 交换服务器模式：提交前先拉回心跳/结果，随后走 outbound 单文件上传 + inbound 整目录拉回
+  if (isExchangeMode(config)) {
+    return submitSshTaskExchange(config, root, params, taskId, timeoutSec, submitTime, baseResult);
+  }
+
+  // ── 共享目录模式（现状，免同步） ──
+
   // 幂等检查：pending/processing 已存在同 task_id 则拒绝
   const existing = await taskExists(root, taskId);
   if (existing !== null) {
@@ -239,6 +253,166 @@ export async function submitSshTask(
   }
 
   // 拼回大输出
+  const overflowResult = await readOverflowIfTruncated(root, result);
+  logger.info(`[submit_ssh_task] result read: task_id=${taskId} status=${result.status} duration_ms=${durationMs}`);
+
+  return {
+    task_id: taskId,
+    status: result.status,
+    exit_code: result.exit_code,
+    stdout: overflowResult.stdout,
+    stderr: overflowResult.stderr,
+    error_msg: overflowResult.error_msg,
+    truncated: overflowResult.truncated,
+    stdout_size: result.stdout_size,
+    stderr_size: result.stderr_size,
+    duration_ms: durationMs,
+  };
+}
+
+// ────────────────────────────────────────────────────────────────
+// 文件交换服务器模式（exchange）：阻塞同步轮询实现
+// 时序：syncPull(拉心跳) → 写 outbound 单文件 → syncPush(上传) →
+//       阻塞循环 { syncPull(拉回 inbound) → 查结果 → 超时检查 → sleep }
+// 超时后写 cancel marker 并 syncPush，只返回 timeout（不再误标 cancelled）
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * 交换服务器模式下的任务提交（核心业务逻辑）
+ * @param config - MCP Server 配置
+ * @param root - HGFS 共享根目录
+ * @param params - 工具参数
+ * @param taskId - 任务唯一标识
+ * @param timeoutSec - 命令超时秒数
+ * @param submitTime - 提交时间戳
+ * @param baseResult - 基础返回结构
+ * @returns 任务执行结果
+ */
+async function submitSshTaskExchange(
+  config: McpServerConfig,
+  root: string,
+  params: SubmitSshTaskParams,
+  taskId: string,
+  timeoutSec: number,
+  submitTime: number,
+  baseResult: SubmitSshTaskResult,
+): Promise<SubmitSshTaskResult> {
+  // 拉取失败不算 Worker 离线，仅记录告警后继续（提交仍可进行）
+  try {
+    await syncPull(config);
+  } catch (err) {
+    logger.warn(`[submit_ssh_task] initial syncPull failed (will retry in loop): ${(err as Error).message}`);
+  }
+
+  // 心跳判定（exchange 模式放宽）：文件服务器可达 + 心跳存在 + shutdown_at==null 即在线
+  const heartbeat = await readHeartbeatExchange(root);
+  if (heartbeat === null) {
+    return {
+      ...baseResult,
+      error_code: ErrorCode.WorkerOffline,
+      error_msg: 'no heartbeat found in inbound/ after syncPull',
+    };
+  }
+  if (heartbeat.shutdown_at !== null) {
+    return {
+      ...baseResult,
+      error_code: ErrorCode.WorkerOffline,
+      error_msg: 'worker has shut down',
+    };
+  }
+
+  // 幂等检查：任务仍在本地上传区（outbound/ 或 sent/）则拒绝重复提交
+  if (await exchangeTaskPending(root, taskId)) {
+    return {
+      ...baseResult,
+      status: TaskStatus.Pending,
+      error_code: ErrorCode.DuplicateSubmit,
+      error_msg: 'task already exists in outbound/',
+    };
+  }
+
+  // 组装任务 → 原子写 outbound/<id>.json → 单文件 push 上传
+  const task = makeCommandTask(taskId, params.cmd, timeoutSec);
+  const localTaskPath = await writeOutboundTask(root, task);
+  logger.info(`[submit_ssh_task] task written to outbound: task_id=${taskId} timeout_sec=${timeoutSec} cmd=${params.cmd}`);
+
+  try {
+    await syncPush(config, localTaskPath);
+    // push 成功后单文件移入 outbound/sent/ 留痕（同步范围之外，绝无二次上行）
+    await archiveSentTask(root, taskId);
+  } catch (err) {
+    logger.error(`[submit_ssh_task] syncPush failed: task_id=${taskId} err=${(err as Error).message}`);
+    return {
+      ...baseResult,
+      duration_ms: Date.now() - submitTime,
+      error_code: ErrorCode.SyncFailed,
+      error_msg: `syncPush failed: ${(err as Error).message}`,
+    };
+  }
+
+  // 阻塞轮询等待结果：每轮先 syncPull 拉回 inbound/ 再查本地结果
+  const backoff = createBackoff(config.polling.initial_interval_ms, config.polling.max_interval_ms);
+  const deadline = Date.now() + config.max_wait_ms;
+  logger.info(`[submit_ssh_task] waiting for result: task_id=${taskId} max_wait_ms=${config.max_wait_ms}`);
+
+  let result: CommandTask | null = null;
+  let timedOut = false;
+
+  while (true) {
+    // 每轮先拉取服务器 inbound/ 到本地镜像，再按 task_id 匹配结果
+    try {
+      await syncPull(config);
+    } catch (err) {
+      // 拉取失败不算 Worker 离线，重试到 max_wait_ms 封顶
+      logger.warn(`[submit_ssh_task] syncPull failed: ${(err as Error).message}`);
+    }
+
+    result = await readResultExchange(root, taskId);
+    if (result !== null) {
+      break;
+    }
+
+    // 超时检查
+    if (Date.now() > deadline) {
+      timedOut = true;
+      break;
+    }
+
+    // 退避等待后进入下一轮同步
+    await sleep(backoff.next());
+  }
+
+  const durationMs = Date.now() - submitTime;
+
+  // 超时：写 cancel marker 并 push 上传（尽力取消），只返回 timeout
+  if (timedOut) {
+    logger.warn(`[submit_ssh_task] timed out: task_id=${taskId} max_wait_ms=${config.max_wait_ms}`);
+    try {
+      const markerPath = await writeOutboundCancelMarker(root, taskId);
+      await syncPush(config, markerPath);
+      await archiveSentTask(root, taskId);
+    } catch (err) {
+      logger.warn(`[submit_ssh_task] cancel marker push failed: ${(err as Error).message}`);
+    }
+    return {
+      ...baseResult,
+      duration_ms: durationMs,
+      error_code: ErrorCode.ExecutionTimeout,
+      error_msg: `timed out after ${config.max_wait_ms}ms`,
+    };
+  }
+
+  // 结果为 null 但非超时（理论不可达，兜底）
+  if (result === null) {
+    return {
+      ...baseResult,
+      status: TaskStatus.Pending,
+      duration_ms: durationMs,
+      error_msg: 'result not found after syncPull',
+    };
+  }
+
+  // 拼回大输出（overflow 文件随结果批次同目录被 -g 拉回本地 inbound/）
   const overflowResult = await readOverflowIfTruncated(root, result);
   logger.info(`[submit_ssh_task] result read: task_id=${taskId} status=${result.status} duration_ms=${durationMs}`);
 

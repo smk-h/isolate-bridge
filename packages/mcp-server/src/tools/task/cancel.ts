@@ -12,9 +12,11 @@
 import { fromJsonSchema } from '@modelcontextprotocol/server';
 import type { CallToolResult } from '@modelcontextprotocol/server';
 
-import { ErrorCode } from '@smai-kit/msgferry-shared';
+import { ErrorCode, logger } from '@smai-kit/msgferry-shared';
 
-import { writeCancelMarker } from '../../queue.js';
+import type { McpServerConfig } from '../../config.js';
+import { writeCancelMarker, writeOutboundCancelMarker } from '../../queue.js';
+import { isExchangeMode, syncPush } from '../../sync.js';
 import { queryTaskStatus } from './query.js';
 import {
   mcpToolConfig,
@@ -37,21 +39,40 @@ export interface CancelTaskResult {
 
 /**
  * 取消任务——写入取消标记（核心业务逻辑）
+ * - shared 模式：直接写 cancelled/<id> 标记；
+ * - exchange 模式：先 syncPull 确认任务状态，再写 outbound/cancel_<id>.marker
+ *   并 syncPush 上传（尽力取消，等下一轮 push 才到 worker）。
+ * @param config - MCP Server 配置
  * @param root - HGFS 共享根目录
  * @param taskId - 任务唯一标识
  * @returns 取消结果
  */
 export async function cancelTask(
+  config: McpServerConfig,
   root: string,
   taskId: string,
 ): Promise<CancelTaskResult> {
   // 先检查任务是否存在
-  const statusResult = await queryTaskStatus(root, taskId);
+  const statusResult = await queryTaskStatus(config, root, taskId);
   if (statusResult.error_code === 'not_found') {
     return {
       task_id: taskId,
       cancelled: false,
       error_code: 'not_found',
+    };
+  }
+
+  // 交换服务器模式：写 outbound 取消标记并 push 上传（尽力取消）
+  if (isExchangeMode(config)) {
+    try {
+      const markerPath = await writeOutboundCancelMarker(root, taskId);
+      await syncPush(config, markerPath);
+    } catch (err) {
+      logger.warn(`[cancel_task] syncPush cancel marker failed: ${(err as Error).message}`);
+    }
+    return {
+      task_id: taskId,
+      cancelled: true,
     };
   }
 
@@ -83,15 +104,17 @@ export const cancelTaskConfig: mcpToolConfig = {
 
 /**
  * 创建 cancel_task 工具回调
+ * @param config - MCP Server 配置
  * @param root - HGFS 共享根目录
  * @returns 工具回调
  */
 export function createCancelTaskHandler(
+  config: McpServerConfig,
   root: string,
 ): (args: CancelTaskParams) => Promise<CallToolResult> {
   return async (args: CancelTaskParams) => {
     try {
-      const result = await cancelTask(root, args.task_id);
+      const result = await cancelTask(config, root, args.task_id);
       return makeSuccessResult(result);
     } catch (e) {
       return makeErrorResult(ErrorCode.Unknown, getErrorMessage(e));
