@@ -386,12 +386,12 @@ Worker 运行在**外网 Windows 宿主机**、MCP 运行在**内网 Linux 虚�
 | 进程 | 运行位置 | 操作系统 | 共享目录路径写法 |
 | --- | --- | --- | --- |
 | Node Worker | 外网 Windows 宿主机 | Windows | `E:\MyLinux\VMware\sharedir\vm_share`（HGFS 共享文件夹） |
-| MCP Server | 内网虚拟机 | Linux | `/mnt/hgfs/sharedir/vm_share`（HGFS 挂载点） |
+| MCP Server | 内网虚拟机 | Linux | `/mnt/hgfs/sharedir/vm_share`（HGFS 挂载点），或 `$HOME/.msgferry/vm_share`（由 MCP 内部自动展开到家目录） |
 
 #### 3.1 配置中的路径处理规则
 
 - **Worker 侧**：SSH 认证推荐写**用户名 + 密码**（`username` / `password`），无需 Windows 私钥文件；多设备用 `devices` 字典，设备名下放连接信息（设备名仅限字母/数字/下划线/连字符，推荐约定 `board-xxx`）；若改用私钥认证，`private_key_path` 等 **Worker 本地**路径字段写 **Windows 路径**（如 `C:\Users\msgferry\.ssh\id_ed25519`），YAML 中反斜杠需转义为 `\\`；而 `policy_file` 是**共享目录内**的路径，建议省略或写相对共享根目录的相对路径（`policy/policy.json`），由 Worker 依据 `--hgfs-root` 自动解析为绝对路径。Worker 配置已收敛：命令行仅 `--hgfs-root`（必填）+ `--log-save` / `--log-dir`（业务日志），其余全部从 `config/worker.yaml` 读取（默认值兜底），不再支持环境变量配置；`audit_log_dir` 字段保留但暂不提供配置入口，固定等于业务日志目录（`logs/worker`）。
-- **MCP 侧**：`.mcp.json` 的 `MSGFERRY_HGFS_ROOT` 环境变量写 **Linux 路径**（如 `/mnt/hgfs/sharedir/vm_share`），MCP 不读 `config/worker.yaml`，无其他路径配置；MCP Server 的全部配置（`MSGFERRY_*` / `LOG_SAVE` / `LOG_DIR`）均由环境变量注入，环境变量未定义时走内置默认值。
+- **MCP 侧**：`.mcp.json` 的 `MSGFERRY_HGFS_ROOT` 环境变量写 **Linux 路径**（如 `/mnt/hgfs/sharedir/vm_share`），也可用 `$HOME/.msgferry/vm_share` / `~/.msgferry/vm_share` 写法，MCP Server 启动时用 `os.homedir()` 自动展开为家目录绝对路径；**若该目录不存在，MCP 启动时会自动 `mkdir` 创建**。MCP 不读 `config/worker.yaml`，无其他路径配置；MCP Server 的全部配置（`MSGFERRY_*` / `LOG_SAVE` / `LOG_DIR`）均由环境变量注入，环境变量未定义时走内置默认值。
 - 队列子目录、心跳文件等**相对路径约定由 shared 包统一定义**，代码层基于 `node:path` 的 `join` 拼接，自动适配两侧系统，无需人工区分。
 - 两侧唯一需要对齐的是「指向同一个物理目录」，路径写法可以不同，只要各自能正确访问该目录即可。
 

@@ -20,12 +20,12 @@
         "./index.mjs"
       ],
       "env": {
-        "MSGFERRY_HGFS_ROOT": "/root/.msgferry/vm_share",
+        "MSGFERRY_HGFS_ROOT": "$HOME/.msgferry/vm_share",
         "MSGFERRY_MAX_WAIT_MS": "120000",
         "MSGFERRY_POLLING_INITIAL": "500",
         "MSGFERRY_POLLING_MAX": "3000",
         "MSGFERRY_SYNC_PUSH_CMD": "file_transfer -pd vm_share/{src} nfs/vm_share/{dst}",
-        "MSGFERRY_SYNC_PULL_CMD": "file_transfer -g nfs/vm_share/inbound /root/.msgferry/vm_share/inbound",
+        "MSGFERRY_SYNC_PULL_CMD": "file_transfer -g nfs/vm_share/inbound $HOME/.msgferry/vm_share/inbound",
         "MSGFERRY_SYNC_TIMEOUT_MS": "30000",
         "MSGFERRY_SYNC_RETRIES": "3",
         "LOG_SAVE": "1"
