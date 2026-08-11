@@ -1,5 +1,7 @@
 ## 一、 项目简介
 
+### 1. 简介
+
 MsgFerry 是一个面向**隔离网络环境**的 AI 设备指令摆渡桥，解决「内网 AI 代理无法直连外网设备执行 SSH 命令」的工程问题。核心思路是把「思考层」收敛在内网、「执行层」剥离到外网，通过文件系统层的文件队列完成跨域通信。
 
 - **内网 MCP Server**（`msgferry-mcp-server`）：由 Claude Code / opencode 拉起，负责任务投递、结果回读、心跳检测，是内网侧的**唯一智能出入口**。
@@ -12,6 +14,56 @@ MsgFerry 支持两种队列模式：
 | --- | --- | --- |
 | `shared`（共享目录） | MCP 与 Worker 直接读写**同一个**共享目录，免同步，近实时 | 支持 HGFS 共享文件夹的环境 |
 | `exchange`（文件交换服务器） | 通过一台**文件交换服务器**（`file_transfer` 等，测试用 `sync-mock` 模拟）完成单向信箱摆渡 | 隔离更严格、**不支持共享目录**的环境 |
+
+### 2. 环境要求
+
+| 依赖 | 版本 | 用途 |
+| --- | --- | --- |
+| Node.js | ≥ 20.0.0（见根 `package.json` 的 `engines` 字段） | 运行 MCP Server / Worker |
+| pnpm | 较新版本即可 | Monorepo 包管理器，workspace 依赖解析 |
+
+### 3. 依赖安装
+
+在项目根目录执行（`pnpm-workspace.yaml` 已声明 `allowBuilds` / `onlyBuiltDependencies`，会为 `ssh2`、`cpu-features`、`esbuild` 等自动执行构建脚本）：
+
+```bash
+pnpm install
+```
+
+### 4. 怎么编译
+
+构建产物只需一条命令：
+
+```bash
+pnpm build
+```
+
+`build/index.ts` 内部流程：
+
+（1）**清理** `dist/` 旧产物；
+
+（2）**Bundle**：Rollup + esbuild 把 `packages/*/src/index.ts` 打成单文件 ESM（`index.mjs`），workspace 依赖（`@smai-kit/*`）源码直接内联；`ssh2`、`cpu-features`、`@modelcontextprotocol/server` 保持 external；
+
+（3）**Pack**：依据各子包 `.npmignore` 白名单清单拷贝分发文件，并从 pnpm `.pnpm` store 解引用拷贝 external 依赖的 `node_modules`（离线解压即用）；
+
+（4）**Tarball**：对每个成果物生成 `dist/<产物名>.tar.gz`。
+
+> 子包 `src/` 与 `test/` 不进产物（已被 bundle 成 `index.mjs`），新增分发文件只需改对应子包的 `.npmignore`，无需改动 build。
+
+### 5. 成果物说明
+
+`pnpm build` 后 `dist/` 目录产出如下：
+
+| 成果物 | 内容 | 部署侧 |
+| --- | --- | --- |
+| `dist/msgferry-mcp-server/` | `index.mjs`、`.mcp.json`、`.claude/settings.local.json`、`.opencode/opencode.json`、`scripts/sync-mock.mjs`、`node_modules/`、`package.json` | Ubuntu 内网 |
+| `dist/msgferry-mcp-server.tar.gz` | 同上压缩包 | |
+| `dist/msgferry-worker/` | `index.mjs`、`config.example.yaml`、`policy.example.json`、`node_modules/`、`package.json` | Windows 外网 |
+| `dist/msgferry-worker.tar.gz` | 同上压缩包 | |
+
+- 两个成果物均为 **解压即用**（`node_modules` 已内置），可直接拷贝或解压到部署机。
+- 自带 CLI 命令：MCP Server 为 `msgferry-mcp`（入口 `index.mjs`），Worker 为 `msgferry-worker`。
+- Worker 的 `config.example.yaml` 需按部署场景改名为 `config/worker.yaml` 放到共享根目录下（见第二章）。
 
 ## 二、 怎么部署？
 
@@ -114,8 +166,8 @@ exchange 模式的核心判据是：**MCP 侧配置了 `MSGFERRY_SYNC_PUSH_CMD` 
         "MSGFERRY_POLLING_INITIAL": "500",
         "MSGFERRY_POLLING_MAX": "3000",
 
-        "MSGFERRY_SYNC_PUSH_CMD": "node /home/sumu/workspace/msgferry/msgferry-mcp-server/sync-mock.mjs -pd {local_root}/{src} {dst}",
-        "MSGFERRY_SYNC_PULL_CMD": "node /home/sumu/workspace/msgferry/msgferry-mcp-server/sync-mock.mjs -g inbound {local_root}/inbound",
+        "MSGFERRY_SYNC_PUSH_CMD": "node /home/sumu/workspace/msgferry/msgferry-mcp-server/scripts/sync-mock.mjs -pd {local_root}/{src} {dst}",
+        "MSGFERRY_SYNC_PULL_CMD": "node /home/sumu/workspace/msgferry/msgferry-mcp-server/scripts/sync-mock.mjs -g inbound {local_root}/inbound",
         "MSGFERRY_SYNC_TIMEOUT_MS": "30000",
         "MSGFERRY_SYNC_RETRIES": "3",
         "MSGFERRY_SYNC_MOCK_SERVER": "/mnt/hgfs/sharedir/vm_share",
