@@ -20,6 +20,7 @@
  *                                传 local 自动使用本机 OpenSSH server 做模拟测试
  *                                （host=127.0.0.1, username=$USER，端口默认 22 可 --port 覆盖）
  *   --log-save 1|true            业务日志使能（可选，默认不落盘）
+ *   --log-dir <path>             业务日志目录（可选，默认 <temp>/logs/worker）
  *
  * 行为：
  *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
@@ -61,6 +62,7 @@ function parseArgs() {
     password: undefined,
     device: undefined,
     logSave: undefined,
+    logDir: undefined,
   };
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
@@ -82,6 +84,9 @@ function parseArgs() {
       case '--log-save':
         raw.logSave = args[++i];
         break;
+      case '--log-dir':
+        raw.logDir = args[++i];
+        break;
     }
   }
   return {
@@ -91,6 +96,7 @@ function parseArgs() {
     password: resolveOpt(raw.password, 'MSGFERRY_SSH_PASS', 'root'),
     device: resolveOpt(raw.device, 'MSGFERRY_SSH_DEVICE', 'default'),
     logSave: raw.logSave ?? process.env.MSGFERRY_LOG_SAVE,
+    logDir: raw.logDir ?? process.env.MSGFERRY_LOG_DIR,
   };
 }
 
@@ -152,6 +158,9 @@ console.log(`[test_ssh] 已写入测试配置: config/worker.yaml (executor=ssh2
 const workerArgs = ['--hgfs-root', tempDir];
 if (opts.logSave !== undefined) {
   workerArgs.push('--log-save', opts.logSave);
+}
+if (opts.logDir !== undefined) {
+  workerArgs.push('--log-dir', opts.logDir);
 }
 
 console.log(`[test_ssh] 启动 Worker: node ${workerJs} ${workerArgs.join(' ')}`);
