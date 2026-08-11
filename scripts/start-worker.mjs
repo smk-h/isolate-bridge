@@ -4,13 +4,13 @@ import { dirname, join, resolve } from 'node:path';
 
 // 启动 MsgFerry Worker 进程（Windows）
 // 用法: node scripts/start-worker.mjs 或 pnpm start:worker
-// 必传 --hgfs-root（默认取 MSGFERRY_HGFS_ROOT 环境变量，再回退到内置默认值）。
+// 必传 --hgfs-root（默认取 MSGFERRY_LOCAL_ROOT 环境变量，再回退到内置默认值）。
 // 业务日志：写死使能（--log-save 1），目录走默认值（<hgfs_root>/logs/worker）。
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, '..');
 const workerEntry = join(repoRoot, 'dist', 'msgferry-worker', 'index.mjs');
 
-const hgfsRoot = process.env.MSGFERRY_HGFS_ROOT ?? 'E:\\MyLinux\\VMware\\sharedir\\vm_share';
+const hgfsRoot = process.env.MSGFERRY_LOCAL_ROOT ?? 'E:\\MyLinux\\VMware\\sharedir\\vm_share';
 
 // 命令行透传：--hgfs-root 必填，--log-save 1 写死使能业务日志，其余参数原样透传给 Worker 子进程
 const child = spawn(

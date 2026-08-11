@@ -44,7 +44,7 @@ if (!serverRoot) {
   process.exit(2);
 }
 
-/** 内网本地根目录（MSGFERRY_HGFS_ROOT 对应，即 MCP 侧 outbound/inbound 工作目录） */
+/** 内网本地根目录（MSGFERRY_LOCAL_ROOT 对应，即 MCP 侧 outbound/inbound 工作目录） */
 const localRoot = process.env.MSGFERRY_SYNC_MOCK_LOCAL ?? '';
 /** 模板中 src 前缀（如 `vm_share/`），sync-mock 据此剥离后相对内网本地根解析本地文件 */
 const localSrcPrefix = process.env.MSGFERRY_SYNC_MOCK_LOCAL_PREFIX ?? '';
