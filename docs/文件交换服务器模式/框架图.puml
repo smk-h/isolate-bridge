@@ -23,7 +23,7 @@ skinparam note {
 
 title 文件交换服务器模式（exchange）总体框架
 
-rectangle "内网侧 MCP Server\n(本地 hgfs_root)" as mcp #DCE9FB {
+rectangle "内网侧 MCP Server\n(本地 local_root)" as mcp #DCE9FB {
   rectangle "同步适配层 sync.ts\npush/pull 模板命令" as sync #DDF3E4
   rectangle "队列层 queue.ts\noutbound/inbound 读写" as q
   rectangle "工具层\nsubmit / query / cancel / health" as tools
