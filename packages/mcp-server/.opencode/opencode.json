@@ -7,7 +7,7 @@
       "enabled": true,
       "timeout": 600000,
       "environment": {
-        "MSGFERRY_HGFS_ROOT": "/mnt/hgfs/sharedir/vm_share",
+        "MSGFERRY_LOCAL_ROOT": "/mnt/hgfs/sharedir/vm_share",
         "MSGFERRY_MAX_WAIT_MS": "30000",
         "MSGFERRY_POLLING_INITIAL": "500",
         "MSGFERRY_POLLING_MAX": "3000",
@@ -20,12 +20,12 @@
       "enabled": false,
       "timeout": 600000,
       "environment": {
-        "MSGFERRY_HGFS_ROOT": "$HOME/.msgferry/vm_share",
+        "MSGFERRY_LOCAL_ROOT": "$HOME/.msgferry/vm_share",
         "MSGFERRY_MAX_WAIT_MS": "120000",
         "MSGFERRY_POLLING_INITIAL": "500",
         "MSGFERRY_POLLING_MAX": "3000",
-        "MSGFERRY_SYNC_PUSH_CMD": "file_transfer -pd {hgfs_root}/{src} nfs/vm_share/{dst}",
-        "MSGFERRY_SYNC_PULL_CMD": "file_transfer -g nfs/vm_share/inbound {hgfs_root}/inbound",
+        "MSGFERRY_SYNC_PUSH_CMD": "file_transfer -pd {local_root}/{src} nfs/vm_share/{dst}",
+        "MSGFERRY_SYNC_PULL_CMD": "file_transfer -g nfs/vm_share/inbound {local_root}/inbound",
         "MSGFERRY_SYNC_TIMEOUT_MS": "30000",
         "MSGFERRY_SYNC_RETRIES": "3",
         "LOG_SAVE": "1"

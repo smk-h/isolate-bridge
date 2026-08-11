@@ -88,7 +88,7 @@ export function pickConfigValue(opts: {
   argv: string[];
   env: NodeJS.ProcessEnv;
   flag?: string;       // 如 '--hgfs-root'
-  envKey?: string;     // 如 'MSGFERRY_HGFS_ROOT'
+  envKey?: string;     // 如 'MSGFERRY_LOCAL_ROOT'
   fileValue?: unknown; // 配置文件中的原始值
   defaultValue?: string;
 }): string | undefined {
