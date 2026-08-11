@@ -22,8 +22,8 @@ import type { McpServerConfig } from './config.js';
 const SRC_PLACEHOLDER = '{src}';
 /** PUSH 模板命令占位符：服务器 outbound/ 目录（相对目录，前缀由模板承担，MCP 不校验） */
 const DST_PLACEHOLDER = '{dst}';
-/** 模板命令占位符：MCP 内网本地根目录（即配置的 `hgfs_root` 展开后的绝对路径），供 push/pull 模板引用本地侧前缀 */
-const HGFS_ROOT_PLACEHOLDER = '{hgfs_root}';
+/** 模板命令占位符：MCP 内网本地根目录（即配置的 `local_root` 展开后的绝对路径），供 push/pull 模板引用本地侧前缀 */
+const LOCAL_ROOT_PLACEHOLDER = '{local_root}';
 
 /** 命令执行结果 */
 export interface SyncRunResult {
@@ -120,40 +120,40 @@ function runOnce(cmd: string, timeoutMs: number): Promise<SyncRunResult> {
 }
 
 /**
- * 生成最终 push 命令：把模板命令中的 {src}/{dst}/{hgfs_root} 占位符替换为实际值
+ * 生成最终 push 命令：把模板命令中的 {src}/{dst}/{local_root} 占位符替换为实际值
  * - {src}：本地单个任务文件相对路径 `outbound/<id>.json`（目录前缀如 `vm_share/` 由模板承担）
  * - {dst}：服务器 outbound/ 目录（相对目录，前缀由模板承担）
- * - {hgfs_root}：MCP 内网本地根目录（配置的 `hgfs_root` 展开后的绝对路径），用于让本地侧前缀跟随 `MSGFERRY_HGFS_ROOT`，消除重叠声明
+ * - {local_root}：MCP 内网本地根目录（配置的 `local_root` 展开后的绝对路径），用于让本地侧前缀跟随 `MSGFERRY_LOCAL_ROOT`，消除重叠声明
  * 替换用纯字符串 replaceAll，不做 shell 解析，用户命令可带任意自定义参数。
  * @param template - 用户配置的 push 模板命令
  * @param localTaskPath - 本地任务文件相对路径
  * @param remoteOutboundDir - 服务器 outbound/ 目录（相对目录）
- * @param hgfsRoot - MCP 内网本地根目录（`hgfs_root` 展开后的绝对路径）
+ * @param localRoot - MCP 内网本地根目录（`local_root` 展开后的绝对路径）
  * @returns 替换占位符后的完整命令
  */
 export function renderPushCommand(
   template: string,
   localTaskPath: string,
   remoteOutboundDir: string,
-  hgfsRoot: string,
+  localRoot: string,
 ): string {
   return template
     .replaceAll(SRC_PLACEHOLDER, localTaskPath)
     .replaceAll(DST_PLACEHOLDER, remoteOutboundDir)
-    .replaceAll(HGFS_ROOT_PLACEHOLDER, hgfsRoot);
+    .replaceAll(LOCAL_ROOT_PLACEHOLDER, localRoot);
 }
 
 /**
- * 生成最终 pull 命令：把模板命令中的 {hgfs_root} 占位符替换为内网本地根目录
+ * 生成最终 pull 命令：把模板命令中的 {local_root} 占位符替换为内网本地根目录
  * - 拉取方向是整目录静态命令，`{src}`/`{dst}` 不参与替换；
  * - 本地侧目标目录若引用了内网本地根（如 `$HOME/.msgferry/vm_share/inbound`），
- *   可用 `{hgfs_root}` 占位符引用配置的 `hgfs_root`，避免重复声明家目录路径。
+ *   可用 `{local_root}` 占位符引用配置的 `local_root`，避免重复声明家目录路径。
  * @param template - 用户配置的 pull 模板命令
- * @param hgfsRoot - MCP 内网本地根目录（`hgfs_root` 展开后的绝对路径）
+ * @param localRoot - MCP 内网本地根目录（`local_root` 展开后的绝对路径）
  * @returns 替换占位符后的完整命令
  */
-export function renderPullCommand(template: string, hgfsRoot: string): string {
-  return template.replaceAll(HGFS_ROOT_PLACEHOLDER, hgfsRoot);
+export function renderPullCommand(template: string, localRoot: string): string {
+  return template.replaceAll(LOCAL_ROOT_PLACEHOLDER, localRoot);
 }
 
 /**
@@ -177,7 +177,7 @@ export async function syncPush(
     throw new Error('sync_push_cmd is not configured in exchange mode');
   }
   const remoteOutboundDir = `${EXCHANGE_DIRS.outbound}/`;
-  const cmd = renderPushCommand(template, localTaskPath, remoteOutboundDir, config.hgfs_root);
+  const cmd = renderPushCommand(template, localTaskPath, remoteOutboundDir, config.local_root);
   logger.info(`[sync] push: ${cmd}`);
   await runSyncCmd(cmd, config.sync_timeout_ms, config.sync_retries, SYNC.retry_delays_ms);
 }
@@ -198,7 +198,7 @@ export async function syncPull(config: McpServerConfig): Promise<void> {
   if (!template) {
     throw new Error('sync_pull_cmd is not configured in exchange mode');
   }
-  const cmd = renderPullCommand(template, config.hgfs_root);
+  const cmd = renderPullCommand(template, config.local_root);
   logger.info(`[sync] pull: ${cmd}`);
   await runSyncCmd(cmd, config.sync_timeout_ms, config.sync_retries, SYNC.retry_delays_ms);
 }

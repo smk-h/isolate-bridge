@@ -6,7 +6,7 @@
  * Date       : 2026/08/09
  * Version    : 0.0.1
  * Description: 业务日志路径解析——LOG_SAVE 开关读取 + LOG_DIR → 绝对路径
- *             （绝对原样 / 相对基于 hgfs_root / 缺省 <hgfs_root>/logs/mcp-server）
+ *             （绝对原样 / 相对基于 local_root / 缺省 <local_root>/logs/mcp-server）
  * ======================================================
  */
 
@@ -28,28 +28,28 @@ export function isLogSaveEnabled(env: NodeJS.ProcessEnv = process.env): boolean 
 /**
  * 解析业务日志目录为绝对路径
  * - LOG_DIR 为绝对路径 → 原样使用（如外网侧 Windows 路径、内网 /var/log/msgferry）
- * - LOG_DIR 为相对路径 → 基于 hgfs_root 解析为绝对路径
- * - LOG_DIR 未设置 → 使用默认 <hgfs_root>/logs/mcp-server
- *   （hgfs_root 未配置时回退参考项目默认 ./log，保证 Logger 可独立使用）
+ * - LOG_DIR 为相对路径 → 基于 local_root 解析为绝对路径
+ * - LOG_DIR 未设置 → 使用默认 <local_root>/logs/mcp-server
+ *   （local_root 未配置时回退参考项目默认 ./log，保证 Logger 可独立使用）
  * @param opts - 解析选项
  * @returns 解析后的绝对日志目录
  */
 export function resolveLogDir(opts: {
-  hgfsRoot?: string;
+  localRoot?: string;
   logDir?: string;
   defaultRel?: string;
 }): string {
-  const { hgfsRoot, logDir, defaultRel } = opts;
+  const { localRoot, logDir, defaultRel } = opts;
   const rel = defaultRel ?? LOG_DIRS.mcpServer;
 
   if (logDir !== undefined && logDir !== '') {
     if (isAbsolute(logDir)) {
       return logDir;
     }
-    // 相对路径：基于 hgfs_root 解析；未提供 hgfs_root 时回退 cwd
-    return join(hgfsRoot ?? process.cwd(), logDir);
+    // 相对路径：基于 local_root 解析；未提供 local_root 时回退 cwd
+    return join(localRoot ?? process.cwd(), logDir);
   }
 
-  // 未设置 LOG_DIR：基于 hgfs_root 的默认相对路径（logs/mcp-server）；未提供 hgfs_root 时回退 ./log
-  return join(hgfsRoot ?? '.', rel);
+  // 未设置 LOG_DIR：基于 local_root 的默认相对路径（logs/mcp-server）；未提供 local_root 时回退 ./log
+  return join(localRoot ?? '.', rel);
 }

@@ -162,10 +162,10 @@ export async function main(): Promise<void> {
   validateConfig(config);
   const root = config.hgfs_root;
   // 注入业务日志相关环境变量，供共享 Logger 延迟初始化读取（仅 worker 进程内生效，不改 mcp）：
-  // - MSGFERRY_HGFS_ROOT：相对日志目录基于共享根目录解析的基准
+  // - MSGFERRY_LOCAL_ROOT：相对日志目录基于共享根目录解析的基准
   // - LOG_SAVE：业务日志使能开关（来自 --log-save）
   // - LOG_DIR：业务日志目录（来自 --log-dir，默认 <hgfs_root>/logs/worker）
-  process.env.MSGFERRY_HGFS_ROOT = root;
+  process.env.MSGFERRY_LOCAL_ROOT = root;
   process.env.LOG_SAVE = config.log_save ? '1' : '0';
   process.env.LOG_DIR = config.log_dir;
 

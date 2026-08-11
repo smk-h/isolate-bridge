@@ -7,7 +7,7 @@
  * Version    : 0.0.1
  * Description: 业务日志模块——LOG_SAVE / LOG_DIR 控制文件写入，info/error/warn/block
  *             格式与参考项目 embedded-mcp-toolkit 的 src/shared/logger.ts 完全一致，
- *             日志目录缺省 <hgfs_root>/logs/mcp-server（可由 LOG_DIR 自定义）
+ *             日志目录缺省 <local_root>/logs/mcp-server（可由 LOG_DIR 自定义）
  * ======================================================
  */
 
@@ -29,7 +29,7 @@ export class Logger {
 
   /**
    * @param defaultRel - 未设置 LOG_DIR 时的默认相对日志目录
-   *                     （基于 hgfs_root 解析），缺省取 LOG_DIRS.mcpServer
+   *                     （基于 local_root 解析），缺省取 LOG_DIRS.mcpServer
    * @param label      - 日志文件头部标识（默认 "Mcp Server"，worker 侧传 "Worker"）
    */
   constructor(
@@ -44,9 +44,9 @@ export class Logger {
 
     if (!isLogSaveEnabled()) return;
 
-    // 目录解析：LOG_DIR（绝对原样 / 相对基于 hgfs_root）> 默认 <hgfs_root>/logs/<label>
+    // 目录解析：LOG_DIR（绝对原样 / 相对基于 local_root）> 默认 <local_root>/logs/<label>
     const dir = resolveLogDir({
-      hgfsRoot: process.env.MSGFERRY_HGFS_ROOT,
+      localRoot: process.env.MSGFERRY_LOCAL_ROOT,
       logDir: process.env.LOG_DIR,
       defaultRel: this.defaultRel,
     });

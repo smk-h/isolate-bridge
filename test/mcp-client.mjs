@@ -23,19 +23,19 @@
  *
  * 环境变量解析优先级：外部环境变量 > 测试覆盖默认值 > opencode.json 环境值。
  * 测试仅覆盖少数键使文件落在 test/temp 且用 cp 模拟交换服务器：
- *   MSGFERRY_HGFS_ROOT          HGFS 共享根目录，默认覆盖为 test/temp。
+ *   MSGFERRY_LOCAL_ROOT         内网本地根目录，默认覆盖为 test/temp。
  *                               若外部设置了该变量指向其他路径（如 $HOME），
  *                               脚本会打印告警提示测试文件不落在 test/temp
  *   MSGFERRY_MAX_WAIT_MS        任务最大等待时长（来自 opencode.json）
  *   MSGFERRY_POLLING_INITIAL    轮询起步间隔（来自 opencode.json）
  *   MSGFERRY_POLLING_MAX        轮询退避上限（来自 opencode.json）
  *   LOG_SAVE                    是否启用 MCP Server 业务日志落盘（来自 opencode.json）
- *   LOG_DIR                     业务日志目录，缺省 <hgfs_root>/logs/mcp-server
+ *   LOG_DIR                     业务日志目录，缺省 <local_root>/logs/mcp-server
  *
  * --exchange 模式（文件交换服务器模式）：
  *   - 内网本地目录为 test/temp，模拟交换服务器为 test/temp_server
  *   - MSGFERRY_SYNC_PUSH_CMD / PULL_CMD 默认用 scripts/sync-mock.mjs（cp 模拟
- *     file_transfer），沿用 opencode.json 的 {hgfs_root} 模板前缀写法；
+ *     file_transfer），沿用 opencode.json 的 {local_root} 模板前缀写法；
  *     真实环境可外部覆盖回 file_transfer 命令
  *   - 需先以 --exchange 启动 test_work_mock.mjs（worker 指向 test/temp_server）
  *
@@ -79,7 +79,7 @@ const MCP_CONFIG = {
   mcp: {
     'msgferry-bridge': {
       environment: {
-        MSGFERRY_HGFS_ROOT: '/mnt/hgfs/sharedir/vm_share',
+        MSGFERRY_LOCAL_ROOT: '/mnt/hgfs/sharedir/vm_share',
         MSGFERRY_MAX_WAIT_MS: '30000',
         MSGFERRY_POLLING_INITIAL: '500',
         MSGFERRY_POLLING_MAX: '3000',
@@ -88,12 +88,12 @@ const MCP_CONFIG = {
     },
     'msgferry-bridge-exchange': {
       environment: {
-        MSGFERRY_HGFS_ROOT: '$HOME/.msgferry/vm_share',
+        MSGFERRY_LOCAL_ROOT: '$HOME/.msgferry/vm_share',
         MSGFERRY_MAX_WAIT_MS: '120000',
         MSGFERRY_POLLING_INITIAL: '500',
         MSGFERRY_POLLING_MAX: '3000',
-        MSGFERRY_SYNC_PUSH_CMD: 'file_transfer -pd {hgfs_root}/{src} nfs/vm_share/{dst}',
-        MSGFERRY_SYNC_PULL_CMD: 'file_transfer -g nfs/vm_share/inbound {hgfs_root}/inbound',
+        MSGFERRY_SYNC_PUSH_CMD: 'file_transfer -pd {local_root}/{src} nfs/vm_share/{dst}',
+        MSGFERRY_SYNC_PULL_CMD: 'file_transfer -g nfs/vm_share/inbound {local_root}/inbound',
         MSGFERRY_SYNC_TIMEOUT_MS: '30000',
         MSGFERRY_SYNC_RETRIES: '3',
         LOG_SAVE: '1',
@@ -104,7 +104,7 @@ const MCP_CONFIG = {
 
 // 解析配置：以 MCP_CONFIG（opencode.json 的 environment）为默认值来源，
 // 再叠加测试覆盖层（外部环境变量 > 测试默认值 > opencode.json 环境值）。
-// 测试只覆盖少数键（hgfs_root 落到 test/temp、同步命令用 cp 模拟），
+// 测试只覆盖少数键（local_root 落到 test/temp、同步命令用 cp 模拟），
 // 其余环境变量直接复用 opencode.json 配置，行为与真实使用基本一致。
 function parseOpts() {
   const exchange = process.argv.includes('--exchange');
@@ -133,7 +133,7 @@ function parseOpts() {
   }
 
   const opts = { exchange };
-  opts.hgfsRoot = pick('MSGFERRY_HGFS_ROOT', join(__dirname, 'temp'));
+  opts.localRoot = pick('MSGFERRY_LOCAL_ROOT', join(__dirname, 'temp'));
   opts.maxWait = pick('MSGFERRY_MAX_WAIT_MS');
   opts.pollingInitial = pick('MSGFERRY_POLLING_INITIAL');
   opts.pollingMax = pick('MSGFERRY_POLLING_MAX');
@@ -153,20 +153,20 @@ function parseOpts() {
     const serverRoot = pick('MSGFERRY_SYNC_MOCK_SERVER', join(__dirname, 'temp_server'));
     // 同步命令默认用 scripts/sync-mock.mjs（cp 模拟 file_transfer）。
     // opencode.json 中为真实 file_transfer，测试环境无此工具故强制替换；
-    // 模板沿用 {hgfs_root} 占位符方案，外部可用 MSGFERRY_SYNC_PUSH_CMD 覆盖回真实命令。
+    // 模板沿用 {local_root} 占位符方案，外部可用 MSGFERRY_SYNC_PUSH_CMD 覆盖回真实命令。
     opts.syncPushCmd = pick(
       'MSGFERRY_SYNC_PUSH_CMD',
-      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -pd {hgfs_root}/{src} nfs/vm_share/{dst}`,
+      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -pd {local_root}/{src} nfs/vm_share/{dst}`,
       false,
     );
     opts.syncPullCmd = pick(
       'MSGFERRY_SYNC_PULL_CMD',
-      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -g nfs/vm_share/inbound {hgfs_root}/inbound`,
+      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -g nfs/vm_share/inbound {local_root}/inbound`,
       false,
     );
     opts.syncMockServer = serverRoot;
     // 兼容旧写法：若同步命令仍用相对前缀（如 vm_share/{src}），sync-mock 需据此剥离前缀
-    // 再相对内网本地根解析；改用 {hgfs_root} 后 src 为绝对路径，该前缀不再生效。
+    // 再相对内网本地根解析；改用 {local_root} 后 src 为绝对路径，该前缀不再生效。
     opts.syncMockLocalPrefix = 'vm_share/';
   }
   return opts;
@@ -181,12 +181,12 @@ function parseOpts() {
  */
 function buildServerEnv(opts) {
   const env = {
-    MSGFERRY_HGFS_ROOT: opts.hgfsRoot,
+    MSGFERRY_LOCAL_ROOT: opts.localRoot,
     MSGFERRY_MAX_WAIT_MS: opts.maxWait,
     MSGFERRY_POLLING_INITIAL: opts.pollingInitial,
     MSGFERRY_POLLING_MAX: opts.pollingMax,
     // 业务日志：LOG_SAVE 默认落盘，LOG_DIR 缺省由 MCP Server 解析到
-    // <hgfs_root>/logs/mcp-server（也可在此显式覆盖）
+    // <local_root>/logs/mcp-server（也可在此显式覆盖）
     LOG_SAVE: opts.logSave,
   };
   if (opts.logDir !== undefined) {
@@ -200,7 +200,7 @@ function buildServerEnv(opts) {
     env.MSGFERRY_SYNC_RETRIES = opts.syncRetries;
     env.MSGFERRY_SYNC_MOCK_SERVER = opts.syncMockServer;
     // 内网本地根 + 模板 src 前缀：sync-mock 定位本地文件需剥离 src 前缀后相对内网根解析
-    env.MSGFERRY_SYNC_MOCK_LOCAL = opts.hgfsRoot;
+    env.MSGFERRY_SYNC_MOCK_LOCAL = opts.localRoot;
     env.MSGFERRY_SYNC_MOCK_LOCAL_PREFIX = opts.syncMockLocalPrefix;
   }
   return env;
@@ -209,13 +209,13 @@ function buildServerEnv(opts) {
 const opts = parseOpts();
 
 // 安全校验：测试脚本默认应使用 test/temp 作为共享根目录。
-// 若外部环境变量 MSGFERRY_HGFS_ROOT 被设置为其他路径（如家目录/共享挂载点），
+// 若外部环境变量 MSGFERRY_LOCAL_ROOT 被设置为其他路径（如家目录/共享挂载点），
 // 测试文件将不落在 test/temp，此处打印告警以便及时发现。
 const expectedRoot = join(__dirname, 'temp');
-if (opts.hgfsRoot !== expectedRoot) {
-  console.warn(`\n[警告] MSGFERRY_HGFS_ROOT 被外部环境变量覆盖，当前为: ${opts.hgfsRoot}`);
+if (opts.localRoot !== expectedRoot) {
+  console.warn(`\n[警告] MSGFERRY_LOCAL_ROOT 被外部环境变量覆盖，当前为: ${opts.localRoot}`);
   console.warn(`        测试文件将不落在 ${expectedRoot}，可能导致测试数据写到非预期目录。`);
-  console.warn(`        如需使用 test/temp，请先取消设置 MSGFERRY_HGFS_ROOT 环境变量。\n`);
+  console.warn(`        如需使用 test/temp，请先取消设置 MSGFERRY_LOCAL_ROOT 环境变量。\n`);
 }
 
 // 打印最终生效的环境变量，便于排查（外部覆盖 / 内置默认一目了然）
@@ -233,8 +233,8 @@ if (!existsSync(mcpJs)) {
 // 检查内网本地根目录：shared 模式内网直接读写该目录，连接前必须已存在；
 // exchange 模式内网本地目录（含 outbound/inbound 单向信箱）由 MCP Server 在
 // 连接成功后识别到 exchange 模式时自动创建（见 server.ts），故连接前不强制要求。
-if (!opts.exchange && !existsSync(opts.hgfsRoot)) {
-  console.error(`[mcp-client] 共享目录不存在: ${opts.hgfsRoot}`);
+if (!opts.exchange && !existsSync(opts.localRoot)) {
+  console.error(`[mcp-client] 共享目录不存在: ${opts.localRoot}`);
   console.error('[mcp-client] 请先运行: node test/test_work_mock.mjs');
   process.exit(1);
 }
@@ -339,7 +339,7 @@ async function runSubmitTask(client, cmd, extra = {}) {
 async function main() {
   separator('启动 MCP Server 并连接');
   console.log(`  脚本路径: ${mcpJs}`);
-  console.log(`  共享目录: ${opts.hgfsRoot}`);
+  console.log(`  共享目录: ${opts.localRoot}`);
   console.log(`  最大等待: ${opts.maxWait}ms`);
   console.log(`  轮询间隔: ${opts.pollingInitial}ms ~ ${opts.pollingMax}ms`);
   console.log(`  同步模式: ${opts.exchange ? 'exchange（cp 模拟文件交换服务器）' : 'shared（共享目录）'}`);

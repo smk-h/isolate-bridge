@@ -112,9 +112,9 @@ export async function startServer(server: McpServer, config: McpServerConfig): P
   logger.info('[mcp-server] stdio transport connected');
 
   // MCP 连接成功后，识别同步模式并自动创建内网本地目录结构（幂等，已存在则跳过）
-  await initQueueDirs(config.hgfs_root);
+  await initQueueDirs(config.local_root);
   if (isExchangeMode(config)) {
-    await initExchangeDirs(config.hgfs_root);
-    logger.info(`[mcp-server] exchange mode detected, ensured local mailbox dirs: ${config.hgfs_root}`);
+    await initExchangeDirs(config.local_root);
+    logger.info(`[mcp-server] exchange mode detected, ensured local mailbox dirs: ${config.local_root}`);
   }
 }
