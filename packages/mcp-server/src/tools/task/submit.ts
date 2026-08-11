@@ -55,6 +55,7 @@ export interface SubmitSshTaskParams {
   cmd: string;
   timeout_sec?: number;              // 默认 30
   task_id?: string;                  // 默认自动生成 UUID
+  device?: string;                   // 目标设备名（未指定走默认设备）
 }
 
 /** submit_ssh_task 工具返回结果 */
@@ -89,15 +90,17 @@ function sleep(ms: number): Promise<void> {
  * @param taskId - 任务唯一标识
  * @param cmd - 待执行命令
  * @param timeoutSec - 超时秒数
+ * @param device - 目标设备名（可选，未指定走默认设备）
  * @returns 初始化的 CommandTask（status=pending）
  */
-function makeCommandTask(taskId: string, cmd: string, timeoutSec: number): CommandTask {
+function makeCommandTask(taskId: string, cmd: string, timeoutSec: number, device?: string): CommandTask {
   return {
     kind: 'command',
     task_id: taskId,
     batch_id: null,
     depends_on: [],
     cmd,
+    device,
     timeout_sec: timeoutSec,
     submit_time: Date.now(),
     start_time: 0,
@@ -192,7 +195,7 @@ export async function submitSshTask(
   }
 
   // 组装任务并原子提交
-  const task = makeCommandTask(taskId, params.cmd, timeoutSec);
+  const task = makeCommandTask(taskId, params.cmd, timeoutSec, params.device);
   await submitTask(root, task);
   logger.info(`[submit_ssh_task] task submitted: task_id=${taskId} timeout_sec=${timeoutSec} cmd=${params.cmd}`);
 
@@ -332,7 +335,7 @@ async function submitSshTaskExchange(
   }
 
   // 组装任务 → 原子写 outbound/<id>.json → 单文件 push 上传
-  const task = makeCommandTask(taskId, params.cmd, timeoutSec);
+  const task = makeCommandTask(taskId, params.cmd, timeoutSec, params.device);
   const localTaskPath = await writeOutboundTask(root, task);
   logger.info(`[submit_ssh_task] task written to outbound: task_id=${taskId} timeout_sec=${timeoutSec} cmd=${params.cmd}`);
 
@@ -442,6 +445,7 @@ export const submitSshTaskConfig: mcpToolConfig = {
       cmd: { type: 'string', description: '待执行 SSH 命令' },
       timeout_sec: { type: 'number', description: '命令超时秒数，默认 30' },
       task_id: { type: 'string', description: '自定义任务标识，未提供则自动生成' },
+      device: { type: 'string', description: '目标设备名（未指定走默认设备）' },
     },
     required: ['cmd'],
   }),
