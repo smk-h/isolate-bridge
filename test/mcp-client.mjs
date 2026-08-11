@@ -11,18 +11,26 @@
  *   node test/mcp-client.mjs [--exchange]
  *
  * 说明：脚本内部会自动为 MCP Server 子进程主动赋值全部所需环境变量，
- *   无需在外部自行配置。外部环境变量存在时以外部为准，否则用内置默认值：
- *   MSGFERRY_HGFS_ROOT         HGFS 共享根目录，默认 test/temp
- *   MSGFERRY_MAX_WAIT_MS       任务最大等待时长，默认 30000
- *   MSGFERRY_POLLING_INITIAL   轮询起步间隔，默认 500
- *   MSGFERRY_POLLING_MAX       轮询退避上限，默认 3000
- *   LOG_SAVE                   是否启用 MCP Server 业务日志落盘，默认 1
- *   LOG_DIR                    业务日志目录，缺省 <hgfs_root>/logs/mcp-server
+ *   无需在外部自行配置。配置以 JSON 对象 MCP_CONFIG 为统一来源，其内容
+ *   即 dist/msgferry-mcp-server/.opencode/opencode.json 的 mcp 部分：
+ *     - 普通模式从 mcp.msgferry-bridge.environment 解析
+ *     - exchange 模式从 mcp.msgferry-bridge-exchange.environment 解析
+ *   与真实使用基本一致，行为更可控。
  *
- * --exchange 模式（文件交换服务器模式，用 cp 模拟）：
+ * 环境变量解析优先级：外部环境变量 > 测试覆盖默认值 > opencode.json 环境值。
+ * 测试仅覆盖少数键使文件落在 test/temp 且用 cp 模拟交换服务器：
+ *   MSGFERRY_HGFS_ROOT          HGFS 共享根目录，默认覆盖为 test/temp
+ *   MSGFERRY_MAX_WAIT_MS        任务最大等待时长（来自 opencode.json）
+ *   MSGFERRY_POLLING_INITIAL    轮询起步间隔（来自 opencode.json）
+ *   MSGFERRY_POLLING_MAX        轮询退避上限（来自 opencode.json）
+ *   LOG_SAVE                    是否启用 MCP Server 业务日志落盘（来自 opencode.json）
+ *   LOG_DIR                     业务日志目录，缺省 <hgfs_root>/logs/mcp-server
+ *
+ * --exchange 模式（文件交换服务器模式）：
  *   - 内网本地目录为 test/temp，模拟交换服务器为 test/temp_server
- *   - MSGFERRY_SYNC_PUSH_CMD  = node scripts/sync-mock.mjs -pd {src} {dst}
- *   - MSGFERRY_SYNC_PULL_CMD  = node scripts/sync-mock.mjs -g inbound <local-inbound>
+ *   - MSGFERRY_SYNC_PUSH_CMD / PULL_CMD 默认用 scripts/sync-mock.mjs（cp 模拟
+ *     file_transfer），沿用 opencode.json 的 {hgfs_root} 模板前缀写法；
+ *     真实环境可外部覆盖回 file_transfer 命令
  *   - 需先以 --exchange 启动 test_work_mock.mjs（worker 指向 test/temp_server）
  *
  * 行为：
@@ -56,45 +64,93 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const mcpJs = resolve(projectRoot, 'dist', 'msgferry-mcp-server', 'index.mjs');
 
-// 解析配置：外部环境变量存在时以外部为准，否则脚本内部主动赋值内置默认值，
-// 保证 `node test/mcp-client.mjs` 无需任何外部配置即可直接运行。
-// （注：MCP Server 已收敛为纯环境变量注入，不再解析命令行参数。）
-function resolveEnvVar(name, fallback) {
-  return process.env[name] !== undefined && process.env[name] !== ''
-    ? process.env[name]
-    : fallback;
-}
+// =====================================================
+// 统一配置源：内联 dist/msgferry-mcp-server/.opencode/opencode.json 的 mcp 部分
+// （源码配置在 packages/mcp-server/.opencode/opencode.json，构建后拷贝进 dist）。
+// 所有 MCP Server 环境变量的默认值均从对应 environment 解析，与真实使用保持一致。
+// =====================================================
+const MCP_CONFIG = {
+  mcp: {
+    'msgferry-bridge': {
+      environment: {
+        MSGFERRY_HGFS_ROOT: '/mnt/hgfs/sharedir/vm_share',
+        MSGFERRY_MAX_WAIT_MS: '30000',
+        MSGFERRY_POLLING_INITIAL: '500',
+        MSGFERRY_POLLING_MAX: '3000',
+        LOG_SAVE: '1',
+      },
+    },
+    'msgferry-bridge-exchange': {
+      environment: {
+        MSGFERRY_HGFS_ROOT: '$HOME/.msgferry/vm_share',
+        MSGFERRY_MAX_WAIT_MS: '120000',
+        MSGFERRY_POLLING_INITIAL: '500',
+        MSGFERRY_POLLING_MAX: '3000',
+        MSGFERRY_SYNC_PUSH_CMD: 'file_transfer -pd {hgfs_root}/{src} nfs/vm_share/{dst}',
+        MSGFERRY_SYNC_PULL_CMD: 'file_transfer -g nfs/vm_share/inbound {hgfs_root}/inbound',
+        MSGFERRY_SYNC_TIMEOUT_MS: '30000',
+        MSGFERRY_SYNC_RETRIES: '3',
+        LOG_SAVE: '1',
+      },
+    },
+  },
+};
 
+// 解析配置：以 MCP_CONFIG（opencode.json 的 environment）为默认值来源，
+// 再叠加测试覆盖层（外部环境变量 > 测试默认值 > opencode.json 环境值）。
+// 测试只覆盖少数键（hgfs_root 落到 test/temp、同步命令用 cp 模拟），
+// 其余环境变量直接复用 opencode.json 配置，行为与真实使用基本一致。
 function parseOpts() {
   const exchange = process.argv.includes('--exchange');
-  const opts = {
-    exchange,
-    hgfsRoot: resolveEnvVar('MSGFERRY_HGFS_ROOT', join(__dirname, 'temp')),
-    maxWait: resolveEnvVar('MSGFERRY_MAX_WAIT_MS', exchange ? '120000' : '30000'),
-    pollingInitial: resolveEnvVar('MSGFERRY_POLLING_INITIAL', '500'),
-    pollingMax: resolveEnvVar('MSGFERRY_POLLING_MAX', '3000'),
-    logSave: resolveEnvVar('LOG_SAVE', '1'),
-    logDir: resolveEnvVar('LOG_DIR', undefined),
-    syncPushCmd: undefined,
-    syncPullCmd: undefined,
-    syncTimeoutMs: resolveEnvVar('MSGFERRY_SYNC_TIMEOUT_MS', '30000'),
-    syncRetries: resolveEnvVar('MSGFERRY_SYNC_RETRIES', '3'),
-  };
+  const serverKey = exchange ? 'msgferry-bridge-exchange' : 'msgferry-bridge';
+  const baseEnv = MCP_CONFIG.mcp[serverKey].environment;
+
+  /**
+   * 解析单个环境变量：
+   * 优先级：外部 process.env > 测试默认值 testDefault > opencode.json 环境值。
+   * 当 useConfigDefault 为 false 时跳过 opencode.json 值（用于同步命令等需强制替换的场景）。
+   */
+  function pick(name, testDefault, useConfigDefault = true) {
+    if (process.env[name] !== undefined && process.env[name] !== '') {
+      return process.env[name];
+    }
+    if (testDefault !== undefined) {
+      return testDefault;
+    }
+    if (useConfigDefault) {
+      const v = baseEnv[name];
+      if (v !== undefined && v !== '') {
+        return v;
+      }
+    }
+    return undefined;
+  }
+
+  const opts = { exchange };
+  opts.hgfsRoot = pick('MSGFERRY_HGFS_ROOT', join(__dirname, 'temp'));
+  opts.maxWait = pick('MSGFERRY_MAX_WAIT_MS');
+  opts.pollingInitial = pick('MSGFERRY_POLLING_INITIAL');
+  opts.pollingMax = pick('MSGFERRY_POLLING_MAX');
+  opts.logSave = pick('LOG_SAVE');
+  opts.logDir = pick('LOG_DIR');
+  opts.syncTimeoutMs = pick('MSGFERRY_SYNC_TIMEOUT_MS');
+  opts.syncRetries = pick('MSGFERRY_SYNC_RETRIES');
+
   if (exchange) {
-    // 用 scripts/sync-mock.mjs（cp 模拟 file_transfer）作为同步命令，采用 {hgfs_root} 占位符方案
-    // （本地侧前缀由 MSGFERRY_HGFS_ROOT 展开，消除 vm_share 重叠声明）：
-    //   - 上传：单文件 -pd {hgfs_root}/{src} nfs/vm_share/{dst}
-    //       {src} → outbound/<id>.json（相对），{hgfs_root} → 内网本地根（test/temp），
-    //       {dst} → outbound/（相对，前缀 nfs/vm_share/ 在模板，基于服务器根解析）
-    //   - 拉取：整目录 -g nfs/vm_share/inbound {hgfs_root}/inbound（源带前缀 nfs/vm_share/）
-    const serverRoot = resolveEnvVar('MSGFERRY_SYNC_MOCK_SERVER', join(__dirname, 'temp_server'));
-    opts.syncPushCmd = resolveEnvVar(
+    // 模拟交换服务器目录（测试专用，不在 opencode.json 中，外部可覆盖）
+    const serverRoot = pick('MSGFERRY_SYNC_MOCK_SERVER', join(__dirname, 'temp_server'));
+    // 同步命令默认用 scripts/sync-mock.mjs（cp 模拟 file_transfer）。
+    // opencode.json 中为真实 file_transfer，测试环境无此工具故强制替换；
+    // 模板沿用 {hgfs_root} 占位符方案，外部可用 MSGFERRY_SYNC_PUSH_CMD 覆盖回真实命令。
+    opts.syncPushCmd = pick(
       'MSGFERRY_SYNC_PUSH_CMD',
       `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -pd {hgfs_root}/{src} nfs/vm_share/{dst}`,
+      false,
     );
-    opts.syncPullCmd = resolveEnvVar(
+    opts.syncPullCmd = pick(
       'MSGFERRY_SYNC_PULL_CMD',
       `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -g nfs/vm_share/inbound {hgfs_root}/inbound`,
+      false,
     );
     opts.syncMockServer = serverRoot;
     // 兼容旧写法：若同步命令仍用相对前缀（如 vm_share/{src}），sync-mock 需据此剥离前缀
@@ -108,12 +164,11 @@ function parseOpts() {
  * 组装传给 MCP Server 子进程的环境变量
  * StdioClientTransport 默认只继承白名单环境变量（HOME / PATH / USER 等），
  * MSGFERRY_* / LOG_SAVE / LOG_DIR 不会自动透传，需在此显式指定。
- * 脚本在内部为全部所需环境变量主动赋值（外部未设置则用内置默认值），
+ * 值统一取自 MCP_CONFIG（opencode.json 的 environment）+ 测试覆盖层，
  * 无需用户在运行 `node test/mcp-client.mjs` 前自行配置任何环境变量。
  */
 function buildServerEnv(opts) {
   const env = {
-    // HGFS 共享根目录（必填）与等待/轮询可调参数，均由脚本主动赋值
     MSGFERRY_HGFS_ROOT: opts.hgfsRoot,
     MSGFERRY_MAX_WAIT_MS: opts.maxWait,
     MSGFERRY_POLLING_INITIAL: opts.pollingInitial,

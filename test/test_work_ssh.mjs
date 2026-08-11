@@ -5,7 +5,7 @@
  * Author     : MsgFerry
  * Date       : 2026/08/10
  * Version    : 0.0.1
- * Description: 测试辅助脚本——针对真实 SSH 设备：创建 test/temp_ssh 共享目录并
+ * Description: 测试辅助脚本——针对真实 SSH 设备：创建 test/temp 共享目录并
  *              以 ssh2 执行器启动 Worker，验证真实设备的命令执行
  *
  * 用法：
@@ -20,8 +20,8 @@
  *   --log-save 1|true            业务日志使能（可选，默认不落盘）
  *
  * 行为：
- *   1. 在项目根目录下创建 test/temp_ssh 目录作为 HGFS 共享根目录
- *      （与 mock 的 test/temp 隔离，互不干扰）
+ *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
+ *      （与 mock 脚本共用同一 test/temp，注意两个脚本不要同时运行）
  *   2. 写入测试用宽松策略 policy/policy.json（default_action=allow、危险参数
  *      模式清空），放行多命令串联（cd /tmp && pwd && ls）等真实场景
  *   3. 写入 executor=ssh2 的 config/worker.yaml，登记目标设备 SSH 连接信息
@@ -99,7 +99,7 @@ if (!existsSync(workerJs)) {
   process.exit(1);
 }
 
-// 创建 test/temp_ssh 共享目录
+// 创建 test/temp 共享目录（与 mock 共用同一目录，勿与 test_work_mock 同时运行）
 console.log(`[test_ssh] 创建共享目录: ${tempDir}`);
 mkdirSync(tempDir, { recursive: true });
 
@@ -166,5 +166,5 @@ process.on('SIGTERM', () => forwardSignal('SIGTERM'));
 
 console.log('[test_ssh] Worker 已启动（真实 SSH 模式），等待 mcp-client 连接...');
 console.log('[test_ssh] 按 Ctrl+C 退出');
-console.log(`[test_ssh] 提示：mcp-client 需指向共享目录 test/temp_ssh，例如：`);
+console.log(`[test_ssh] 提示：mcp-client 需指向共享目录 test/temp，例如：`);
 console.log(`[test_ssh]   MSGFERRY_HGFS_ROOT=${tempDir} node test/mcp-client.mjs`);
