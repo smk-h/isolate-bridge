@@ -229,6 +229,32 @@ const verifyNpmIgnore = (pkgName: string) => {
 };
 
 /**
+ * 将项目根目录 scripts/ 下的共享脚本拷贝进产物目录。
+ * 这些脚本不属于任何子包目录，因此不走 .npmignore 白名单，这里单独处理。
+ * 拷贝后随产物一起压缩分发，保证部署解压即用。
+ */
+const copyExtraScripts = async (outputDir: string) => {
+  const extraScripts = ["sync-mock.mjs"];
+  const scriptsSrc = resolve(projectRoot, "scripts");
+
+  for (const file of extraScripts) {
+    const src = resolve(scriptsSrc, file);
+    if (!existsSync(src)) {
+      console.warn(
+        picocolors.yellow(`[mcp-server] extra script not found: scripts/${file}`)
+      );
+      continue;
+    }
+    const dest = resolve(outputDir, "scripts", file);
+    await ensureDir(dirname(dest));
+    await copy(src, dest);
+    console.log(
+      picocolors.gray(`[mcp-server] copied scripts/${file} -> ${dest}`)
+    );
+  }
+};
+
+/**
  * 主流程：生成 package.json -> 拷贝 node_modules -> 按 .npmignore 拷贝分发文件
  * 注意：不清理 index.js（由 bundle 阶段生成）
  */
@@ -252,6 +278,13 @@ const assemble = async () => {
     // 按 .npmignore 拷贝分发文件（config.example.json、.mcp.json、.claude/... 等
     // 都在各自的 .npmignore 白名单式清单里声明，新增文件无需再改 build）
     await copyFilesByNpmIgnore(pkgName);
+
+    // 拷贝根目录共享脚本（位于项目 scripts/，不属于任何子包）
+    // sync-mock.mjs 是文件交换服务器的测试/仿真脚本，部署后可直接调用，
+    // 因此需一并随 mcp-server 产物分发并压缩。
+    if (pkgName === "mcp-server") {
+      await copyExtraScripts(outputDir);
+    }
 
     console.log(picocolors.green(`[${pkgName}] Pack complete\n`));
   }
