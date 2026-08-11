@@ -19,6 +19,11 @@
  * 相对目录名（outbound/、inbound/）基于服务器根目录解析，
  * 与真实 file_transfer「远程路径不校验、由命令自带上下文」的语义一致。
  *
+ * 模板前缀方案下，同步命令由用户模板定义（如 `-pd vm_share/{src} nfs/vm_share/{dst}`）：
+ *   - 服务器侧 dst 前缀（nfs/vm_share/）基于服务器根 MSGFERRY_SYNC_MOCK_SERVER 解析；
+ *   - 本地侧 src 前缀（vm_share/）先剥离（MSGFERRY_SYNC_MOCK_LOCAL_PREFIX），
+ *     再相对内网本地根 MSGFERRY_SYNC_MOCK_LOCAL 解析，从而精确定位 MCP 写的本地任务文件。
+ *
  * 模拟同步延时：默认 1000ms，用环境变量 MSGFERRY_SYNC_MOCK_DELAY_MS（毫秒）覆盖，
  * 便于测试不同网络/同步延迟场景。设为 0 可完全关闭延时。
  *
@@ -27,7 +32,7 @@
  */
 
 import { copyFile, cp, mkdir, access, constants } from 'node:fs/promises';
-import { resolve, join, dirname } from 'node:path';
+import { resolve, join, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +43,11 @@ if (!serverRoot) {
   console.error('[sync-mock] 环境变量 MSGFERRY_SYNC_MOCK_SERVER 未设置（模拟交换服务器根目录）');
   process.exit(2);
 }
+
+/** 内网本地根目录（MSGFERRY_HGFS_ROOT 对应，即 MCP 侧 outbound/inbound 工作目录） */
+const localRoot = process.env.MSGFERRY_SYNC_MOCK_LOCAL ?? '';
+/** 模板中 src 前缀（如 `vm_share/`），sync-mock 据此剥离后相对内网本地根解析本地文件 */
+const localSrcPrefix = process.env.MSGFERRY_SYNC_MOCK_LOCAL_PREFIX ?? '';
 
 /** 模拟同步延时（毫秒），默认 1000ms 近似真实交换服务器一次同步的开销 */
 const SYNC_DELAY_MS = Number(process.env.MSGFERRY_SYNC_MOCK_DELAY_MS ?? 1000);
@@ -63,6 +73,26 @@ function resolvePath(p) {
   return resolve(serverRoot, p);
 }
 
+/**
+ * 解析本地源文件路径（-pd 的第一个参数）：
+ * 相对路径会先剥离模板 src 前缀（如 vm_share/），再基于内网本地根解析；
+ * 绝对路径原样使用。未配置本地根或前缀不匹配时，保留原样（交由 cwd 兜底）。
+ * @param p - 用户命令中的本地源路径（可能相对/绝对）
+ * @returns 解析后的绝对路径
+ */
+function resolveLocalSrc(p) {
+  if (!p) {
+    return '';
+  }
+  if (isAbsolute(p)) {
+    return p;
+  }
+  if (localRoot && localSrcPrefix && p.startsWith(localSrcPrefix)) {
+    return resolve(localRoot, p.slice(localSrcPrefix.length));
+  }
+  return p;
+}
+
 /** 拉取方向：把服务器 inbound/ 整目录复制到本地镜像（完全替换） */
 async function doPull(srcDir, dstDir) {
   const serverSrc = resolvePath(srcDir);
@@ -83,11 +113,12 @@ async function doPull(srcDir, dstDir) {
 
 /** 上传方向：把本地单个任务文件复制到服务器 outbound/ */
 async function doPush(srcFile, dstDir) {
+  const localSrc = resolveLocalSrc(srcFile);
   const serverDst = resolvePath(dstDir);
   await mkdir(serverDst, { recursive: true });
-  await copyFile(srcFile, join(serverDst, srcFile.split(/[\\/]/).pop()));
+  await copyFile(localSrc, join(serverDst, localSrc.split(/[\\/]/).pop()));
   await simulateSyncDelay();
-  console.log(`[sync-mock] push ${srcFile} -> ${serverDst}`);
+  console.log(`[sync-mock] push ${localSrc} -> ${serverDst}`);
   process.exit(0);
 }
 

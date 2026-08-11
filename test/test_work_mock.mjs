@@ -22,11 +22,12 @@
  *   exchange：
  *     当前没有真实文件交换服务器，用 cp 命令模拟：
  *       - test/temp         内网本地目录（MCP 侧，含 outbound/inbound 镜像）
- *       - test/temp_server  模拟文件交换服务器 vm_shared（Worker 直接读写）
- *     Worker --hgfs-root 指向 test/temp_server（天然同步语义），
+ *       - test/temp_server  模拟文件交换服务器根（sync-mock 的 MSGFERRY_SYNC_MOCK_SERVER）
+ *       - test/temp_server/nfs/vm_share  Worker 挂载根（模拟真实 Y: 盘上的 nfs/vm_share）
+ *     Worker --hgfs-root 指向 test/temp_server/nfs/vm_share（模板前缀 nfs/vm_share/ 的落点），
  *     配置 queue_mode: exchange，Worker 扫 outbound/ 领任务、结果写 inbound/；
  *     内网 MCP 侧通过 scripts/sync-mock.mjs（cp 模拟 file_transfer）完成
- *     单文件上传 + 整目录拉回。
+ *     单文件上传 + 整目录拉回，模板前缀（vm_share/、nfs/vm_share/）由同步命令承担。
  *
  * 行为：
  *   1. 创建测试目录（shared 用 test/temp，exchange 额外建 test/temp_server）
@@ -46,7 +47,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
 const tempDir = join(__dirname, 'temp');             // 内网本地 / 共享根目录
-const serverDir = join(__dirname, 'temp_server');    // 模拟文件交换服务器 vm_shared
+const serverDir = join(__dirname, 'temp_server');    // 模拟文件交换服务器根（sync-mock 的 MSGFERRY_SYNC_MOCK_SERVER）
+const serverMount = join(serverDir, 'nfs', 'vm_share'); // Worker 挂载根（模拟真实 Y: 盘上的 nfs/vm_share）
 const workerJs = resolve(projectRoot, 'dist', 'msgferry-worker', 'index.mjs');
 
 // 解析命令行参数
@@ -81,13 +83,15 @@ if (!existsSync(workerJs)) {
   process.exit(1);
 }
 
-// exchange 模式：worker 读写模拟交换服务器目录，内网本地目录与之隔离
-const workerRoot = opts.exchange ? serverDir : tempDir;
+// exchange 模式：worker 读写模拟交换服务器挂载根（test/temp_server/nfs/vm_share），
+// 内网本地目录（test/temp）与之隔离；sync-mock 服务器根仍为 test/temp_server。
+const workerRoot = opts.exchange ? serverMount : tempDir;
 
 console.log(`[test_work_mock] 模式: ${opts.exchange ? 'exchange（cp 模拟文件交换服务器）' : 'shared（共享目录）'}`);
 if (opts.exchange) {
-  console.log(`[test_work_mock] 内网本地目录(workerRoot): ${tempDir}`);
-  console.log(`[test_work_mock] 模拟交换服务器(vm_shared): ${serverDir}`);
+  console.log(`[test_work_mock] 内网本地目录(MSGFERRY_HGFS_ROOT): ${tempDir}`);
+  console.log(`[test_work_mock] 模拟交换服务器根(MSGFERRY_SYNC_MOCK_SERVER): ${serverDir}`);
+  console.log(`[test_work_mock] Worker 挂载根(--hgfs-root): ${workerRoot}`);
 }
 console.log(`[test_work_mock] 创建共享目录: ${workerRoot}`);
 mkdirSync(workerRoot, { recursive: true });
