@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "embedded-board": {
+      "type": "local",
+      "command": ["E:\\AI\\embedded-mcp-toolkit\\remote-start-mcp.bat"],
+      "enabled": true,
+      "timeout": 600000
+    }
+  }
+}
