@@ -16,7 +16,9 @@
  *   --port <port>                SSH 端口，默认 22
  *   --username <name>            SSH 用户名，默认 root
  *   --password <pass>            SSH 密码，默认 root
- *   --device <name>              config 中设备名，默认 default
+ *   --device <name>              config 中设备名，默认 default；
+ *                                传 local 自动使用本机 OpenSSH server 做模拟测试
+ *                                （host=127.0.0.1, username=$USER，端口默认 22 可 --port 覆盖）
  *   --log-save 1|true            业务日志使能（可选，默认不落盘）
  *
  * 行为：
@@ -38,6 +40,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { userInfo } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
@@ -92,6 +95,19 @@ function parseArgs() {
 }
 
 const opts = parseArgs();
+
+// 本机模拟设备：设备名为 local 时，自动改用本机 OpenSSH server（host=127.0.0.1,
+// username=$USER），无需准备外部真实设备即可做 SSH 模拟测试。
+// 端口默认 22，可 --port 覆盖；密码默认用空串（多数发行版 root 免密，若需密码
+// 可用 --password 显式传入），用户名优先取当前系统用户，支持 --username 覆盖。
+if (opts.device === 'local') {
+  const localUser = process.env.USER || userInfo().username || 'root';
+  opts.host = '127.0.0.1';
+  opts.username = localUser;
+  opts.password = '';
+  // 端口沿用 --port / MSGFERRY_SSH_PORT，默认 22（本机 OpenSSH 标准端口）
+  console.log('[test_ssh] 本机模拟设备 local：连接本机 OpenSSH server ' + localUser + '@127.0.0.1:' + opts.port);
+}
 
 // 检查 Worker 编译产物
 if (!existsSync(workerJs)) {
@@ -168,3 +184,8 @@ console.log('[test_ssh] Worker 已启动（真实 SSH 模式），等待 mcp-cli
 console.log('[test_ssh] 按 Ctrl+C 退出');
 console.log(`[test_ssh] 提示：mcp-client 需指向共享目录 test/temp，例如：`);
 console.log(`[test_ssh]   MSGFERRY_HGFS_ROOT=${tempDir} node test/mcp-client.mjs`);
+if (opts.device === 'local') {
+  console.log('[test_ssh] 提示：当前为本机模拟设备 local（连本机 OpenSSH server），' +
+    '无需外部真实设备即可跑 ssh_shell_login / ssh_shell_exec / SFTP 上传下载');
+  console.log('[test_ssh]   前置条件：本机已安装并启动 OpenSSH server（sudo apt install openssh-server && sudo systemctl start ssh）');
+}
