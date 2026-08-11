@@ -16,8 +16,11 @@
  *   --port <port>                SSH 端口，默认 22
  *   --username <name>            SSH 用户名，默认 root
  *   --password <pass>            SSH 密码，默认 root
- *   --device <name>              config 中设备名，默认 default
+ *   --device <name>              config 中设备名，默认 default；
+ *                                传 local 自动使用本机 OpenSSH server 做模拟测试
+ *                                （host=127.0.0.1, username=$USER，端口默认 22 可 --port 覆盖）
  *   --log-save 1|true            业务日志使能（可选，默认不落盘）
+ *   --log-dir <path>             业务日志目录（可选，默认 <temp>/logs/worker）
  *
  * 行为：
  *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
@@ -38,6 +41,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { userInfo } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
@@ -58,6 +62,7 @@ function parseArgs() {
     password: undefined,
     device: undefined,
     logSave: undefined,
+    logDir: undefined,
   };
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
@@ -79,6 +84,9 @@ function parseArgs() {
       case '--log-save':
         raw.logSave = args[++i];
         break;
+      case '--log-dir':
+        raw.logDir = args[++i];
+        break;
     }
   }
   return {
@@ -88,10 +96,29 @@ function parseArgs() {
     password: resolveOpt(raw.password, 'MSGFERRY_SSH_PASS', 'root'),
     device: resolveOpt(raw.device, 'MSGFERRY_SSH_DEVICE', 'default'),
     logSave: raw.logSave ?? process.env.MSGFERRY_LOG_SAVE,
+    logDir: raw.logDir ?? process.env.MSGFERRY_LOG_DIR,
+    passwordExplicit: raw.password !== undefined || process.env.MSGFERRY_SSH_PASS !== undefined,
   };
 }
 
 const opts = parseArgs();
+
+// 本机模拟设备：设备名为 local 时，自动改用本机 OpenSSH server（host=127.0.0.1,
+// username=$USER），无需准备外部真实设备即可做 SSH 模拟测试。
+// 端口默认 22，可 --port 覆盖；密码默认用空串（多数发行版 root 免密，若需密码
+// 可用 --password 显式传入），用户名优先取当前系统用户，支持 --username 覆盖。
+if (opts.device === 'local') {
+  const localUser = process.env.USER || userInfo().username || 'root';
+  opts.host = '127.0.0.1';
+  opts.username = localUser;
+  // 密码默认用空串（多数发行版 root 免密/密钥登录）；若通过 --password 或
+  // MSGFERRY_SSH_PASS 显式传入则保留，否则置空走免密/密钥认证。
+  if (!opts.passwordExplicit) {
+    opts.password = '';
+  }
+  // 端口沿用 --port / MSGFERRY_SSH_PORT，默认 22（本机 OpenSSH 标准端口）
+  console.log('[test_ssh] 本机模拟设备 local：连接本机 OpenSSH server ' + localUser + '@127.0.0.1:' + opts.port);
+}
 
 // 检查 Worker 编译产物
 if (!existsSync(workerJs)) {
@@ -137,6 +164,9 @@ const workerArgs = ['--hgfs-root', tempDir];
 if (opts.logSave !== undefined) {
   workerArgs.push('--log-save', opts.logSave);
 }
+if (opts.logDir !== undefined) {
+  workerArgs.push('--log-dir', opts.logDir);
+}
 
 console.log(`[test_ssh] 启动 Worker: node ${workerJs} ${workerArgs.join(' ')}`);
 console.log('[test_ssh]   每条命令会真实 SSH 到目标设备执行，请确认设备可达');
@@ -168,3 +198,8 @@ console.log('[test_ssh] Worker 已启动（真实 SSH 模式），等待 mcp-cli
 console.log('[test_ssh] 按 Ctrl+C 退出');
 console.log(`[test_ssh] 提示：mcp-client 需指向共享目录 test/temp，例如：`);
 console.log(`[test_ssh]   MSGFERRY_HGFS_ROOT=${tempDir} node test/mcp-client.mjs`);
+if (opts.device === 'local') {
+  console.log('[test_ssh] 提示：当前为本机模拟设备 local（连本机 OpenSSH server），' +
+    '无需外部真实设备即可跑 ssh_shell_login / ssh_shell_exec / SFTP 上传下载');
+  console.log('[test_ssh]   前置条件：本机已安装并启动 OpenSSH server（sudo apt install openssh-server && sudo systemctl start ssh）');
+}

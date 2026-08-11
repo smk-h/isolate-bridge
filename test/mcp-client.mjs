@@ -8,7 +8,7 @@
  * Description: 测试辅助脚本——以 MCP SDK Client 身份启动并连接 MCP Server，调用工具
  *
  * 用法：
- *   node test/mcp-client.mjs [--exchange]
+ *   node test/mcp-client.mjs [--exchange] [--device <name>]
  *
  * 说明：脚本内部会自动为 MCP Server 子进程主动赋值全部所需环境变量，
  *   无需在外部自行配置。配置以 JSON 对象 MCP_CONFIG 为统一来源，其内容
@@ -16,6 +16,10 @@
  *     - 普通模式从 mcp.msgferry-bridge.environment 解析
  *     - exchange 模式从 mcp.msgferry-bridge-exchange.environment 解析
  *   与真实使用基本一致，行为更可控。
+ *
+ *   --device <name>  可选，目标设备名（透传给 submit_ssh_task 的 device 参数）；
+ *                    未指定时走默认设备。配合 test_work_ssh.mjs --device local
+ *                    可连接本机模拟设备做 SSH 模拟测试。
  *
  * 环境变量解析优先级：外部环境变量 > 测试覆盖默认值 > opencode.json 环境值。
  * 测试仅覆盖少数键使文件落在 test/temp 且用 cp 模拟交换服务器：
@@ -137,6 +141,12 @@ function parseOpts() {
   opts.logDir = pick('LOG_DIR');
   opts.syncTimeoutMs = pick('MSGFERRY_SYNC_TIMEOUT_MS');
   opts.syncRetries = pick('MSGFERRY_SYNC_RETRIES');
+
+  // 目标设备名：可选 --device <name>，透传给 submit_ssh_task（未指定走默认设备）
+  const deviceArg = process.argv.indexOf('--device');
+  opts.device = deviceArg !== -1 && deviceArg + 1 < process.argv.length
+    ? process.argv[deviceArg + 1]
+    : undefined;
 
   if (exchange) {
     // 模拟交换服务器目录（测试专用，不在 opencode.json 中，外部可覆盖）
@@ -286,7 +296,8 @@ function printResult(label, result, assertFn) {
  */
 async function runSubmitTask(client, cmd, extra = {}) {
   const taskId = extra.task_id ?? randomUUID();
-  console.log(`\n  提交命令: ${cmd.replace(/\n/g, ' \\n ')}, task_id=${taskId}`);
+  const device = extra.device ?? opts.device;
+  console.log(`\n  提交命令: ${cmd.replace(/\n/g, ' \\n ')}, task_id=${taskId}${device ? `, device=${device}` : ''}`);
   printExpected('submit_ssh_task', {
     task_id: '<string>',
     status: '<completed | failed | cancelled | timeout>',
@@ -306,6 +317,7 @@ async function runSubmitTask(client, cmd, extra = {}) {
       cmd,
       timeout_sec: extra.timeout_sec ?? 10,
       task_id: taskId,
+      ...(device ? { device } : {}),
     },
   });
   printResult('submit_ssh_task', result, (sc) => {
