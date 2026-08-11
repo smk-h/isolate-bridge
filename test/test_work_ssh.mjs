@@ -97,6 +97,7 @@ function parseArgs() {
     device: resolveOpt(raw.device, 'MSGFERRY_SSH_DEVICE', 'default'),
     logSave: raw.logSave ?? process.env.MSGFERRY_LOG_SAVE,
     logDir: raw.logDir ?? process.env.MSGFERRY_LOG_DIR,
+    passwordExplicit: raw.password !== undefined || process.env.MSGFERRY_SSH_PASS !== undefined,
   };
 }
 
@@ -110,7 +111,11 @@ if (opts.device === 'local') {
   const localUser = process.env.USER || userInfo().username || 'root';
   opts.host = '127.0.0.1';
   opts.username = localUser;
-  opts.password = '';
+  // 密码默认用空串（多数发行版 root 免密/密钥登录）；若通过 --password 或
+  // MSGFERRY_SSH_PASS 显式传入则保留，否则置空走免密/密钥认证。
+  if (!opts.passwordExplicit) {
+    opts.password = '';
+  }
   // 端口沿用 --port / MSGFERRY_SSH_PORT，默认 22（本机 OpenSSH 标准端口）
   console.log('[test_ssh] 本机模拟设备 local：连接本机 OpenSSH server ' + localUser + '@127.0.0.1:' + opts.port);
 }
