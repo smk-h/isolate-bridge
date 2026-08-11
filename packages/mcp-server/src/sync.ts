@@ -18,9 +18,9 @@ import { EXCHANGE_DIRS, SYNC, logger } from '@smai-kit/msgferry-shared';
 
 import type { McpServerConfig } from './config.js';
 
-/** PUSH 模板命令占位符：本地单个任务文件绝对路径 */
+/** PUSH 模板命令占位符：本地单个任务文件相对路径（如 `outbound/<id>.json`，目录前缀由模板承担） */
 const SRC_PLACEHOLDER = '{src}';
-/** PUSH 模板命令占位符：服务器 outbound/ 目录（远程路径，MCP 不校验） */
+/** PUSH 模板命令占位符：服务器 outbound/ 目录（相对目录，前缀由模板承担，MCP 不校验） */
 const DST_PLACEHOLDER = '{dst}';
 
 /** 命令执行结果 */
@@ -118,13 +118,13 @@ function runOnce(cmd: string, timeoutMs: number): Promise<SyncRunResult> {
 }
 
 /**
- * 生成最终 push 命令：把模板命令中的 {src}/{dst} 占位符替换为实际路径
- * - {src}：本地单个任务文件绝对路径
- * - {dst}：服务器 outbound/ 目录（远程路径）
+ * 生成最终 push 命令：把模板命令中的 {src}/{dst} 占位符替换为相对路径
+ * - {src}：本地单个任务文件相对路径 `outbound/<id>.json`（目录前缀如 `vm_share/` 由模板承担）
+ * - {dst}：服务器 outbound/ 目录（相对目录，前缀由模板承担）
  * 替换用纯字符串 replaceAll，不做 shell 解析，用户命令可带任意自定义参数。
  * @param template - 用户配置的 push 模板命令
- * @param localTaskPath - 本地任务文件绝对路径
- * @param remoteOutboundDir - 服务器 outbound/ 目录（远程路径）
+ * @param localTaskPath - 本地任务文件相对路径
+ * @param remoteOutboundDir - 服务器 outbound/ 目录（相对目录）
  * @returns 替换占位符后的完整命令
  */
 export function renderPushCommand(
@@ -143,7 +143,7 @@ export function renderPushCommand(
  * - exchange 模式：渲染模板命令 → spawn → 超时 → 退避重试；
  *   全部重试耗尽仍失败时抛错（上层映射 SyncFailed）。
  * @param config - MCP Server 配置
- * @param localTaskPath - 本地单个任务文件绝对路径
+ * @param localTaskPath - 本地单个任务文件相对路径 `outbound/<id>.json`（目录前缀由模板承担）
  * @returns Promise<void>
  */
 export async function syncPush(

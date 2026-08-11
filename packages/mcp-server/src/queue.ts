@@ -211,14 +211,14 @@ export async function initExchangeDirs(root: string): Promise<void> {
  * 原子写任务文件到 outbound/（.tmp → rename），供交换模式 push 上传
  * @param root - HGFS 共享根目录
  * @param task - 任务结构体
- * @returns 本地任务文件绝对路径（供 syncPush 上传）
+ * @returns 任务文件相对路径 `outbound/<id>.json`（供 syncPush 上传；目录前缀由同步命令模板承担）
  */
 export async function writeOutboundTask(root: string, task: CommandTask): Promise<string> {
   const targetPath = join(root, EXCHANGE_DIRS.outbound, `${task.task_id}${JSON_SUFFIX}`);
   const tmpPath = `${targetPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, targetPath);
-  return targetPath;
+  return join(EXCHANGE_DIRS.outbound, `${task.task_id}${JSON_SUFFIX}`);
 }
 
 /**
@@ -261,14 +261,14 @@ export async function archiveSentTask(root: string, taskId: string): Promise<voi
  * 原子写取消标记到 outbound/cancel_<id>.marker，供交换模式 push 上传（尽力取消）
  * @param root - HGFS 共享根目录
  * @param taskId - 任务唯一标识
- * @returns 取消标记本地绝对路径
+ * @returns 取消标记相对路径 `outbound/cancel_<id>.marker`（供 syncPush 上传；目录前缀由同步命令模板承担）
  */
 export async function writeOutboundCancelMarker(root: string, taskId: string): Promise<string> {
   const markerPath = join(root, EXCHANGE_DIRS.outbound, `cancel_${taskId}${CANCEL_MARKER_SUFFIX}`);
   const tmpPath = `${markerPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, '', 'utf-8');
   await rename(tmpPath, markerPath);
-  return markerPath;
+  return join(EXCHANGE_DIRS.outbound, `cancel_${taskId}${CANCEL_MARKER_SUFFIX}`);
 }
 
 /**
