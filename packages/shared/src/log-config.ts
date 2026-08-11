@@ -13,6 +13,7 @@
 import { isAbsolute, join } from 'node:path';
 
 import { LOG_DIRS } from './constants.js';
+import { expandHomeDir } from './path.js';
 
 /**
  * 判断业务日志是否启用
@@ -39,17 +40,20 @@ export function resolveLogDir(opts: {
   logDir?: string;
   defaultRel?: string;
 }): string {
-  const { localRoot, logDir, defaultRel } = opts;
+  const { logDir, defaultRel } = opts;
   const rel = defaultRel ?? LOG_DIRS.mcpServer;
+
+  // 先展开家目录占位符（~ / $HOME），避免相对路径拼接时基于 cwd 落盘
+  const root = opts.localRoot ? expandHomeDir(opts.localRoot) : opts.localRoot;
 
   if (logDir !== undefined && logDir !== '') {
     if (isAbsolute(logDir)) {
       return logDir;
     }
     // 相对路径：基于 local_root 解析；未提供 local_root 时回退 cwd
-    return join(localRoot ?? process.cwd(), logDir);
+    return join(root ?? process.cwd(), logDir);
   }
 
   // 未设置 LOG_DIR：基于 local_root 的默认相对路径（logs/mcp-server）；未提供 local_root 时回退 ./log
-  return join(localRoot ?? '.', rel);
+  return join(root ?? '.', rel);
 }

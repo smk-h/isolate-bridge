@@ -11,6 +11,7 @@
 
 export * from './constants.js';
 export * from './config-file.js';
+export * from './path.js';
 export * from './status.js';
 export * from './errors.js';
 export * from './tasks.js';

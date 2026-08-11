@@ -12,9 +12,8 @@
  */
 
 import { existsSync, accessSync, constants, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 
-import { WAIT, POLLING, SYNC } from '@smai-kit/msgferry-shared';
+import { WAIT, POLLING, SYNC, expandHomeDir } from '@smai-kit/msgferry-shared';
 
 /** 同步模式：shared = 共享目录（免同步）；exchange = 文件交换服务器（手动同步） */
 export type SyncMode = 'shared' | 'exchange';
@@ -32,39 +31,6 @@ export interface McpServerConfig {
   sync_pull_cmd?: string;               // pull 静态命令（整目录拉回），exchange 模式必填
   sync_timeout_ms: number;              // 单次同步命令超时（毫秒）
   sync_retries: number;                 // 同步失败退避重试次数
-}
-
-/**
- * 展开路径中的家目录占位符（`~` 与 `$HOME`）为真实家目录路径
- *
- * 跨平台说明：
- * - Windows 原生环境的 `$HOME` 变量通常不存在（用的是 `USERPROFILE`），
- *   因此这里不依赖 `process.env.HOME`，而是统一用 `node:os` 的 `homedir()`，
- *   它在 Windows 优先取 `USERPROFILE`、在 Linux/macOS 取 `HOME`，跨平台可靠。
- * - 支持两种写法：
- *   - `~/.msgferry/vm_share`      → `${homedir}/.msgferry/vm_share`
- *   - `$HOME/.msgferry/vm_share`  → `${homedir}/.msgferry/vm_share`
- *   兼容 `/$HOME/...`（用户可能多写一个前导 `/`）的写法。
- * - 不含占位符时原样返回。
- *
- * @param raw - 配置原始值（如 `$HOME/.msgferry/vm_share`）
- * @returns 展开后的绝对路径
- */
-export function expandHomeDir(raw: string): string {
-  if (!raw) {
-    return raw;
-  }
-  const home = homedir();
-  if (!home) {
-    return raw;
-  }
-  // 先处理 `~` 前缀，再处理 `$HOME`（兼容可选的前导 `/`）
-  let expanded = raw;
-  if (expanded === '~' || expanded.startsWith('~/')) {
-    expanded = home + expanded.slice(1);
-  }
-  expanded = expanded.replace(/^\/?\$HOME\//, `${home}/`).replace(/^\$HOME$/, home);
-  return expanded;
 }
 
 /**
