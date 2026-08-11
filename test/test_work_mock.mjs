@@ -91,7 +91,7 @@ const workerRoot = opts.exchange ? serverMount : tempDir;
 
 console.log(`[test_work_mock] 模式: ${opts.exchange ? 'exchange（cp 模拟文件交换服务器）' : 'shared（共享目录）'}`);
 if (opts.exchange) {
-  console.log(`[test_work_mock] 内网本地目录(MSGFERRY_HGFS_ROOT): ${tempDir}`);
+  console.log(`[test_work_mock] 内网本地目录(MSGFERRY_LOCAL_ROOT): ${tempDir}`);
   console.log(`[test_work_mock] 模拟交换服务器根(MSGFERRY_SYNC_MOCK_SERVER): ${serverDir}`);
   console.log(`[test_work_mock] Worker 挂载根(--hgfs-root): ${workerRoot}`);
 }
@@ -167,5 +167,5 @@ if (opts.exchange) {
   console.log(`[test_work_mock]   node test/mcp-client.mjs --exchange`);
 } else {
   console.log(`[test_work_mock] 提示：mcp-client 指向共享目录 test/temp，例如：`);
-  console.log(`[test_work_mock]   MSGFERRY_HGFS_ROOT=${tempDir} node test/mcp-client.mjs`);
+  console.log(`[test_work_mock]   MSGFERRY_LOCAL_ROOT=${tempDir} node test/mcp-client.mjs`);
 }
