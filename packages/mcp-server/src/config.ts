@@ -28,7 +28,7 @@ export interface McpServerConfig {
     max_interval_ms: number;            // 轮询退避上限
   };
   sync_mode: SyncMode;                  // 同步模式：共享目录 / 文件交换服务器
-  sync_push_cmd?: string;               // push 模板命令（含 {src}/{dst} 占位符），exchange 模式必填
+  sync_push_cmd?: string;               // push 模板命令（含 {src}/{dst}/{hgfs_root} 占位符），exchange 模式必填
   sync_pull_cmd?: string;               // pull 静态命令（整目录拉回），exchange 模式必填
   sync_timeout_ms: number;              // 单次同步命令超时（毫秒）
   sync_retries: number;                 // 同步失败退避重试次数

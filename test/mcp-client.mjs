@@ -81,23 +81,24 @@ function parseOpts() {
     syncRetries: resolveEnvVar('MSGFERRY_SYNC_RETRIES', '3'),
   };
   if (exchange) {
-    // 用 scripts/sync-mock.mjs（cp 模拟 file_transfer）作为同步命令，完全按“模板前缀”方案
-    // 模拟真实目录情况（前缀 vm_share/、nfs/vm_share/ 由同步命令模板承担）：
-    //   - 上传：单文件 -pd vm_share/{src} nfs/vm_share/{dst}
-    //       {src} → outbound/<id>.json（相对，前缀 vm_share/ 在模板），
+    // 用 scripts/sync-mock.mjs（cp 模拟 file_transfer）作为同步命令，采用 {hgfs_root} 占位符方案
+    // （本地侧前缀由 MSGFERRY_HGFS_ROOT 展开，消除 vm_share 重叠声明）：
+    //   - 上传：单文件 -pd {hgfs_root}/{src} nfs/vm_share/{dst}
+    //       {src} → outbound/<id>.json（相对），{hgfs_root} → 内网本地根（test/temp），
     //       {dst} → outbound/（相对，前缀 nfs/vm_share/ 在模板，基于服务器根解析）
-    //   - 拉取：整目录 -g nfs/vm_share/inbound <本地镜像>（源带前缀 nfs/vm_share/）
+    //   - 拉取：整目录 -g nfs/vm_share/inbound {hgfs_root}/inbound（源带前缀 nfs/vm_share/）
     const serverRoot = resolveEnvVar('MSGFERRY_SYNC_MOCK_SERVER', join(__dirname, 'temp_server'));
     opts.syncPushCmd = resolveEnvVar(
       'MSGFERRY_SYNC_PUSH_CMD',
-      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -pd vm_share/{src} nfs/vm_share/{dst}`,
+      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -pd {hgfs_root}/{src} nfs/vm_share/{dst}`,
     );
     opts.syncPullCmd = resolveEnvVar(
       'MSGFERRY_SYNC_PULL_CMD',
-      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -g nfs/vm_share/inbound ${join(opts.hgfsRoot, 'inbound')}`,
+      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -g nfs/vm_share/inbound {hgfs_root}/inbound`,
     );
     opts.syncMockServer = serverRoot;
-    // 同步命令模板里 src 前缀为 vm_share/（相对内网本地根），sync-mock 需据此剥离前缀再定位本地文件
+    // 兼容旧写法：若同步命令仍用相对前缀（如 vm_share/{src}），sync-mock 需据此剥离前缀
+    // 再相对内网本地根解析；改用 {hgfs_root} 后 src 为绝对路径，该前缀不再生效。
     opts.syncMockLocalPrefix = 'vm_share/';
   }
   return opts;
