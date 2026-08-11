@@ -5,13 +5,14 @@
  * Author     : MsgFerry
  * Date       : 2026/08/10
  * Version    : 0.0.1
- * Description: 测试辅助脚本——针对真实 SSH 设备：创建 test/temp 共享目录并
- *              以 ssh2 执行器启动 Worker，验证真实设备的命令执行
+ * Description: 测试辅助脚本——针对真实 SSH 设备：创建共享目录并以 ssh2 执行器
+ *              启动 Worker，验证真实设备的命令执行；支持 exchange 文件交换服务器模式
  *
  * 用法：
  *   node test/test_ssh.mjs [options]
  *
  * 选项（均可由环境变量覆盖，命令行优先级更高）：
+ *   --exchange                  文件交换服务器模式（默认 shared 共享目录模式）
  *   --host <ip>                  SSH 主机，默认取 MSGFERRY_SSH_HOST
  *   --port <port>                SSH 端口，默认 22
  *   --username <name>            SSH 用户名，默认 root
@@ -22,12 +23,23 @@
  *   --log-save 1|true            业务日志使能（可选，默认不落盘）
  *   --log-dir <path>             业务日志目录（可选，默认 <temp>/logs/worker）
  *
+ * 两种模式：
+ *   shared（默认）：创建 test/temp 作为 HGFS 共享根目录，Worker 直接轮询该目录，
+ *     写入 executor=ssh2 + devices 配置，mcp-client 指向同一 test/temp。
+ *   exchange：与 mock 脚本相同的文件交换服务器布局（cp 模拟 file_transfer）：
+ *     - test/temp                    内网本地目录（MCP 侧，含 outbound/inbound 镜像）
+ *     - test/temp_server             模拟文件交换服务器根（sync-mock 的 MSGFERRY_SYNC_MOCK_SERVER）
+ *     - test/temp_server/nfs/vm_share Worker 挂载根（模拟真实 Y: 盘上的 nfs/vm_share）
+ *     Worker --hgfs-root 指向 test/temp_server/nfs/vm_share，
+ *     配置 queue_mode: exchange + executor=ssh2 + devices；mcp-client 需用 --exchange 配对。
+ *
  * 行为：
- *   1. 在项目根目录下创建 test/temp 目录作为 HGFS 共享根目录
- *      （与 mock 脚本共用同一 test/temp，注意两个脚本不要同时运行）
+ *   1. 创建共享目录（shared 用 test/temp；exchange 额外建 test/temp_server/nfs/vm_share
+ *      及 test/temp 的 outbound/inbound）
  *   2. 写入测试用宽松策略 policy/policy.json（default_action=allow、危险参数
  *      模式清空），放行多命令串联（cd /tmp && pwd && ls）等真实场景
- *   3. 写入 executor=ssh2 的 config/worker.yaml，登记目标设备 SSH 连接信息
+ *   3. 写入 executor=ssh2 的 config/worker.yaml（exchange 加 queue_mode: exchange），
+ *      登记目标设备 SSH 连接信息
  *   4. 启动 Worker（真实 SSH 模式），将 stderr 转发到当前进程
  *   5. 收到 SIGINT/SIGTERM 时优雅终止 Worker
  *
@@ -45,7 +57,9 @@ import { userInfo } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, '..');
-const tempDir = join(__dirname, 'temp');
+const tempDir = join(__dirname, 'temp');                // 内网本地 / 共享根目录
+const serverDir = join(__dirname, 'temp_server');       // 模拟文件交换服务器根（sync-mock 的 MSGFERRY_SYNC_MOCK_SERVER）
+const serverMount = join(serverDir, 'nfs', 'vm_share'); // Worker 挂载根（模拟真实 Y: 盘上的 nfs/vm_share）
 const workerJs = resolve(projectRoot, 'dist', 'msgferry-worker', 'index.mjs');
 
 // 解析命令行参数与环境变量（命令行优先，其次环境变量，最后内置默认值）
@@ -56,6 +70,7 @@ function resolveOpt(name, envName, fallback) {
 function parseArgs() {
   const args = process.argv.slice(2);
   const raw = {
+    exchange: false,
     host: undefined,
     port: undefined,
     username: undefined,
@@ -66,6 +81,9 @@ function parseArgs() {
   };
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
+      case '--exchange':
+        raw.exchange = true;
+        break;
       case '--host':
         raw.host = args[++i];
         break;
@@ -90,6 +108,7 @@ function parseArgs() {
     }
   }
   return {
+    exchange: raw.exchange,
     host: resolveOpt(raw.host, 'MSGFERRY_SSH_HOST', '192.168.16.107'),
     port: resolveOpt(raw.port, 'MSGFERRY_SSH_PORT', '22'),
     username: resolveOpt(raw.username, 'MSGFERRY_SSH_USER', 'root'),
@@ -126,14 +145,29 @@ if (!existsSync(workerJs)) {
   process.exit(1);
 }
 
-// 创建 test/temp 共享目录（与 mock 共用同一目录，勿与 test_work_mock 同时运行）
-console.log(`[test_ssh] 创建共享目录: ${tempDir}`);
-mkdirSync(tempDir, { recursive: true });
+// exchange 模式：worker 读写模拟交换服务器挂载根（test/temp_server/nfs/vm_share），
+// 内网本地目录（test/temp）与之隔离；sync-mock 服务器根仍为 test/temp_server。
+// shared 模式：worker 直接轮询 test/temp 共享目录。
+const workerRoot = opts.exchange ? serverMount : tempDir;
+
+console.log(`[test_ssh] 模式: ${opts.exchange ? 'exchange（cp 模拟文件交换服务器）' : 'shared（共享目录）'}`);
+if (opts.exchange) {
+  console.log(`[test_ssh] 内网本地目录(MSGFERRY_HGFS_ROOT): ${tempDir}`);
+  console.log(`[test_ssh] 模拟交换服务器根(MSGFERRY_SYNC_MOCK_SERVER): ${serverDir}`);
+  console.log(`[test_ssh] Worker 挂载根(--hgfs-root): ${workerRoot}`);
+}
+console.log(`[test_ssh] 创建共享目录: ${workerRoot}`);
+mkdirSync(workerRoot, { recursive: true });
+if (opts.exchange) {
+  // 内网本地目录也建好 outbound/inbound，mcp-server 启动时会自动补齐 sent/
+  mkdirSync(join(tempDir, 'outbound'), { recursive: true });
+  mkdirSync(join(tempDir, 'inbound'), { recursive: true });
+}
 
 // 写入测试用宽松策略：default_action=allow 且危险参数模式为空，
 // 便于验证多命令串联（cd /tmp && pwd && ls、换行多条命令）等真实场景；
 // 黑名单仍保留，危险命令（rm -rf / 等）依旧会被拦截。
-const policyDir = join(tempDir, 'policy');
+const policyDir = join(workerRoot, 'policy');
 mkdirSync(policyDir, { recursive: true });
 const testPolicy = {
   whitelist_prefixes: ['docker', 'kubectl', 'systemctl', 'journalctl', 'cat', 'ls', 'tail', 'pwd', 'echo', 'uname', 'hostname'],
@@ -145,11 +179,13 @@ writeFileSync(join(policyDir, 'policy.json'), JSON.stringify(testPolicy, null, 2
 console.log('[test_ssh] 已写入测试宽松策略: policy/policy.json (default_action=allow, 不拦截串联/管道/重定向)');
 
 // 写入测试用 worker 配置：executor=ssh2，登记目标设备 SSH 连接信息
-const configDir = join(tempDir, 'config');
+const configDir = join(workerRoot, 'config');
 mkdirSync(configDir, { recursive: true });
+// exchange 模式额外配置 queue_mode: exchange（worker 扫 outbound/、结果写 inbound/）
+const queueModeLine = opts.exchange ? 'queue_mode: exchange\n' : '';
 const testConfig = `# 测试用 Worker 配置（真实 SSH 模式）
 executor: ssh2
-devices:
+${queueModeLine}devices:
   ${opts.device}:
     host: ${opts.host}
     port: ${opts.port}
@@ -157,10 +193,10 @@ devices:
     password: ${opts.password}
 `;
 writeFileSync(join(configDir, 'worker.yaml'), testConfig, 'utf-8');
-console.log(`[test_ssh] 已写入测试配置: config/worker.yaml (executor=ssh2, device=${opts.device} ${opts.username}@${opts.host}:${opts.port})`);
+console.log(`[test_ssh] 已写入测试配置: config/worker.yaml (executor=ssh2${opts.exchange ? ', queue_mode=exchange' : ''}, device=${opts.device} ${opts.username}@${opts.host}:${opts.port})`);
 
 // 组装 Worker 启动参数
-const workerArgs = ['--hgfs-root', tempDir];
+const workerArgs = ['--hgfs-root', workerRoot];
 if (opts.logSave !== undefined) {
   workerArgs.push('--log-save', opts.logSave);
 }
@@ -196,8 +232,13 @@ process.on('SIGTERM', () => forwardSignal('SIGTERM'));
 
 console.log('[test_ssh] Worker 已启动（真实 SSH 模式），等待 mcp-client 连接...');
 console.log('[test_ssh] 按 Ctrl+C 退出');
-console.log(`[test_ssh] 提示：mcp-client 需指向共享目录 test/temp，例如：`);
-console.log(`[test_ssh]   MSGFERRY_HGFS_ROOT=${tempDir} node test/mcp-client.mjs`);
+if (opts.exchange) {
+  console.log('[test_ssh] 提示：mcp-client 请用 --exchange 模式，例如：');
+  console.log('[test_ssh]   node test/mcp-client.mjs --exchange');
+} else {
+  console.log(`[test_ssh] 提示：mcp-client 需指向共享目录 test/temp，例如：`);
+  console.log(`[test_ssh]   MSGFERRY_HGFS_ROOT=${tempDir} node test/mcp-client.mjs`);
+}
 if (opts.device === 'local') {
   console.log('[test_ssh] 提示：当前为本机模拟设备 local（连本机 OpenSSH server），' +
     '无需外部真实设备即可跑 ssh_shell_login / ssh_shell_exec / SFTP 上传下载');
