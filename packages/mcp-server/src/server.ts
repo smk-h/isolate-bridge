@@ -20,6 +20,8 @@ import { logger } from '@smai-kit/msgferry-shared';
 
 import type { McpServerConfig } from './config.js';
 import { createAllTools } from './tools/index.js';
+import { initQueueDirs, initExchangeDirs } from './queue.js';
+import { isExchangeMode } from './sync.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -94,11 +96,25 @@ export function createMcpServer(config: McpServerConfig, root: string): McpServe
 }
 
 /**
- * 创建 StdioServerTransport 并连接 McpServer
+ * 创建 StdioServerTransport 并连接 McpServer；连接成功后自动补齐内网本地目录结构。
+ *
+ * 内网本地目录结构（队列子目录 + exchange 模式的 outbound/inbound 单向信箱）由
+ * 本侧 MCP Server 在 MCP client 连接成功后自动创建，不依赖外网 Worker 进程预先 mkdir：
+ * - 始终补齐基础队列目录（pending/processing/completed/failed/cancelled/outputs/policy）；
+ * - 若识别到 exchange 模式，额外补齐 outbound/（含 sent/）与 inbound/ 单向信箱。
+ *
  * @param server - 已注册工具的 McpServer 实例
+ * @param config - MCP Server 配置（用于判断是否处于 exchange 模式）
  */
-export async function startServer(server: McpServer): Promise<void> {
+export async function startServer(server: McpServer, config: McpServerConfig): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info('[mcp-server] stdio transport connected');
+
+  // MCP 连接成功后，识别同步模式并自动创建内网本地目录结构（幂等，已存在则跳过）
+  await initQueueDirs(config.hgfs_root);
+  if (isExchangeMode(config)) {
+    await initExchangeDirs(config.hgfs_root);
+    logger.info(`[mcp-server] exchange mode detected, ensured local mailbox dirs: ${config.hgfs_root}`);
+  }
 }
