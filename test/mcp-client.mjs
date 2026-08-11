@@ -19,7 +19,9 @@
  *
  * 环境变量解析优先级：外部环境变量 > 测试覆盖默认值 > opencode.json 环境值。
  * 测试仅覆盖少数键使文件落在 test/temp 且用 cp 模拟交换服务器：
- *   MSGFERRY_HGFS_ROOT          HGFS 共享根目录，默认覆盖为 test/temp
+ *   MSGFERRY_HGFS_ROOT          HGFS 共享根目录，默认覆盖为 test/temp。
+ *                               若外部设置了该变量指向其他路径（如 $HOME），
+ *                               脚本会打印告警提示测试文件不落在 test/temp
  *   MSGFERRY_MAX_WAIT_MS        任务最大等待时长（来自 opencode.json）
  *   MSGFERRY_POLLING_INITIAL    轮询起步间隔（来自 opencode.json）
  *   MSGFERRY_POLLING_MAX        轮询退避上限（来自 opencode.json）
@@ -195,6 +197,16 @@ function buildServerEnv(opts) {
 }
 
 const opts = parseOpts();
+
+// 安全校验：测试脚本默认应使用 test/temp 作为共享根目录。
+// 若外部环境变量 MSGFERRY_HGFS_ROOT 被设置为其他路径（如家目录/共享挂载点），
+// 测试文件将不落在 test/temp，此处打印告警以便及时发现。
+const expectedRoot = join(__dirname, 'temp');
+if (opts.hgfsRoot !== expectedRoot) {
+  console.warn(`\n[警告] MSGFERRY_HGFS_ROOT 被外部环境变量覆盖，当前为: ${opts.hgfsRoot}`);
+  console.warn(`        测试文件将不落在 ${expectedRoot}，可能导致测试数据写到非预期目录。`);
+  console.warn(`        如需使用 test/temp，请先取消设置 MSGFERRY_HGFS_ROOT 环境变量。\n`);
+}
 
 // 打印最终生效的环境变量，便于排查（外部覆盖 / 内置默认一目了然）
 console.log('[mcp-client] 生效的环境变量:');
