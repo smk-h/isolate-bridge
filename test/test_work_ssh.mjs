@@ -34,8 +34,8 @@
  *     配置 queue_mode: exchange + executor=ssh2 + devices；mcp-client 需用 --exchange 配对。
  *
  * 行为：
- *   1. 创建共享目录（shared 用 test/temp；exchange 额外建 test/temp_server/nfs/vm_share
- *      及 test/temp 的 outbound/inbound）
+ *   1. 创建共享目录（shared 用 test/temp；exchange 建 test/temp_server/nfs/vm_share）
+ *      （内网 test/temp 的 outbound/inbound 由 MCP Server 连接时自动创建）
  *   2. 写入测试用宽松策略 policy/policy.json（default_action=allow、危险参数
  *      模式清空），放行多命令串联（cd /tmp && pwd && ls）等真实场景
  *   3. 写入 executor=ssh2 的 config/worker.yaml（exchange 加 queue_mode: exchange），
@@ -158,11 +158,9 @@ if (opts.exchange) {
 }
 console.log(`[test_ssh] 创建共享目录: ${workerRoot}`);
 mkdirSync(workerRoot, { recursive: true });
-if (opts.exchange) {
-  // 内网本地目录也建好 outbound/inbound，mcp-server 启动时会自动补齐 sent/
-  mkdirSync(join(tempDir, 'outbound'), { recursive: true });
-  mkdirSync(join(tempDir, 'inbound'), { recursive: true });
-}
+// 注意：内网本地目录（test/temp 下的 outbound/inbound 单向信箱）不再由 Worker 侧创建，
+// 而是由内网 MCP Server 在 MCP client 连接成功后识别到 exchange 模式时自动补齐（见 server.ts）。
+// 这里只负责创建 Worker 侧的挂载根与交换服务器根，内网侧目录由 MCP Server 自行确保。
 
 // 写入测试用宽松策略：default_action=allow 且危险参数模式为空，
 // 便于验证多命令串联（cd /tmp && pwd && ls、换行多条命令）等真实场景；

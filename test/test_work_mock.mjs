@@ -21,16 +21,18 @@
  *     写入宽松策略 + mock 配置，mcp-client 指向同一 test/temp。
  *   exchange：
  *     当前没有真实文件交换服务器，用 cp 命令模拟：
- *       - test/temp         内网本地目录（MCP 侧，含 outbound/inbound 镜像）
+ *       - test/temp         内网本地目录（MCP 侧，含 outbound/inbound 镜像；由 MCP Server 连接时自动创建）
  *       - test/temp_server  模拟文件交换服务器根（sync-mock 的 MSGFERRY_SYNC_MOCK_SERVER）
  *       - test/temp_server/nfs/vm_share  Worker 挂载根（模拟真实 Y: 盘上的 nfs/vm_share）
  *     Worker --hgfs-root 指向 test/temp_server/nfs/vm_share（模板前缀 nfs/vm_share/ 的落点），
  *     配置 queue_mode: exchange，Worker 扫 outbound/ 领任务、结果写 inbound/；
  *     内网 MCP 侧通过 scripts/sync-mock.mjs（cp 模拟 file_transfer）完成
  *     单文件上传 + 整目录拉回，模板前缀（vm_share/、nfs/vm_share/）由同步命令承担。
+ *     注：内网本地目录（test/temp 下的 outbound/inbound）不再由本脚本创建，
+ *     而是由内网 MCP Server 在 MCP client 连接成功后识别到 exchange 模式时自动补齐。
  *
  * 行为：
- *   1. 创建测试目录（shared 用 test/temp，exchange 额外建 test/temp_server）
+ *   1. 创建测试目录（shared 用 test/temp，exchange 建 test/temp_server/nfs/vm_share）
  *   2. 写入测试用宽松策略 policy/policy.json（default_action=allow），
  *      放行多命令串联（cd /tmp && pwd && ls）、换行多条命令等真实场景
  *   3. 写入 Worker 配置（mock 模式 + queue_mode），executor 从配置文件读取
@@ -95,11 +97,9 @@ if (opts.exchange) {
 }
 console.log(`[test_work_mock] 创建共享目录: ${workerRoot}`);
 mkdirSync(workerRoot, { recursive: true });
-if (opts.exchange) {
-  // 内网本地目录也建好 outbound/inbound，mcp-server 启动时会自动补齐 sent/
-  mkdirSync(join(tempDir, 'outbound'), { recursive: true });
-  mkdirSync(join(tempDir, 'inbound'), { recursive: true });
-}
+// 注意：内网本地目录（test/temp 下的 outbound/inbound 单向信箱）不再由 Worker 侧创建，
+// 而是由内网 MCP Server 在 MCP client 连接成功后识别到 exchange 模式时自动补齐（见 server.ts）。
+// 这里只负责创建 Worker 侧的挂载根与交换服务器根，内网侧目录由 MCP Server 自行确保。
 
 // 写入测试用宽松策略：default_action=allow 且不拦截 && / ; / | / > 等参数模式，
 // 便于 mcp-client 验证多命令串联（cd /tmp && pwd && ls、换行多条命令）等真实场景。

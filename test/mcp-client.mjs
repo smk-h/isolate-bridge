@@ -53,7 +53,7 @@
  *   5. 测试完成后优雅退出
  *
  * 前置条件：
- *   - test/temp 目录已由 test_work_mock.mjs 创建
+ *   - test/temp 为内网本地目录（含 outbound/inbound 单向信箱），由 MCP Server 在连接成功后自动创建
  *   - Worker 进程已启动且心跳已写入
  * ======================================================
  */
@@ -230,8 +230,10 @@ if (!existsSync(mcpJs)) {
   process.exit(1);
 }
 
-// 检查共享目录
-if (!existsSync(opts.hgfsRoot)) {
+// 检查内网本地根目录：shared 模式内网直接读写该目录，连接前必须已存在；
+// exchange 模式内网本地目录（含 outbound/inbound 单向信箱）由 MCP Server 在
+// 连接成功后识别到 exchange 模式时自动创建（见 server.ts），故连接前不强制要求。
+if (!opts.exchange && !existsSync(opts.hgfsRoot)) {
   console.error(`[mcp-client] 共享目录不存在: ${opts.hgfsRoot}`);
   console.error('[mcp-client] 请先运行: node test/test_work_mock.mjs');
   process.exit(1);

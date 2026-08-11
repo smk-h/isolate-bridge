@@ -10,8 +10,6 @@
  */
 
 import { parseConfig, validateConfig } from './config.js';
-import { initQueueDirs, initExchangeDirs } from './queue.js';
-import { isExchangeMode } from './sync.js';
 import { createMcpServer, startServer } from './server.js';
 import type { McpServer } from '@modelcontextprotocol/server';
 import { pathToFileURL } from 'node:url';
@@ -44,17 +42,12 @@ export async function main(): Promise<void> {
   logger.info(`MCP server log_dir: ${resolveLogDir({ hgfsRoot: config.hgfs_root, logDir: process.env.LOG_DIR })}`);
   logger.info(`MCP server sync_mode: ${config.sync_mode}`);
 
-  // 初始化 HGFS 队列子目录（交换模式额外初始化 outbound/inbound 单向信箱）
-  await initQueueDirs(config.hgfs_root);
-  if (isExchangeMode(config)) {
-    await initExchangeDirs(config.hgfs_root);
-  }
-
   // 创建 McpServer 实例并注册工具
   const server = createMcpServer(config, config.hgfs_root);
 
-  // 连接 stdio transport，开始监听 Claude Code 请求
-  await startServer(server);
+  // 连接 stdio transport，开始监听 Claude Code 请求。
+  // 内网本地目录结构（含 exchange 模式单向信箱）在连接成功后由 startServer 自动补齐。
+  await startServer(server, config);
 
   logger.info(`MCP server ready, hgfs_root=${config.hgfs_root}`);
 
