@@ -1,0 +1,61 @@
+sequenceDiagram
+    autonumber
+    participant AI as 内网 MCP / Claude Code
+    participant HGFS as HGFS 共享目录<br/>sessions/<session_id>
+    participant W as SessionManager<br/>(Worker 外网)
+    participant F as SshSessionFactory<br/>shell + pty
+    participant A as 设备A<br/>(SSH daemon)
+
+    Note over AI,A: exec_mode=shell：长生命周期 stdin/stdout 文件摆渡，<br/>受 HGFS 轮询延迟限制，仅适合低频交互
+
+    rect rgb(240, 248, 255)
+    Note over AI,A: 阶段一：打开会话 —— 建连 + shell channel + pty
+    AI->>HGFS: 提交 session 任务<br/>写 session.json(status=running, cmd)
+    W->>HGFS: tick 轮询发现 running 会话
+    W->>W: SessionManager.open(session)
+    W->>F: factory.open(device)<br/>findSshConfig → connectClient 握手
+    F->>A: TCP 握手 → SSH 密钥交换 → 认证
+    A-->>F: ready（握手完成）
+    F->>A: client.shell({term:xterm, cols, rows})<br/>打开 shell channel + pty
+    A-->>F: 交互式 shell 就绪（不回显结束）
+    F-->>W: 返回 SshSession（sessionId=ssh_1）
+    W->>W: 订阅 onStdout/onStderr/onClose<br/>初始化 stdout_seq / lastActive
+    Note over W,F: 注入初始命令（若存在）
+    W->>A: shell.write(session.cmd + "\n")
+    end
+
+    rect rgb(255, 250, 240)
+    Note over AI,A: 阶段二：stdin 注入 —— 内网写、Worker 轮询注入
+    AI->>HGFS: 写 stdin/[seq].input 文件
+    W->>HGFS: tick() → listStdinInputs() 列出待注入序号
+    HGFS-->>W: [seq=1, 2, ...] 升序
+    W->>HGFS: readAndRemoveStdinInput()<br/>读取并删除 [seq].input
+    W->>A: shell.write(content)  # 注入 shell
+    W->>W: 更新 lastActive（供空闲超时判定）
+    end
+
+    rect rgb(240, 255, 240)
+    Note over AI,A: 阶段三：stdout 回写 —— shell 输出落盘供内网回读
+    A-->>W: shell 输出 chunk（stdout / stderr）
+    W->>W: onStdout/onStderr 回调<br/>→ appendStdout（stderr 并入 stdout）
+    W->>HGFS: writeStdoutOutput() 原子写<br/>stdout/[seq].output
+    W->>W: stdout_seq 递增
+    AI->>HGFS: 轮询读取 [seq].output
+    HGFS-->>AI: 返回输出文本（AI 读取到命令结果）
+    end
+
+    rect rgb(255, 240, 248)
+    Note over AI,A: 阶段四：关闭 —— 三种触发方式
+    AI->>HGFS: 写 close.marker（主动关闭）
+    Note over W,F: 或 空闲超时(idle_timeout)<br/>或 远端关闭(remote_closed)
+    W->>W: finalize(session, 终态, reason)<br/>先置终态回写 session.json<br/>（closing 集合防并发覆盖）
+    W->>F: shell.close() 关闭 channel<br/>释放连接并从缓存移除
+    Note over W,F: onClose 回调：remote_closed 时<br/>由 SessionManager.finalize 统一收尾
+    end
+
+    rect rgb(240, 255, 255)
+    Note over AI,A: 阶段五：Worker 优雅退出 —— 全量关闭
+    W->>W: SessionManager.closeAll()
+    W->>W: 逐会话 finalize(Aborted, worker_shutdown)<br/>+ closeShell()
+    W->>F: factory.closeAll() 关闭全部底层连接
+    end

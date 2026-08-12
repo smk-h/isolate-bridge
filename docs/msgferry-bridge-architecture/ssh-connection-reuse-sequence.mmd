@@ -5,7 +5,7 @@ sequenceDiagram
     participant M as sessions: Map<br/>device→Client
     participant A as 设备A<br/>(SSH daemon)
 
-    Note over W: 核心：复用的是「门」(传输连接)，<br/>不是「屋子里的人」(每次命令都是全新进程)
+    Note over AI,A: 核心：复用的是「门」(传输连接)，<br/>不是「屋子里的人」(每次命令都是全新进程)
 
     rect rgb(240, 248, 255)
     Note over AI,A: 阶段一：首次连接设备A —— 完整握手
@@ -19,7 +19,7 @@ sequenceDiagram
     W->>A: SSH 版本协商 → 密钥交换(KEX) → 认证签名
     A-->>W: ready（握手完成）
     W->>M: 缓存 Client → sessions.set("A", client)
-    Note over M: 生成会话 id：ssh_1
+    Note over W,M: 生成会话 id：ssh_1
     end
 
     rect rgb(255, 250, 240)
@@ -48,10 +48,10 @@ sequenceDiagram
     AI->>W: submit_ssh_task(cmd, device=B)
     W->>M: 查 map：无 "B" → 重新完整握手
     W->>M: 缓存 Client → sessions.set("B", client)
-    Note over M: 生成会话 id：ssh_2（与 ssh_1 并存）
+    Note over W,M: 生成会话 id：ssh_2（与 ssh_1 并存）
     W->>A: client.exec(cmd)  # 在 B 的连接上执行
     A-->>W: 结果
     W-->>AI: 返回结果（A/B 连接互不干扰、各自复用）
     end
 
-    Note over W,M: 连接超时(10s)/keepalive(15s)/close()<br/>统一由 ExecSession 管理，Worker 退出时全量关闭
+    Note over W,A: 连接超时(10s)/keepalive(15s)/close()<br/>统一由 ExecSession 管理，Worker 退出时全量关闭

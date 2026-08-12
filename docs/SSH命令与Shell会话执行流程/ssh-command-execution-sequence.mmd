@@ -1,0 +1,67 @@
+sequenceDiagram
+    autonumber
+    participant AI as Claude Code<br/>(内网编排层)
+    participant W as SshExecExecutor<br/>(Worker 外网)
+    participant C as SshClientCache<br/>device → Client
+    participant A as 设备A<br/>(SSH daemon)
+
+    Note over AI,A: exec_mode=command：<br/>复用的是「门」(传输连接)，<br/>不是「屋子里的人」(每次命令都是全新进程)
+
+    rect rgb(240, 248, 255)
+    Note over AI,A: 阶段一：首次执行命令 —— 建连 + 握手 + 入缓存
+    AI->>W: execute(cmd1, timeout, device=A)
+    W->>W: normalizeDevice("A") → "A"
+    W->>W: findSshConfig(config, "A")<br/>devices["A"] → 命中 SshConfig
+    W->>C: getOrCreate("A")<br/>sessions 未命中 → 检查 opening 去重
+    C-->>W: 无缓存、无 in-flight
+    W->>W: connectClient()<br/>生成 sessionId=ssh_1
+    W->>W: 认证：私钥优先 + password 作 passphrase，<br/>否则纯密码；二者皆无抛错
+    W->>A: TCP 三次握手
+    A-->>W: TCP 建立
+    W->>A: SSH 版本协商 → 密钥交换(KEX) → 认证
+    A-->>W: ready（握手完成，10s 超时 + 5s 兜底）
+    W->>C: sessions.set("A", ssh_1 Client)
+    Note over W,C: 挂 client close/error 监听，<br/>失效自动驱逐（惰性重连）
+    end
+
+    rect rgb(255, 250, 240)
+    Note over AI,A: 阶段二：exec 命令 —— 复用连接，开全新 channel
+    W->>A: client.exec(cmd1)<br/>在已握手连接上开 exec channel
+    A->>A: 远端 sh -c cmd1（全新子进程）
+    A-->>W: channel data(stdout) / stderr / exit
+    W->>W: 累积 stdout/stderr/exit_code，<br/>超时或 close 交付结果
+    W-->>AI: 返回 CmdResult（连接仍保留在缓存）
+    Note over W,A: channel 随命令关闭销毁，<br/>远端进程销毁、环境变量不保留；<br/>传输连接不动
+    end
+
+    rect rgb(240, 255, 240)
+    Note over AI,A: 阶段三：后续命令 —— 零握手复用
+    AI->>W: execute(cmd2, timeout, device=A)
+    W->>C: getOrCreate("A") → 命中缓存
+    C-->>W: 直接返回 ssh_1 Client（无握手）
+    W->>A: client.exec(cmd2)  # 新 channel，新进程
+    A->>A: 远端 sh -c cmd2（全新子进程）
+    A-->>W: channel stdout/stderr/exit
+    W-->>AI: 返回 cmd2 结果
+    Note over W,A: 省掉 TCP 握手 + KEX + 认证的固定开销
+    end
+
+    rect rgb(255, 240, 248)
+    Note over AI,A: 阶段四：连接失效 —— 自动驱逐 + 惰性重连
+    Note over C,A: 设备重启 / 网络断开 / 连接超时
+    A-->>C: client 触发 close / error
+    C->>C: evict() → sessions.delete("A")
+    Note over W,C: 下次 execute 未命中缓存<br/>→ 自动走阶段一新建连接
+    end
+
+    rect rgb(240, 255, 255)
+    Note over AI,A: 阶段五：接入设备B —— 独立连接缓存
+    AI->>W: execute(cmd, device=B)
+    W->>C: getOrCreate("B") → 未命中 → 完整握手
+    W->>C: sessions.set("B", ssh_2)<br/>（与 ssh_1 并存，互不干扰）
+    W->>A: 在 B 的连接上 client.exec(cmd)
+    A-->>W: 结果
+    W-->>AI: 返回结果（各设备独立复用）
+    end
+
+    Note over W,A: 连接超时(10s)/keepalive(15s)<br/>由 connectClient 统一管理；<br/>Worker 优雅退出时 close() → cache.closeAll() 全量关闭
