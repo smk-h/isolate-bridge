@@ -188,6 +188,14 @@ exchange 模式的核心判据是：**MCP 侧配置了 `MSGFERRY_SYNC_PUSH_CMD` 
 - `MSGFERRY_SYNC_MOCK_SERVER`：交换服务器根，即共享目录的 Ubuntu 路径 `/mnt/hgfs/sharedir/vm_share`（sync-mock 跑在 Ubuntu 侧，用它充当交换服务器）。
 - `MSGFERRY_MAX_WAIT_MS`：exchange 模式建议调到 **120000**，覆盖「上传 → worker 执行 → 拉回」一整轮。
 
+> Tips：不支持直接下载到指定目录怎么办？也就是说只能下载到当前目录，这个时候最简单的就是直接改模板，因为同步命令是**完全由用户定义的模板**，其实用户完全可以在 pull 命令里自己写：
+>
+> ```bash
+> MSGFERRY_SYNC_PULL_CMD='cd {local_root}/inbound && file_transfer -g nfs/vm_share/inbound'
+> ```
+>
+> `file_transfer -g` 的源带前缀指向服务器，本地目标不写，那下载自然落到当前目录，而当前目录已经被 `cd` 切到了 `{local_root}/inbound`。**这个方案零代码改动、最灵活，但要求用户了解自己的工具语义、自己会写 shell。**
+
 #### 2.2 sync-mock.mjs 工具
 
 `sync-mock.mjs` 用 `cp` 命令模拟 `file_transfer` 文件交换服务器，部署在 Ubuntu 的 MCP Server 目录下（`/home/sumu/workspace/msgferry/msgferry-mcp-server/sync-mock.mjs`），被 `MSGFERRY_SYNC_PUSH_CMD` / `PULL_CMD` 模板调用，**无需真实 `file_transfer`**。
