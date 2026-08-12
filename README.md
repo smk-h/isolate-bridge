@@ -287,6 +287,12 @@ node test/mcp-client.mjs                # shared 模式
 node test/mcp-client.mjs --exchange     # exchange 模式
 node test/mcp-client.mjs --device local # 指定设备名连接
 
+# 单独测试 Worker（无需启动 MCP Server，直接操作共享目录生成任务/获取结果）
+node test/test_worker_single.mjs                          # shared 模式（默认，写 pending/ 读 completed|failed/）
+node test/test_worker_single.mjs --exchange               # exchange 模式（写 outbound/ 读 inbound/）
+node test/test_worker_single.mjs --cmd "docker ps" --cmd "uname -a"  # 自定义命令（可多次）
+node test/test_worker_single.mjs --device local --timeout 15          # 指定设备与超时
+
 # 模拟文件交换服务器脚本（cp 模拟 file_transfer，供 exchange 模式使用）
 node scripts/sync-mock.mjs -pd <src-file> <dst-dir>   # 上传方向
 node scripts/sync-mock.mjs -g <src-dir> <dst-dir>     # 拉取方向
