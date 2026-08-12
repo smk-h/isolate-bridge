@@ -46,6 +46,12 @@ queue_mode: shared
 # SSH 执行器：mock（本地模拟）| ssh2（真实 SSH）
 executor: ssh2
 
+# 任务执行模式（通过此开关在「一次性命令」与「交互式 shell」之间切换）：
+#   command：一次性命令（默认）——使用 SSH exec 通道执行单条命令，请求-响应式。
+#   shell  ：交互式 shell ——使用 SSH shell 通道 + pty 执行命令，
+#            适用于目标设备不支持 exec 通道、仅支持交互式登录 shell 的场景。
+exec_mode: command
+
 # 多设备：设备名 → SSH 连接信息（设备名仅限字母/数字/下划线/连字符）
 devices:
   default:

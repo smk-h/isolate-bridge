@@ -42,21 +42,30 @@ export interface CommandTask {
 }
 
 /**
- * Session 交互式会话任务结构体（远期能力类型骨架）
- * 不在本阶段展开 stdin/stdout 摆渡执行逻辑
+ * Session 交互式会话任务结构体
+ * 基于文件队列做 stdin/stdout 双向摆渡：
+ *  - 内网写入 <sessions>/<session_id>/stdin/<seq>.input，Worker 轮询读取后
+ *    通过 pty 注入 ssh shell 会话；
+ *  - ssh 输出由 Worker 实时写入 <sessions>/<session_id>/stdout/<seq>.output；
+ *  - 内网写 close 标记触发会话关闭（close_marker）。
+ * 受限于 HGFS 轮询延迟，仅适合低频交互，不适合 vim 等全屏 TUI。
  */
 export interface SessionTask {
   kind: 'session';                  // 判别字段，固定值
   session_id: string;               // 会话唯一标识
-  cmd: string;                      // 初始命令
-  timeout_sec: number;              // 会话超时上限
+  cmd: string;                      // 初始命令（会话启动后首条注入的命令，可为空串）
+  device?: string;                  // 目标设备名（未指定走默认设备）
+  timeout_sec: number;              // 会话超时上限（从最后活跃起算的空闲超时）
   submit_time: number;
   start_time: number;
   end_time: number;
   status: SessionStatus;            // 会话状态
-  stdin_dir: string;                // stdin 摆渡目录约定
-  stdout_dir: string;               // stdout 摆渡目录约定
-  close_marker: string | null;       // 会话关闭标记，未关闭为 null
+  session_dir: string;              // 会话摆渡根目录（<root>/sessions/<session_id>）
+  stdin_dir: string;                // stdin 摆渡目录（相对 session_dir）
+  stdout_dir: string;               // stdout 摆渡目录（相对 session_dir）
+  close_marker: string | null;      // 会话关闭标记路径，未关闭为 null
+  stdout_seq: number;               // stdout 下一序号（Worker 维护）
+  stdin_seq: number;                // stdin 下一序号（内网维护）
   error_msg: string | null;
   worker_pid: number | null;
 }

@@ -210,6 +210,7 @@ max_inline_bytes: 65536
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `executor` | string | `mock`（本地模拟，不发起真实 SSH）或 `ssh2`（真实 SSH 执行），默认 `mock` |
+| `exec_mode` | string | 任务执行模式：`command`（一次性命令，SSH `exec` 通道，默认）或 `shell`（交互式 shell，SSH `shell` 通道 + pty）；`shell` 适用于目标设备不支持 `exec` 通道、仅支持交互式登录 shell 的场景 |
 | `devices` | object | **多设备字典（推荐）**：设备名 → SSH 连接信息；设备名仅限字母/数字/下划线/连字符（推荐 `board-xxx`，不强制） |
 | `devices.<设备名>.host` | string | 该设备 SSH 目标主机 IP 或域名；`ssh2` 模式必填 |
 | `devices.<设备名>.port` | number/string | 该设备 SSH 端口，默认 `22` |

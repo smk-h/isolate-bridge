@@ -196,6 +196,29 @@ ssh:
     writeFileSync(join(root, 'config', 'worker.yaml'), '{{broken');
     assert.throws(() => parseConfig(['--hgfs-root', root]), /not valid YAML/);
   });
+
+  it('parses exec_mode (command default | shell)', () => {
+    // 默认 command
+    const root = makeRoot();
+    const cfgDefault = parseConfig(['--hgfs-root', root]);
+    assert.equal(cfgDefault.exec_mode, 'command');
+
+    // 显式 shell
+    const rootShell = makeRoot();
+    writeConfig(rootShell, { exec_mode: 'shell' });
+    assert.equal(parseConfig(['--hgfs-root', rootShell]).exec_mode, 'shell');
+
+    // 显式 command
+    const rootCmd = makeRoot();
+    writeConfig(rootCmd, { exec_mode: 'command' });
+    assert.equal(parseConfig(['--hgfs-root', rootCmd]).exec_mode, 'command');
+  });
+
+  it('rejects invalid exec_mode', () => {
+    const root = makeRoot();
+    writeConfig(root, { exec_mode: 'bogus' });
+    assert.throws(() => parseConfig(['--hgfs-root', root]), /invalid exec_mode/);
+  });
 });
 
 describe('parseConfig log settings from CLI', () => {
@@ -303,6 +326,7 @@ describe('validateConfig', () => {
       hgfs_root: '',
       queue_mode: 'shared',
       executor_type: 'mock',
+      exec_mode: 'command',
       devices: {},
       ssh_config: null,
       audit_log_dir: '',

@@ -69,6 +69,21 @@ export const LOG_DIRS = {
   worker: 'logs/worker',
 } as const;
 
+/** 交互式会话根目录（位于共享根目录下），每个会话占 <root>/sessions/<session_id>/ */
+export const SESSIONS_DIR = 'sessions' as const;
+
+/** 交互式会话摆渡子目录与序号文件约定 */
+export const SESSION = {
+  /** stdin 摆渡子目录名（相对会话根目录） */
+  stdin: 'stdin',
+  /** stdout 摆渡子目录名（相对会话根目录） */
+  stdout: 'stdout',
+  /** 关闭标记文件名 */
+  close_marker: 'close.marker',
+  /** 会话元信息文件名 */
+  meta: 'session.json',
+} as const;
+
 /** 文件交换服务器模式（exchange）下的单向信箱目录名 */
 export const EXCHANGE_DIRS = {
   /** 内网只写、Worker 只读：任务文件与取消标记的上传方向 */
