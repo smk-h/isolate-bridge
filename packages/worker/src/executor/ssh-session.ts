@@ -10,15 +10,10 @@
  * ======================================================
  */
 
-import { readFile } from 'node:fs/promises';
-
-import { Client } from 'ssh2';
-import type { ConnectConfig } from 'ssh2';
-
 import type { WorkerConfig } from '../config/index.js';
 import { findSshConfig } from '../config/index.js';
-import type { SshConfig } from '../config/index.js';
 import { logger } from '../log/index.js';
+import { connectClient } from './ssh-conn.js';
 import type { ShellSession, ShellSessionFactory } from './types.js';
 
 /** ssh2 shell channel + pty 的交互式会话封装 */
@@ -113,7 +108,6 @@ export class SshSessionFactory implements ShellSessionFactory {
   private readonly sessions = new Set<SshSession>();
   private readonly clients = new Set<import('ssh2').Client>();
   private counter = 0;
-  private readonly connectTimeoutMs = 10000;
 
   constructor(private readonly config: WorkerConfig) {}
 
@@ -129,7 +123,7 @@ export class SshSessionFactory implements ShellSessionFactory {
     logger.info(`[executor:ssh-session] opening shell ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
 
     // 建连 → 打开 shell channel + pty → 封装为会话对象
-    const client = await this.connect(sshConfig, sessionId);
+    const client = await connectClient(sshConfig, sessionId);
     this.clients.add(client);
 
     const stream = await this.openShellChannel(client, sessionId);
@@ -159,54 +153,6 @@ export class SshSessionFactory implements ShellSessionFactory {
         // 忽略单连接关闭异常
       }
     }
-  }
-
-  private connect(sshConfig: SshConfig, sessionId: string): Promise<import('ssh2').Client> {
-    return new Promise((resolve, reject) => {
-      const client = new Client();
-      const connectCfg: ConnectConfig = {
-        host: sshConfig.host,
-        port: sshConfig.port,
-        username: sshConfig.username,
-        readyTimeout: this.connectTimeoutMs,
-        keepaliveInterval: 15000,
-      };
-
-      const doConnect = () => client.connect(connectCfg);
-      if (sshConfig.private_key_path) {
-        readFile(sshConfig.private_key_path, 'utf-8')
-          .then((keyContent) => {
-            connectCfg.privateKey = keyContent;
-            if (sshConfig.password) {
-              connectCfg.passphrase = sshConfig.password;
-            }
-            doConnect();
-          })
-          .catch((err) => {
-            reject(new Error(`[executor:ssh-session] ${sessionId} read private key failed: ${err.message}`));
-          });
-      } else if (sshConfig.password) {
-        connectCfg.password = sshConfig.password;
-        doConnect();
-      } else {
-        reject(new Error(`[executor:ssh-session] ${sessionId} no auth: neither private_key_path nor password`));
-        return;
-      }
-
-      const timer = setTimeout(() => {
-        client.end();
-        reject(new Error(`[executor:ssh-session] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
-      }, this.connectTimeoutMs + 5000);
-
-      client.once('ready', () => {
-        clearTimeout(timer);
-        resolve(client);
-      });
-      client.once('error', (err) => {
-        clearTimeout(timer);
-        reject(new Error(`[executor:ssh-session] ${sessionId} connect error: ${err.message}`));
-      });
-    });
   }
 
   private openShellChannel(client: import('ssh2').Client, sessionId: string): Promise<import('ssh2').ClientChannel> {

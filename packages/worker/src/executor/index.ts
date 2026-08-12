@@ -15,4 +15,5 @@ export { MockSshExecutor, MockShellSessionFactory } from './mock.js';
 export { SshSessionFactory } from './ssh-session.js';
 export { SshExecExecutor } from './ssh-exec.js';
 export { SshShellExecExecutor } from './ssh-shell-exec.js';
+export { connectClient, closeClient, SshClientCache } from './ssh-conn.js';
 export { createExecutor, createShellSessionFactory } from './factory.js';
