@@ -400,5 +400,223 @@ async closeAll(): Promise<void> {
 - 需要**保持状态、低频交互**的调试（且能接受 HGFS 轮询延迟）→ `exec_mode=shell`。
 - 若目标设备不支持 exec 通道、仅支持交互式 shell（如部分 Dropbear / 受限登录 shell），可基于 shell 通道做**单命令执行**（见 [ssh-shell-exec.ts](../packages/worker/src/executor/ssh-shell-exec.ts)，注入 `echo <marker>:$?` 检测命令结束）。
 
+## 五、 设备在线判断与重试流程
+
+设备在线判断与重试是 Worker 连接层对"**连接失效**"与"**设备离线**"的区分处理，以及错误码对可重试性的归类，**command 与 shell 会话两条链路共用**。它并不显式维护一份"设备在线状态表"，而是通过**连接级失效检测 + 惰性重连**这套机制，把"连接短暂失效"从"设备真正离线"里剥离出来——只有重连也失败才升级为设备离线。核心逻辑收敛在公共连接层 [ssh-conn.ts](../packages/worker/src/executor/ssh-conn.ts) 与共享错误码 [errors.ts](../packages/shared/src/errors.ts)。
+
+### 1. 在线判断的两个层次
+
+设备"不在线"要区分两种语义，避免混为一谈：
+
+| 类型 | 含义 | 设备真挂了吗？ | 主动重连的价值 |
+| --- | --- | --- | --- |
+| **连接级失效** | 缓存里的 ssh2 Client 断了（keepalive 失效 / 网络闪断 / 远端 sshd 重启 / 空闲超时） | **不一定**，设备可能活得好好的 | **很高**——本地缓存失效 ≠ 设备离线，重连大概率成功 |
+| **设备级离线** | 设备真关机 / 断网 / 不可达 | 是 | 必然失败，重连只是确认 |
+
+#### 1.1 连接级失效检测
+
+`SshClientCache` 给缓存里的 Client 挂上 `close` / `error` 监听，一旦连接悄悄死掉，**立即从缓存驱逐**，避免后续命令仍拿着死连接去 `client.exec()` 报错：
+
+```ts
+// packages/worker/src/executor/ssh-conn.ts
+const evict = () => {
+  if (this.sessions.get(device) === session) {
+    this.sessions.delete(device);   // 失效驱逐
+  }
+};
+client.once('close', evict);
+client.once('error', evict);
+```
+
+【**要点**】
+
+- 监听对象是 **client（连接级）**，适用于 command 侧每条命令复用同一连接、通道自开自关的场景。
+- shell 侧在**会话级** `onClose()` 驱逐（见三、4），因"一连接一通道"，会话失效连带连接失效，会话级驱逐即可覆盖。
+- `evict` 用 `=== session` 校验，防止新连接已入缓存后旧连接的回调误删新条目。
+
+#### 1.2 设备级离线判定
+
+连接失效后被驱逐，下一次任务自动走新建连接路径（惰性重连）：
+
+- **重连成功** → 设备实际在线，只是此前缓存失效，判定为在线。
+- **重连失败**（`connectClient` 抛错，如连接超时、认证失败、host 不可达）→ 升级为**设备离线**。
+
+因此设备级离线不是单独探测出来的，而是"连接失效 → 惰性重连失败"这一路径的最终结论。
+
+### 2. 惰性重连与建连去重
+
+#### 2.1 惰性重连
+
+`getOrCreate` 未命中缓存（首次或已驱逐）时自动发起建连，命令本身就是触达，无需额外的前置探测动作：
+
+```ts
+// packages/worker/src/executor/ssh-conn.ts
+async getOrCreate(device, sshConfig, connectFn) {
+  const existing = this.sessions.get(device);
+  if (existing) return existing;          // 命中缓存直接复用
+  const inFlight = this.opening.get(device);
+  if (inFlight) return inFlight;          // 复用 in-flight 建连 Promise
+  const p = this.open(device, sshConfig, connectFn)
+    .finally(() => { this.opening.delete(device); });
+  this.opening.set(device, p);
+  return p;
+}
+```
+
+【**要点**】
+
+- **缓存命中**：直接复用已握手连接，零握手开销。
+- **缓存未命中**：走建连路径，成功后重新入缓存并挂失效检测监听。
+- 惰性重连与"没缓存就 new Client"的路径完全同构，代码最干净，无需额外的前置 probe。
+
+#### 2.2 建连去重
+
+同一设备并发建连时，`opening` Map 保存 in-flight Promise，后续请求**复用同一个 Promise**，避免并发场景下重复握手：
+
+```ts
+// packages/worker/src/executor/ssh-conn.ts
+const inFlight = this.opening.get(device);
+if (inFlight) return inFlight;          // 复用 in-flight 建连 Promise
+const p = this.open(device, sshConfig, connectFn).finally(() => {
+  this.opening.delete(device);          // 建连结束（成功或失败）即清除，允许下次重试
+});
+this.opening.set(device, p);
+```
+
+【**要点**】
+
+- 建连**成功或失败**都会在 `finally` 里清除 in-flight 记录，保证失败后下次可重新建连。
+- 该思路与 shell 侧 `opening` Map（按设备串行建连去重）对齐，只是 command 侧按设备复用。
+
+### 3. 错误码与可重试归类
+
+#### 3.1 错误码语义
+
+`errors.ts` 中与设备在线相关的两个错误码，语义必须区分清楚：
+
+| 错误码 | 含义 | 适用场景 |
+| --- | --- | --- |
+| `DeviceOffline` | 设备离线 / 不可达 | **连接建立失败**（含主动重连后仍失败） |
+| `SshConnectionFailed` | SSH 连接失败 | 连接已建立、但命令通道 / 执行失败，或一般连接失败 |
+
+```ts
+// packages/shared/src/errors.ts
+export const ErrorCode = {
+  // ...
+  SshConnectionFailed: 'ssh_connection_failed',
+  DeviceOffline: 'device_offline',
+  // ...
+} as const;
+```
+
+【**要点**】
+
+- **连接建立失败（含重连失败）→ `DeviceOffline`**：设备真离线或不可达。
+- **连接已建立、但命令通道 / 执行失败 → 其他错误（如 `SshConnectionFailed`）**：不该误标成设备离线。
+- 这样区分能避免"网络闪断"被误判为"设备永久离线"，为上层重试留出正确依据。
+
+#### 3.2 RETRYABLE_ERROR_CODES
+
+`DeviceOffline`、`SshConnectionFailed` 与超时、同步失败等同属**可重试错误码**，上层据此决定是否重试：
+
+```ts
+// packages/shared/src/errors.ts
+export const RETRYABLE_ERROR_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
+  ErrorCode.DeviceOffline,
+  ErrorCode.WorkerOffline,
+  ErrorCode.ExecutionTimeout,
+  ErrorCode.SshConnectionFailed,
+  ErrorCode.SyncFailed,
+]);
+```
+
+对应地，[isRetryableErrorCode()](../packages/shared/src/utils.ts) 提供判断函数：
+
+```ts
+// packages/shared/src/utils.ts
+export function isRetryableErrorCode(code: ErrorCode): boolean {
+  return RETRYABLE_ERROR_CODES.has(code);
+}
+```
+
+【**要点**】
+
+- `WorkerOffline`（Worker 心跳过期）与 `DeviceOffline`（设备离线）是两个不同对象，均属可重试。
+- `ExecutionTimeout` / `SyncFailed` 等环境性故障也归入可重试，与 `BlockedByPolicy` 等确定性故障（不可重试）区分开。
+
+### 4. 重试流程
+
+#### 4.1 Worker 侧：不做 executor 内自旋重试
+
+`SshExecExecutor` 在执行命令时**不做自身重试自旋**——连接失败直接抛错（调用方回写 failed 结果）。重试交由上层编排控制：
+
+```ts
+// packages/worker/src/executor/ssh-exec.ts
+async execute(cmd: string, timeout_sec: number, device?: string): Promise<CmdResult> {
+  const session = await this.getOrCreateSession(device);
+  return this.runCommand(session.client, session.sessionId, cmd, timeout_sec);
+}
+```
+
+【**要点**】
+
+- 若 `getOrCreateSession` 建连失败，`execute` 直接抛错，不在此处 retry。
+- 原因：`DeviceOffline` 等已在 `RETRYABLE_ERROR_CODES` 中，上层（MCP Server / AI 编排）可重试，executor 内自旋易放大故障时延、拖住 AI 编排。
+
+#### 4.2 MCP Server 侧：上层重试依据
+
+MCP Server 侧通过错误码判断是否重试：
+
+```ts
+// packages/mcp-server/src/tools/task/submit.ts
+return {
+  ...baseResult,
+  error_code: ErrorCode.ExecutionTimeout,   // 超时等可重试错误
+  error_msg: `timed out after ${config.max_wait_ms}ms`,
+};
+```
+
+同时，内网侧对**同步命令**（`syncPush` / `syncPull`）已有退避重试（见 [sync.ts](../packages/mcp-server/src/sync.ts) 的 `runSyncCmd`）：
+
+```ts
+// packages/mcp-server/src/sync.ts
+async function runSyncCmd(
+  cmd: string,
+  timeoutMs: number,
+  retries: number,
+  retryDelays: readonly number[],
+): Promise<SyncRunResult> {
+  let last: SyncRunResult | null = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const result = await runOnce(cmd, timeoutMs);
+    last = result;
+    if (result.exit_code === 0) return result;
+    if (attempt < retries) {
+      const delay = retryDelays[attempt] ?? retryDelays[retryDelays.length - 1] ?? 1000;
+      await new Promise((resolve) => setTimeout(resolve, delay));   // 退避重试
+    }
+  }
+  throw new Error(`sync command failed after ${retries + 1} attempts ...`);
+}
+```
+
+【**要点**】
+
+- 同步类命令在 MCP Server 内部做**退避重试**（`sync_retries` 次），保证文件摆渡的稳定性。
+- 业务 SSH 命令则依赖 `RETRYABLE_ERROR_CODES` 判定，由上层按需重提，避免内网自旋阻塞。
+
+### 5. 在线判断与重试整体时序
+
+![设备在线判断与重试时序](./SSH命令与Shell会话执行流程/img/ssh-device-retry-sequence.svg)
+
+设备在线判断与重试是 **command 与 shell 会话共用的连接层能力**——两条链路的重试语义完全一致（连接/会话失效检测 → 惰性重连 → 建连去重 → 失败判 `DeviceOffline` → 上层按可重试错误码重提），区别仅在失效检测粒度（command 监听 client、shell 监听会话通道）。因此只需**一张共用重试时序图**，下面以 command 链路为例展示完整流程：
+
+1. 任务触发 `execute()` → `getOrCreateSession()`（command）/ `getOrOpenSession()`（shell）取会话。
+2. **缓存命中**：连接/会话仍存活 → 直接执行命令，判定设备在线。
+3. **缓存未命中 / 已失效**：走建连路径 → **重连成功**则判定在线、继续执行。
+4. **重连失败**（连接超时 / 认证失败 / 不可达）→ 判 `DeviceOffline`，命令失败。
+5. 上层收到 `DeviceOffline`（或 `SshConnectionFailed`）等**可重试错误码** → 按需重新提交任务。
+6. 连接在存活期间因网络闪断 / sshd 重启触发 `close` / `error` → 缓存自动驱逐，回到第 3 步。
+
 ---
 *本文档由 markdowncli 技能辅助生成*

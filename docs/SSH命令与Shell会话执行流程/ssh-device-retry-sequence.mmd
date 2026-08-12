@@ -1,0 +1,77 @@
+sequenceDiagram
+    autonumber
+    participant AI as Claude Code<br/>(内网编排层)
+    participant M as MCP Server
+    participant W as SshExecExecutor<br/>(Worker 外网)
+    participant C as SshClientCache<br/>device → Client
+    participant A as 设备A<br/>(SSH daemon)
+
+    Note over AI,A: 设备在线判断与重试：<br/>连接失效 → 惰性重连一次 →<br/>重连成功判定在线，失败才判 DeviceOffline
+
+    rect rgb(240, 248, 255)
+    Note over AI,A: 阶段一：缓存命中 —— 设备在线，正常执行
+    AI->>M: submit 任务(cmd, device=A)
+    M->>W: execute(cmd, timeout, device=A)
+    W->>C: getOrCreate("A") → 命中缓存
+    C-->>W: 返回存活 Client(ssh_1)
+    W->>A: client.exec(cmd)  # 复用连接，开新 channel
+    A-->>W: stdout/stderr/exit
+    W-->>M: CmdResult(exit_code=0)
+    M-->>AI: 任务成功
+    Note over W,A: 连接仍存活 → 判定设备在线，零握手执行
+    end
+
+    rect rgb(255, 250, 240)
+    Note over AI,A: 阶段二：连接失效 —— close/error 触发自动驱逐
+    Note over C,A: 网络闪断 / sshd 重启 / 空闲超时<br/>（本地缓存失效 ≠ 设备离线）
+    A-->>C: client 触发 close / error
+    C->>C: evict() → sessions.delete("A")
+    Note over W,C: 死连接被驱逐，<br/>下次 execute 走建连路径（惰性重连）
+    end
+
+    rect rgb(240, 255, 240)
+    Note over AI,A: 阶段三：惰性重连成功 —— 判定设备在线，继续执行
+    AI->>M: submit 任务(cmd, device=A)（连接已失效）
+    M->>W: execute(cmd, timeout, device=A)
+    W->>C: getOrCreate("A") → 未命中
+    W->>W: connectClient()<br/>TCP 握手 → KEX → 认证
+    W->>A: 重新建连
+    A-->>W: ready（重连成功）
+    W->>C: sessions.set("A", ssh_2)<br/>重新入缓存并挂失效监听
+    W->>A: client.exec(cmd)
+    A-->>W: stdout/stderr/exit
+    W-->>M: CmdResult(exit_code=0)
+    M-->>AI: 任务成功
+    Note over W,A: 重连成功 → 设备实际在线，<br/>只是此前缓存失效
+    end
+
+    rect rgb(255, 240, 248)
+    Note over AI,A: 阶段四：重连失败 —— 判定 DeviceOffline，命令失败
+    M->>W: execute(cmd, timeout, device=A)（连接已失效）
+    W->>C: getOrCreate("A") → 未命中
+    W->>W: connectClient()<br/>TCP 握手 → KEX → 认证
+    W->>A: 重新建连
+    A--xW: 连接超时 / 认证失败 / host 不可达
+    W->>W: 建连抛错 → 升级判定设备离线
+    W-->>M: 抛 DeviceOffline<br/>（连接建立失败，含重连失败）
+    M-->>AI: 命令失败，error_code=DeviceOffline
+    Note over W,A: 重连也失败 → 才是设备级离线
+    end
+
+    rect rgb(240, 255, 255)
+    Note over AI,A: 阶段五：上层重试 —— 按可重试错误码重提任务
+    AI->>M: 检测 error_code 在 RETRYABLE_ERROR_CODES<br/>→ isRetryableErrorCode(DeviceOffline)=true
+    M->>W: 重新 submit 任务(cmd, device=A)
+    W->>C: getOrCreate("A") → 未命中
+    W->>A: connectClient() 再次尝试建连
+    alt 重连成功
+        A-->>W: ready → 继续执行命令
+        W-->>M: CmdResult(exit_code=0)
+        M-->>AI: 任务成功
+    else 持续离线
+        A--xW: 仍失败 → 再次抛 DeviceOffline
+        W-->>M: 错误上抛
+        M-->>AI: 重试仍失败，交由上层策略处理<br/>（退避重试 / 告警 / 放弃）
+    end
+    Note over W,A: 连接存活期间若再闪断 →<br/>回到阶段二自动驱逐，形成闭环
+    end
