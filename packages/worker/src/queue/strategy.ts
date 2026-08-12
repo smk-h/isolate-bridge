@@ -24,6 +24,7 @@ import {
   writeCancelledResult,
   writeHeartbeat,
   gcResults,
+  gcProcessing,
 } from './shared.js';
 import {
   initExchangeDirs,
@@ -108,7 +109,8 @@ class SharedQueueStrategy implements QueueModeStrategy {
   }
 
   gcResults(root: string, ttlSec: number): Promise<number> {
-    return gcResults(root, ttlSec);
+    return Promise.all([gcResults(root, ttlSec), gcProcessing(root, ttlSec)])
+      .then(([results, processing]) => results + processing);
   }
 }
 
@@ -156,7 +158,8 @@ class ExchangeQueueStrategy implements QueueModeStrategy {
   }
 
   gcResults(root: string, ttlSec: number): Promise<number> {
-    return gcInboundResults(root, ttlSec);
+    return Promise.all([gcInboundResults(root, ttlSec), gcProcessing(root, ttlSec)])
+      .then(([results, processing]) => results + processing);
   }
 }
 

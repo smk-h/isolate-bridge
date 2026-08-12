@@ -16,7 +16,7 @@ import type { QueueModeStrategy } from './queue/index.js';
 import { transitionToProcessing } from './queue/index.js';
 import { checkCommand } from './policy/index.js';
 import type { PolicyRule, PolicyResult } from './policy/index.js';
-import type { CmdExecutor } from './executor/index.js';
+import type { CmdExecutor, CmdResult } from './executor/index.js';
 import { SshExecExecutor } from './executor/index.js';
 import type { AuditLogger } from './log/index.js';
 import { formatSystemTime } from './log/index.js';
@@ -69,7 +69,23 @@ export async function processTask(
 
   // SSH 执行
   logger.info(`[worker] ssh executing: task_id=${task.task_id} timeout_sec=${task.timeout_sec} cmd=${task.cmd}`);
-  const cmdResult = await executor.execute(task.cmd, task.timeout_sec, task.device);
+  let cmdResult: CmdResult;
+  try {
+    cmdResult = await executor.execute(task.cmd, task.timeout_sec, task.device);
+  } catch (err) {
+    // 执行异常（如 SSH 建连失败/会话异常）：归一化为失败任务回写，避免任务静默丢失
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(`[worker] task ${task.task_id} execute error: ${msg}`);
+    task.status = 'failed';
+    task.exit_code = null;
+    task.stderr = msg;
+    task.stderr_size = Buffer.byteLength(msg, 'utf-8');
+    task.error_msg = msg;
+    task.end_time = Date.now();
+    await strategy.writeResult(root, task, config.max_inline_bytes);
+    await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
+    return;
+  }
   // 取已建立会话 id 作为审计 ssh_target（SshExecExecutor 有，MockExecutor 无）
   const sshTarget = executor instanceof SshExecExecutor
     ? (executor.getSessionId(task.device) ?? null)

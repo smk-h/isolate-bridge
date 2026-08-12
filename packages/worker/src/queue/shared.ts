@@ -266,6 +266,61 @@ export async function readHeartbeat(root: string): Promise<Heartbeat | null> {
 }
 
 /**
+ * 释放已消费任务的 processing 记录：删除处理锁与 processing json
+ * 任务无论成功/失败/取消，终态回写完成后调用，避免 processing/ 无限累积；
+ * 删除采用幂等（不存在即忽略），可安全重复调用。
+ * @param root - HGFS 共享根目录
+ * @param taskId - 任务唯一标识
+ */
+export async function releaseProcessing(root: string, taskId: string): Promise<void> {
+  const lockPath = join(root, QUEUE_DIRS.processing, `${taskId}${LOCK_SUFFIX}`);
+  const jsonPath = join(root, QUEUE_DIRS.processing, `${taskId}${JSON_SUFFIX}`);
+  await unlink(lockPath).catch(() => {});
+  await unlink(jsonPath).catch(() => {});
+}
+
+/**
+ * 清理 processing/ 下超保留期的孤儿锁定与任务记录（崩溃残留兜底）
+ * 正常完成的 worker 会主动删除 processing 记录，此处仅处理进程崩溃后遗留
+ * 的锁：超龄锁会永久阻塞该任务重入（acquireLock 遇 EEXIST 跳过），据此判龄回收。
+ * @param root - HGFS 共享根目录
+ * @param ttlSec - 保留期（秒）
+ * @returns 清理的任务数
+ */
+export async function gcProcessing(root: string, ttlSec: number): Promise<number> {
+  const processingDir = join(root, QUEUE_DIRS.processing);
+  const now = Date.now();
+  const ttlMs = ttlSec * 1000;
+  let cleaned = 0;
+  let entries: string[];
+  try {
+    entries = await readdir(processingDir);
+  } catch {
+    return 0;
+  }
+  for (const name of entries) {
+    if (!name.endsWith(LOCK_SUFFIX)) {
+      continue;
+    }
+    const lockPath = join(processingDir, name);
+    try {
+      const fileStat = await stat(lockPath);
+      if (now - fileStat.mtimeMs <= ttlMs) {
+        continue;
+      }
+      // 超龄锁：连同同 id 的处理记录一并删除
+      const taskId = name.slice(0, -LOCK_SUFFIX.length);
+      await unlink(lockPath);
+      await unlink(join(processingDir, `${taskId}${JSON_SUFFIX}`)).catch(() => {});
+      cleaned++;
+    } catch {
+      // 单文件清理失败忽略，继续下一个
+    }
+  }
+  return cleaned;
+}
+
+/**
  * 清理 completed/ 与 failed/ 下超过保留期的结果文件
  * @param root - HGFS 共享根目录
  * @param ttlSec - 保留期（秒）

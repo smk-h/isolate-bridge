@@ -23,6 +23,8 @@ export {
   writeCancelledResult,
   writeHeartbeat,
   readHeartbeat,
+  releaseProcessing,
+  gcProcessing,
   gcResults,
 } from './shared.js';
 export {

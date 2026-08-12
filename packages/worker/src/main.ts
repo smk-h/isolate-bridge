@@ -17,6 +17,7 @@ import { pathToFileURL } from 'node:url';
 import {
   acquireLock,
   createQueueStrategy,
+  releaseProcessing,
 } from './queue/index.js';
 import type { QueueModeStrategy } from './queue/index.js';
 import { loadPolicy, createPolicyWatcher, ensurePolicyTemplate } from './policy/index.js';
@@ -218,23 +219,30 @@ export async function main(): Promise<void> {
         if (shuttingDown) {
           break;
         }
+        // 标记是否真正抢占成功，用于 finally 中是否释放锁与 processing 记录
+        let acquired = false;
         try {
           const locked = await acquireLock(root, taskId, process.pid);
           if (!locked) {
             continue;
           }
+          acquired = true;
           logger.info(`[worker] task acquired: task_id=${taskId}`);
           const task = await strategy.readTask(root, taskId);
           await processTask(config, root, task, process.pid, policyRule, executor, auditLogger, strategy);
-          // 消费后清理取消残留（exchange 删除 outbound 取消标记，shared 无操作）
-          await strategy.afterConsumed(root, taskId);
           processedCount++;
         } catch (err) {
-          logger.error(`[worker] task ${taskId} failed:`, err);
+          logger.error(`[worker] task ${taskId} failed: ${err instanceof Error ? err.message : String(err)}`);
+        } finally {
+          // 无论成功/失败，释放抢占锁与 processing 记录避免孤儿累积，并清理消费残留
+          if (acquired) {
+            await strategy.afterConsumed(root, taskId).catch(() => {});
+            await releaseProcessing(root, taskId).catch(() => {});
+          }
         }
       }
     } catch (err) {
-      logger.error('[worker] loop error:', err);
+      logger.error(`[worker] loop error: ${err instanceof Error ? err.message : String(err)}`);
       await sleep(backoff.next());
     }
   }

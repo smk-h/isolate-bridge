@@ -26,6 +26,8 @@ import {
   writeCancelledResult,
   writeHeartbeat,
   readHeartbeat,
+  releaseProcessing,
+  gcProcessing,
   gcResults,
   initExchangeDirs,
   listOutbound,
@@ -179,6 +181,46 @@ describe('queue heartbeat', () => {
 
   it('readHeartbeat 文件不存在返回 null', async () => {
     assert.equal(await readHeartbeat(testRoot), null);
+  });
+});
+
+describe('queue releaseProcessing', () => {
+  it('应删除 processing 锁与任务记录', async () => {
+    await initQueueDirs(testRoot);
+    await acquireLock(testRoot, 'rp1', 1);
+    await transitionToProcessing(testRoot, makeTask({ task_id: 'rp1' }), 1);
+    assert.ok(existsSync(join(testRoot, 'processing', 'rp1.lock')));
+    assert.ok(existsSync(join(testRoot, 'processing', 'rp1.json')));
+    await releaseProcessing(testRoot, 'rp1');
+    assert.ok(!existsSync(join(testRoot, 'processing', 'rp1.lock')));
+    assert.ok(!existsSync(join(testRoot, 'processing', 'rp1.json')));
+  });
+
+  it('文件不存在时静默忽略（幂等）', async () => {
+    await initQueueDirs(testRoot);
+    await releaseProcessing(testRoot, 'rp2');
+    assert.ok(true);
+  });
+});
+
+describe('queue gcProcessing', () => {
+  it('应清理超龄孤儿锁及其任务记录', async () => {
+    await initQueueDirs(testRoot);
+    await acquireLock(testRoot, 'gc-orphan', 1);
+    await transitionToProcessing(testRoot, makeTask({ task_id: 'gc-orphan' }), 1);
+    const oldTime = new Date(Date.now() - 3600 * 1000);
+    utimesSync(join(testRoot, 'processing', 'gc-orphan.lock'), oldTime, oldTime);
+    const cleaned = await gcProcessing(testRoot, 600);
+    assert.ok(cleaned >= 1);
+    assert.ok(!existsSync(join(testRoot, 'processing', 'gc-orphan.lock')));
+    assert.ok(!existsSync(join(testRoot, 'processing', 'gc-orphan.json')));
+  });
+
+  it('未超龄锁不应被清理', async () => {
+    await initQueueDirs(testRoot);
+    await acquireLock(testRoot, 'gc-fresh', 1);
+    assert.equal(await gcProcessing(testRoot, 600), 0);
+    assert.ok(existsSync(join(testRoot, 'processing', 'gc-fresh.lock')));
   });
 });
 
