@@ -26,9 +26,31 @@ function listPids(procName) {
   return pids;
 }
 
-// 排除脚本自身进程，避免强杀自己导致循环中断
-const pids = listPids(procName).filter((pid) => pid !== process.pid);
-console.log(`[kill-node] 发现 ${pids.length} 个 ${procName} 进程(已排除自身): ${pids.join(', ') || '(无)'}`);
+// 识别包管理器父进程的 PID（npm/pnpm 命令行特征），避免误杀自身调用链上的进程
+// PowerShell: 用 CIM 查询获取进程命令行，匹配 npm-cli.js / pnpm 相关脚本特征
+function findManagerPids() {
+  const ps = `Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" | ` +
+    `Where-Object { $_.CommandLine -match '(npm-cli\\.js|pnpm(?:[^\\\\/ ]*)\\.js|cli\\.js).*?(?:--?prefix|create-temp-dir|--?dir|run|exec)' } | ` +
+    `ForEach-Object { $_.ProcessId }`;
+  try {
+    const stdout = execFileSync('powershell', ['-NoProfile', '-Command', ps], {
+      encoding: 'utf8',
+      windowsHide: true,
+    });
+    return stdout
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter((s) => /^\d+$/.test(s))
+      .map(Number);
+  } catch {
+    return [];
+  }
+}
+
+// 排除脚本自身进程，避免强杀自己导致循环中断；同时排除包管理器父进程（npm/pnpm 调用链）
+const excluded = new Set([process.pid, ...findManagerPids()]);
+const pids = listPids(procName).filter((pid) => !excluded.has(pid));
+console.log(`[kill-node] 发现 ${pids.length} 个 ${procName} 进程(已排除自身与包管理器父进程): ${pids.join(', ') || '(无)'}`);
 
 if (pids.length === 0) process.exit(0);
 
