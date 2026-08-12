@@ -178,6 +178,36 @@ describe('ShellCmdExecutor (mock)', () => {
     const result = await exec.execute('docker ps', 1);
     assert.ok(result.stdout.includes('[mock-shell]'));
     assert.ok(result.stdout.includes('docker ps'));
+    assert.equal(result.exit_code, 0);
+    assert.equal(result.timed_out, false);
+    assert.ok(!result.stdout.includes('__MSG_DONE_'), 'stdout 不应残留结束 marker');
+    await exec.close();
+  });
+
+  it('命令输出应通过结束 marker 立即判定完成，无需等满超时', async () => {
+    const config: WorkerConfig = {
+      hgfs_root: '/tmp',
+      queue_mode: 'shared',
+      executor_type: 'mock',
+      exec_mode: 'shell',
+      devices: {},
+      ssh_config: null,
+      audit_log_dir: '/tmp/logs',
+      policy_file: '/tmp/policy.json',
+      polling: { initial_interval_ms: 500, max_interval_ms: 3000 },
+      heartbeat_interval_sec: 5,
+      result_ttl_sec: 600,
+      max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
+    };
+    const started = Date.now();
+    const exec = new ShellCmdExecutor(config);
+    const result = await exec.execute('ls -la', 30);
+    const elapsed = Date.now() - started;
+    assert.equal(result.exit_code, 0);
+    assert.equal(result.timed_out, false);
+    assert.ok(elapsed < 1000, `命令应在 marker 检测后立即返回，实际耗时 ${elapsed}ms`);
     await exec.close();
   });
 });

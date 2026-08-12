@@ -138,6 +138,11 @@ class MockShellSession implements ShellSession {
     for (const line of data.split(/\r?\n/)) {
       if (line !== '') {
         this.emitStdout(`[mock-shell] $ ${line}\n`);
+        // 模拟结束标记回显（echo <marker>:$? → <marker>:0），使 marker 检测在 mock 下可验证
+        const markerMatch = line.match(/^echo\s+(__MSG_DONE_\w+):\$\?$/);
+        if (markerMatch) {
+          this.emitStdout(`${markerMatch[1]}:0\n`);
+        }
       }
     }
   }
@@ -610,10 +615,29 @@ export class Ssh2ShellSessionFactory implements ShellSessionFactory {
 // ────────────────────────────────────────────────────────────────
 
 /**
+ * 从 stdout 中剥离结束 marker 相关的行
+ * 交互式 shell 会回显注入的命令（echo <marker>:$?），同时 pty 也会把命令回显出来，
+ * 这两类行都含 marker，需要一并去掉，避免污染返回给上层的结果。
+ * @param stdout - 原始 stdout 文本
+ * @param marker - 结束标记
+ * @returns 剥离 marker 相关行后的文本
+ */
+function stripMarkerLines(stdout: string, marker: string): string {
+  return stdout
+    .split(/\r?\n/)
+    .filter((line) => !line.includes(marker))
+    .join('\n');
+}
+
+/**
  * 基于交互式 shell 通道的单命令执行器
  * 适用于目标设备不支持 exec 通道、仅支持交互式 shell（如部分 Dropbear/受限登录 shell）
  * 的场景：打开 shell channel + pty，把 cmd 作为输入注入，收集 stdout 到超时或会话关闭。
  * 复用 ShellSessionFactory 建立连接，执行完后关闭会话回收通道。
+ *
+ * 结束标记检测：交互式 shell 执行完命令不会关闭通道，仅靠超时兜底会白白等待。
+ * 因此在命令后注入唯一 marker（echo <marker>:$?），在 stdout 中匹配到 marker 即判定命令
+ * 已结束并解析退出码，无需等到超时。
  */
 export class ShellCmdExecutor implements CmdExecutor {
   private readonly factory: ShellSessionFactory;
@@ -643,15 +667,27 @@ export class ShellCmdExecutor implements CmdExecutor {
         finish({ stdout, stderr, exit_code: null, timed_out: true });
       }, timeout_sec * 1000);
 
-      session.onStdout((chunk) => { stdout += chunk; });
+      // 唯一结束标记：随机后缀避免与命令输出中的文本冲突
+      const marker = `__MSG_DONE_${Math.random().toString(36).slice(2, 10)}`;
+      const markerRe = new RegExp(`${marker}:(\\d+)`);
+
+      session.onStdout((chunk) => {
+        stdout += chunk;
+        const m = stdout.match(markerRe);
+        if (!m) return;
+        // 匹配到结束标记：从 stdout 中剥离 marker 相关行，解析退出码并立即结束
+        stdout = stripMarkerLines(stdout, marker);
+        finish({ stdout, stderr, exit_code: Number(m[1]), timed_out: false });
+      });
       session.onStderr((chunk) => { stderr += chunk; });
       session.onClose(() => {
         // 会话提前关闭（远端退出），收集到的输出作为结果返回
         finish({ stdout, stderr, exit_code: null, timed_out: false });
       });
 
-      // 注入命令并回车执行
+      // 注入命令并回车执行，随后注入唯一结束标记回显退出码
       session.write(`${cmd}\n`);
+      session.write(`echo ${marker}:$?\n`);
     });
   }
 
