@@ -8,46 +8,32 @@
  * Description: ssh2 一次性命令执行器（exec 通道）
  *   - SshExecExecutor：按设备名查 SSH 配置 → 建连接 → 生成 ssh_N 会话 id →
  *     后续同一设备复用该连接发命令；连接失败抛 SshConnectionFailed。
+ *   - 连接复用与失效检测收敛到公共连接层 SshClientCache：
+ *     缓存 client 监听 close/error 自动驱逐，下次任务惰性重连，并发建连去重。
  * ======================================================
  */
 
-import { readFile } from 'node:fs/promises';
-
-import { Client } from 'ssh2';
-import type { ConnectConfig } from 'ssh2';
-
 import type { WorkerConfig } from '../config/index.js';
 import { findSshConfig } from '../config/index.js';
-import type { SshConfig } from '../config/index.js';
 import { logger } from '../log/index.js';
+import { connectClient, SshClientCache } from './ssh-conn.js';
 import type { CmdExecutor, CmdResult } from './types.js';
-
-/** 已建立的 exec 会话条目（按设备名复用） */
-interface ExecSession {
-  /** 会话 id，形如 ssh_1、ssh_2，全局自增 */
-  sessionId: string;
-  /** 设备名（normalize 后：显式设备名或 'default'） */
-  device: string;
-  /** ssh2 Client 实例 */
-  client: Client;
-}
 
 /**
  * ssh2 真实执行器
  *
  * 按 device 查 SSH 配置；首次命中某设备时建连接并生成 ssh_N 形式的会话 id，
  * 后续同一设备复用已建连接发命令，避免每条命令重新握手。
+ * 连接失效（client close/error）时由 SshClientCache 自动驱逐缓存，下次任务自动重连。
  * 连接失败抛 Error（调用方据此回写 failed 结果）。
  */
 export class SshExecExecutor implements CmdExecutor {
-  /** 设备名 → 会话条目（含已建立的 ssh2 Client） */
-  private readonly sessions = new Map<string, ExecSession>();
-  /** 全局会话自增计数器，生成 ssh_1、ssh_2… */
-  private sessionCounter = 0;
-  /** 默认连接超时（毫秒） */
-  private readonly connectTimeoutMs = 10000;
+  /** 公共连接缓存：设备名 → client 会话（含失效检测 + 惰性重连 + 建连去重） */
+  private readonly cache: SshClientCache;
 
-  constructor(private readonly config: WorkerConfig) {}
+  constructor(private readonly config: WorkerConfig) {
+    this.cache = new SshClientCache();
+  }
 
   /**
    * 执行命令：按 device 复用或新建连接，exec 一条命令并回收 stdout/stderr/exit_code
@@ -60,7 +46,7 @@ export class SshExecExecutor implements CmdExecutor {
     const session = await this.getOrCreateSession(device);
     logger.info(`[executor:ssh-exec] execute on ${session.sessionId} (device=${session.device}): ${cmd}`);
 
-    return this.runCommand(session, cmd, timeout_sec);
+    return this.runCommand(session.client, session.sessionId, cmd, timeout_sec);
   }
 
   /**
@@ -70,20 +56,14 @@ export class SshExecExecutor implements CmdExecutor {
    * @returns 会话 id 或 undefined
    */
   getSessionId(device?: string): string | undefined {
-    const normalized = this.normalizeDevice(device);
-    return this.sessions.get(normalized)?.sessionId;
+    return this.cache.getSessionId(this.normalizeDevice(device));
   }
 
   /**
    * 关闭所有已建立的 SSH 连接，供 Worker 优雅退出时调用
    */
   async close(): Promise<void> {
-    const closes: Promise<void>[] = [];
-    for (const [, session] of this.sessions) {
-      closes.push(this.closeSession(session));
-    }
-    this.sessions.clear();
-    await Promise.all(closes);
+    await this.cache.closeAll();
   }
 
   // ── 内部实现 ──
@@ -97,18 +77,14 @@ export class SshExecExecutor implements CmdExecutor {
 
   /**
    * 取或建某设备的 SSH 会话
-   * - 已建立则直接复用
-   * - 未建立则查 config 拿 SshConfig，握手成功后存入 sessions 并返回
+   * - 已缓存且未失效则直接复用（连接失效已由 SshClientCache 自动驱逐）
+   * - 未命中则查 config 拿 SshConfig，握手成功后存入缓存并返回
    * @param device - 调用方传入的设备名（可能 undefined）
    * @returns 会话条目
    * @throws {Error} 设备未配置 / 连接失败
    */
-  private async getOrCreateSession(device?: string): Promise<ExecSession> {
+  private async getOrCreateSession(device?: string): Promise<{ sessionId: string; device: string; client: import('ssh2').Client }> {
     const normalized = this.normalizeDevice(device);
-    const existing = this.sessions.get(normalized);
-    if (existing) {
-      return existing;
-    }
 
     // 查 SSH 配置：显式设备名 → default → 旧 ssh 字段
     const sshConfig = findSshConfig(this.config, normalized === 'default' ? undefined : normalized);
@@ -116,75 +92,18 @@ export class SshExecExecutor implements CmdExecutor {
       throw new Error(`no ssh config for device "${normalized}"`);
     }
 
-    const sessionId = `ssh_${++this.sessionCounter}`;
-    logger.info(`[executor:ssh-exec] connecting ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
-
-    const client = await this.connect(sshConfig, sessionId);
-    const session: ExecSession = { sessionId, device: normalized, client };
-    this.sessions.set(normalized, session);
-    logger.info(`[executor:ssh-exec] ${sessionId} connected`);
-    return session;
+    return this.cache.getOrCreate(normalized, sshConfig, connectClient);
   }
 
   /**
-   * 建立 ssh2 连接，握手成功返回 Client，失败抛错
+   * 在已建立的连接上执行一条命令，超时或异常时回收通道
+   * @param client - 已建立的 ssh2 Client
+   * @param sessionId - 会话 id（日志定位用）
+   * @param cmd - 待执行命令
+   * @param timeout_sec - 超时秒数
+   * @returns 命令执行结果
    */
-  private connect(sshConfig: SshConfig, sessionId: string): Promise<Client> {
-    return new Promise<Client>((resolve, reject) => {
-      const client = new Client();
-      const connectCfg: ConnectConfig = {
-        host: sshConfig.host,
-        port: sshConfig.port,
-        username: sshConfig.username,
-        readyTimeout: this.connectTimeoutMs,
-        keepaliveInterval: 15000,
-      };
-
-      // 认证方式：优先私钥（可带 passphrase），其次密码，两者皆无则报错
-      if (sshConfig.private_key_path) {
-        readFile(sshConfig.private_key_path, 'utf-8')
-          .then((keyContent) => {
-            connectCfg.privateKey = keyContent;
-            // 密码在私钥场景下作为私钥 passphrase（若配置了）
-            if (sshConfig.password) {
-              connectCfg.passphrase = sshConfig.password;
-            }
-            client.connect(connectCfg);
-          })
-          .catch((err) => {
-            reject(new Error(`[executor:ssh-exec] ${sessionId} read private key failed: ${err.message}`));
-          });
-      } else if (sshConfig.password) {
-        connectCfg.password = sshConfig.password;
-        client.connect(connectCfg);
-      } else {
-        reject(new Error(`[executor:ssh-exec] ${sessionId} no auth: neither private_key_path nor password`));
-        return;
-      }
-
-      // 连接超时兜底：超时强制断连并拒绝
-      const timer = setTimeout(() => {
-        client.end();
-        reject(new Error(`[executor:ssh-exec] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
-      }, this.connectTimeoutMs + 5000);
-
-      // 握手成功后清除超时定时器并交付 Client
-      client.once('ready', () => {
-        clearTimeout(timer);
-        resolve(client);
-      });
-
-      client.once('error', (err) => {
-        clearTimeout(timer);
-        reject(new Error(`[executor:ssh-exec] ${sessionId} connect error: ${err.message}`));
-      });
-    });
-  }
-
-  /**
-   * 在已建立的会话上执行一条命令，超时或异常时回收通道
-   */
-  private runCommand(session: ExecSession, cmd: string, timeout_sec: number): Promise<CmdResult> {
+  private runCommand(client: import('ssh2').Client, sessionId: string, cmd: string, timeout_sec: number): Promise<CmdResult> {
     return new Promise<CmdResult>((resolve) => {
       const timeoutMs = timeout_sec * 1000;
       let settled = false;
@@ -192,7 +111,7 @@ export class SshExecExecutor implements CmdExecutor {
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
-        logger.warn(`[executor:ssh-exec] ${session.sessionId} command timed out after ${timeout_sec}s: ${cmd}`);
+        logger.warn(`[executor:ssh-exec] ${sessionId} command timed out after ${timeout_sec}s: ${cmd}`);
         // 超时直接回退结果，通道由 ssh2 内部在 close 事件后回收
         resolve({
           stdout: '',
@@ -202,7 +121,7 @@ export class SshExecExecutor implements CmdExecutor {
         });
       }, timeoutMs);
 
-      session.client.exec(cmd, (err, s) => {
+      client.exec(cmd, (err, s) => {
         // exec 通道打开失败：直接返回错误信息
         if (err) {
           if (settled) return;
@@ -253,29 +172,6 @@ export class SshExecExecutor implements CmdExecutor {
           });
         });
       });
-    });
-  }
-
-  /**
-   * 关闭单个会话：end() 触发 ssh2 优雅断连
-   */
-  private closeSession(session: ExecSession): Promise<void> {
-    return new Promise((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        resolve();
-      };
-      session.client.once('close', finish);
-      session.client.once('end', finish);
-      try {
-        session.client.end();
-      } catch {
-        finish();
-      }
-      // 兜底：1s 内未收到 close/end 事件也强行结束
-      setTimeout(finish, 1000);
     });
   }
 }

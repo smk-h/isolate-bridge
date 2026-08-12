@@ -266,6 +266,30 @@ Worker 主循环（无限循环）：
 
 常驻后台轮询进程，纯 IO 逻辑，无任何大模型依赖，负责任务消费、SSH 调用、超时控制、状态流转。轻量、稳定、低资源占用。每 5s 写入 `heartbeat.json`（内容为 `{pid, last_beat, processed_count, queue_depth}`），内网提交前可读取心跳判断 Worker 是否在线。
 
+#### 1.2.1 SSH 传输连接复用机制
+
+Worker 按设备名缓存 SSH **传输连接**（`SshExecExecutor.sessions`：device → ssh2 `Client`），后续同一设备的每条命令都复用这条已握手的连接，只在其上重新开一个 `exec` channel，避免每条命令重复 TCP 三次握手 + SSH 密钥交换 + 认证的固定开销。
+
+![SSH 传输连接握手与复用时序](./msgferry-bridge-architecture/img/ssh-connection-reuse-sequence.svg)
+
+要点（详见 Issue #77 讨论）：
+
+- **复用的是「门」，不是「屋子里的人」**：复用的是最外层传输连接（Client），而不是 channel、也不是远端进程。
+- **每条命令仍是全新进程**：每次 `client.exec(cmd)` 在已握手的连接上开一个新 channel，远端 `sh -c cmd` 起全新子进程，跑完即销毁，环境变量不保留——命令之间本就无状态，状态由上层编排管理。
+- **连接按设备独立缓存**：多设备各自建立并复用自己的连接（`ssh_1`、`ssh_2`…），互不干扰；连接由 `ExecSession` 统一管理超时（10s）/keepalive（15s），Worker 退出时 `close()` 全量关闭。
+
+#### 1.2.2 SSH 交互式会话机制
+
+与一次性命令不同，**交互式 shell 会话**（`SessionManager`，`exec_mode=shell`）是**长生命周期**的 stdin/stdout 文件摆渡：Worker 为每个 running 会话建立 shell channel + pty，通过固定会话目录做双向文件交换，内网写输入、Worker 轮询注入、输出落盘供内网回读。受 HGFS 轮询延迟限制，仅适合低频交互。
+
+![SSH 交互式会话时序](./msgferry-bridge-architecture/img/ssh-interactive-session-sequence.svg)
+
+要点（对照 Issue #77 讨论中的一次性命令通道）：
+
+- **打开会话**：`SessionManager.open()` → `SshSessionFactory.open(device)` 走完整握手后 `client.shell()` 打开 shell channel + pty，注入初始命令，会话号形如 `ssh_1`。
+- **stdin 注入**：内网写 `<session_id>/stdin/<seq>.input`，Worker 每轮 `tick` 轮询 `listStdinInputs()` 读取并注入 shell；输出经 `onStdout` 回调落盘到 `<session_id>/stdout/<seq>.output` 供内网回读。
+- **关闭三路**：内网写 `close.marker`（`close_marker`）、空闲超时（`idle_timeout`）、或远端关闭（`remote_closed`），均先置终态回写 `session.json` 再关闭 channel；Worker 优雅退出时 `closeAll()` 全量关闭。
+
 #### 1.3 消息总线模块（HGFS 文件队列）
 
 系统唯一跨域通信介质，不依赖网络协议，完全适配内网隔离规范，具备任务排队、状态隔离、异常容错能力。
