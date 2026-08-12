@@ -1,7 +1,7 @@
 /**
  * =====================================================
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
- * File name  : shell-cmd.ts
+ * File name  : ssh-shell-exec.ts
  * Author     : MsgFerry
  * Date       : 2026/08/12
  * Version    : 0.0.1
@@ -45,7 +45,7 @@ function stripMarkerLines(stdout: string, marker: string): string {
 /**
  * 基于交互式 shell 通道的单命令执行器
  */
-export class ShellCmdExecutor implements CmdExecutor {
+export class SshShellExecExecutor implements CmdExecutor {
   private readonly factory: ShellSessionFactory;
   /** device → 已缓存的交互式 shell 会话（长连接复用） */
   private readonly sessions = new Map<string, ShellSession>();

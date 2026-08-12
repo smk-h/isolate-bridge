@@ -1,12 +1,12 @@
 /**
  * =====================================================
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
- * File name  : command.ts
+ * File name  : ssh-exec.ts
  * Author     : MsgFerry
  * Date       : 2026/08/12
  * Version    : 0.0.1
  * Description: ssh2 一次性命令执行器（exec 通道）
- *   - Ssh2Executor：按设备名查 SSH 配置 → 建连接 → 生成 ssh_N 会话 id →
+ *   - SshExecExecutor：按设备名查 SSH 配置 → 建连接 → 生成 ssh_N 会话 id →
  *     后续同一设备复用该连接发命令；连接失败抛 SshConnectionFailed。
  * ======================================================
  */
@@ -22,8 +22,8 @@ import type { SshConfig } from '../config/index.js';
 import { logger } from '../log.js';
 import type { CmdExecutor, CmdResult } from './types.js';
 
-/** 已建立的 SSH 会话条目（按设备名复用） */
-interface SshSession {
+/** 已建立的 exec 会话条目（按设备名复用） */
+interface ExecSession {
   /** 会话 id，形如 ssh_1、ssh_2，全局自增 */
   sessionId: string;
   /** 设备名（normalize 后：显式设备名或 'default'） */
@@ -39,9 +39,9 @@ interface SshSession {
  * 后续同一设备复用已建连接发命令，避免每条命令重新握手。
  * 连接失败抛 Error（调用方据此回写 failed 结果）。
  */
-export class Ssh2Executor implements CmdExecutor {
+export class SshExecExecutor implements CmdExecutor {
   /** 设备名 → 会话条目（含已建立的 ssh2 Client） */
-  private readonly sessions = new Map<string, SshSession>();
+  private readonly sessions = new Map<string, ExecSession>();
   /** 全局会话自增计数器，生成 ssh_1、ssh_2… */
   private sessionCounter = 0;
   /** 默认连接超时（毫秒） */
@@ -103,7 +103,7 @@ export class Ssh2Executor implements CmdExecutor {
    * @returns 会话条目
    * @throws {Error} 设备未配置 / 连接失败
    */
-  private async getOrCreateSession(device?: string): Promise<SshSession> {
+  private async getOrCreateSession(device?: string): Promise<ExecSession> {
     const normalized = this.normalizeDevice(device);
     const existing = this.sessions.get(normalized);
     if (existing) {
@@ -120,7 +120,7 @@ export class Ssh2Executor implements CmdExecutor {
     logger.info(`[executor] connecting ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
 
     const client = await this.connect(sshConfig, sessionId);
-    const session: SshSession = { sessionId, device: normalized, client };
+    const session: ExecSession = { sessionId, device: normalized, client };
     this.sessions.set(normalized, session);
     logger.info(`[executor] ${sessionId} connected`);
     return session;
@@ -184,7 +184,7 @@ export class Ssh2Executor implements CmdExecutor {
   /**
    * 在已建立的会话上执行一条命令，超时或异常时回收通道
    */
-  private runCommand(session: SshSession, cmd: string, timeout_sec: number): Promise<CmdResult> {
+  private runCommand(session: ExecSession, cmd: string, timeout_sec: number): Promise<CmdResult> {
     return new Promise<CmdResult>((resolve) => {
       const timeoutMs = timeout_sec * 1000;
       let settled = false;
@@ -259,7 +259,7 @@ export class Ssh2Executor implements CmdExecutor {
   /**
    * 关闭单个会话：end() 触发 ssh2 优雅断连
    */
-  private closeSession(session: SshSession): Promise<void> {
+  private closeSession(session: ExecSession): Promise<void> {
     return new Promise((resolve) => {
       let done = false;
       const finish = () => {

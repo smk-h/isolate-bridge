@@ -11,7 +11,7 @@
  *     - 本模块（session/index.ts）：**长生命周期**会话管理——负责对每个 running
  *       会话建立 shell、轮询 stdin 注入、将输出落盘、处理关闭与空闲超时，
  *       会话生命周期全程由本模块驱动（tick）。
- *     - executor/shell-cmd.ts：**短生命周期**单命令执行——在 shell 通道上跑单条命令，
+ *     - executor/ssh-shell-exec.ts：**短生命周期**单命令执行——在 shell 通道上跑单条命令，
  *       用完即走，长连接复用由它自己管理。
  *   两者共享 executor/ 的 ShellSession 接口，职责清晰无重复。
  *

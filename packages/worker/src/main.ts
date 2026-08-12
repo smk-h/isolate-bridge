@@ -21,8 +21,12 @@ import {
 } from './queue/index.js';
 import type { QueueModeStrategy } from './queue/index.js';
 import { loadPolicy, createPolicyWatcher } from './policy.js';
-import { createExecutor, createShellSessionFactory, ShellCmdExecutor } from './executor/index.js';
-import { Ssh2Executor } from './executor/index.js';
+import {
+  createExecutor,
+  createShellSessionFactory,
+  SshExecExecutor,
+  SshShellExecExecutor,
+} from './executor/index.js';
 import {
   initSessionsDir,
   listSessions,
@@ -247,9 +251,9 @@ export async function main(): Promise<void> {
     await sessionManager.closeAll();
   }
   // 关闭所有已建立的 SSH 会话
-  if (executor instanceof Ssh2Executor) {
+  if (executor instanceof SshExecExecutor) {
     await executor.close();
-  } else if (executor instanceof ShellCmdExecutor) {
+  } else if (executor instanceof SshShellExecExecutor) {
     await executor.close();
   }
   // 退出心跳（策略决定落盘位置）

@@ -12,7 +12,7 @@
 
 export type { CmdResult, CmdExecutor, ShellSession, ShellSessionFactory } from './types.js';
 export { MockSshExecutor, MockShellSessionFactory } from './mock.js';
-export { Ssh2Executor } from './command.js';
-export { Ssh2ShellSessionFactory } from './shell.js';
-export { ShellCmdExecutor } from './shell-cmd.js';
+export { SshSessionFactory } from './ssh-session.js';
+export { SshExecExecutor } from './ssh-exec.js';
+export { SshShellExecExecutor } from './ssh-shell-exec.js';
 export { createExecutor, createShellSessionFactory } from './factory.js';

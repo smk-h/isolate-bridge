@@ -17,7 +17,7 @@ import { transitionToProcessing } from './queue/index.js';
 import { checkCommand } from './policy.js';
 import type { PolicyRule, PolicyResult } from './policy.js';
 import type { CmdExecutor } from './executor/index.js';
-import { Ssh2Executor } from './executor/index.js';
+import { SshExecExecutor } from './executor/index.js';
 import type { AuditLogger } from './audit.js';
 import { formatSystemTime } from './audit.js';
 import type { AuditEntry } from './audit.js';
@@ -70,8 +70,8 @@ export async function processTask(
   // SSH 执行
   logger.info(`[worker] ssh executing: task_id=${task.task_id} timeout_sec=${task.timeout_sec} cmd=${task.cmd}`);
   const cmdResult = await executor.execute(task.cmd, task.timeout_sec, task.device);
-  // 取已建立会话 id 作为审计 ssh_target（Ssh2Executor 有，MockExecutor 无）
-  const sshTarget = executor instanceof Ssh2Executor
+  // 取已建立会话 id 作为审计 ssh_target（SshExecExecutor 有，MockExecutor 无）
+  const sshTarget = executor instanceof SshExecExecutor
     ? (executor.getSessionId(task.device) ?? null)
     : null;
   logger.info(`[worker] ssh executed: task_id=${task.task_id} exit_code=${cmdResult.exit_code} timed_out=${cmdResult.timed_out}`);

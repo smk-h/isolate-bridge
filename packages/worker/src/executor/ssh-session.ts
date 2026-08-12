@@ -1,12 +1,12 @@
 /**
  * =====================================================
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
- * File name  : shell.ts
+ * File name  : ssh-session.ts
  * Author     : MsgFerry
  * Date       : 2026/08/12
  * Version    : 0.0.1
  * Description: ssh2 真实交互式 shell 会话与工厂（shell channel + pty）
- *   会话生命周期由调用方（session.ts）管理，与一次性命令执行器（Ssh2Executor）解耦。
+ *   会话生命周期由调用方（session.ts）管理，与一次性命令执行器（SshExecExecutor）解耦。
  * ======================================================
  */
 
@@ -22,7 +22,7 @@ import { logger } from '../log.js';
 import type { ShellSession, ShellSessionFactory } from './types.js';
 
 /** ssh2 shell channel + pty 的交互式会话封装 */
-class Ssh2ShellSession implements ShellSession {
+class SshSession implements ShellSession {
   readonly sessionId: string;
   readonly device: string;
   private readonly stream: import('ssh2').ClientChannel;
@@ -107,10 +107,10 @@ class Ssh2ShellSession implements ShellSession {
 /**
  * ssh2 真实会话工厂
  * 每个会话独立建立一条 SSH 连接，打开 shell channel + pty 后交回会话对象。
- * 与一次性命令执行器（Ssh2Executor）解耦，会话生命周期由调用方（session.ts）管理。
+ * 与一次性命令执行器（SshExecExecutor）解耦，会话生命周期由调用方（session.ts）管理。
  */
-export class Ssh2ShellSessionFactory implements ShellSessionFactory {
-  private readonly sessions = new Set<Ssh2ShellSession>();
+export class SshSessionFactory implements ShellSessionFactory {
+  private readonly sessions = new Set<SshSession>();
   private readonly clients = new Set<import('ssh2').Client>();
   private counter = 0;
   private readonly connectTimeoutMs = 10000;
@@ -133,7 +133,7 @@ export class Ssh2ShellSessionFactory implements ShellSessionFactory {
     this.clients.add(client);
 
     const stream = await this.openShellChannel(client, sessionId);
-    const session = new Ssh2ShellSession(sessionId, normalized, stream);
+    const session = new SshSession(sessionId, normalized, stream);
     this.sessions.add(session);
     // 会话关闭时同步释放连接与缓存记录
     session.onClose(() => {

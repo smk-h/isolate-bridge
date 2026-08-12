@@ -15,8 +15,8 @@ import assert from 'node:assert/strict';
 import {
   MockSshExecutor,
   MockShellSessionFactory,
-  Ssh2Executor,
-  ShellCmdExecutor,
+  SshExecExecutor,
+  SshShellExecExecutor,
   createExecutor,
   createShellSessionFactory,
 } from '../src/executor/index.js';
@@ -64,7 +64,7 @@ describe('createExecutor', () => {
     assert.ok(exec instanceof MockSshExecutor);
   });
 
-  it('ssh2 模式应返回 Ssh2Executor 实例', () => {
+  it('ssh2 模式应返回 SshExecExecutor 实例', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
       queue_mode: 'shared',
@@ -82,10 +82,10 @@ describe('createExecutor', () => {
       log_dir: '/tmp/logs',
     };
     const exec = createExecutor(config);
-    assert.ok(exec instanceof Ssh2Executor);
+    assert.ok(exec instanceof SshExecExecutor);
   });
 
-  it('ssh2 + exec_mode=shell 应返回 ShellCmdExecutor（交互式 shell 通道）', () => {
+  it('ssh2 + exec_mode=shell 应返回 SshShellExecExecutor（交互式 shell 通道）', () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
       queue_mode: 'shared',
@@ -103,7 +103,7 @@ describe('createExecutor', () => {
       log_dir: '/tmp/logs',
     };
     const exec = createExecutor(config);
-    assert.ok(exec instanceof ShellCmdExecutor);
+    assert.ok(exec instanceof SshShellExecExecutor);
   });
 
   it('mock 会话工厂应返回 MockShellSessionFactory 实例', () => {
@@ -156,7 +156,7 @@ describe('MockShellSessionFactory', () => {
   });
 });
 
-describe('ShellCmdExecutor (mock)', () => {
+describe('SshShellExecExecutor (mock)', () => {
   it('execute 通过 mock shell 回显输入并返回结果', async () => {
     const config: WorkerConfig = {
       hgfs_root: '/tmp',
@@ -174,7 +174,7 @@ describe('ShellCmdExecutor (mock)', () => {
       log_save: false,
       log_dir: '/tmp/logs',
     };
-    const exec = new ShellCmdExecutor(config);
+    const exec = new SshShellExecExecutor(config);
     const result = await exec.execute('docker ps', 1);
     assert.ok(result.stdout.includes('[mock-shell]'));
     assert.ok(result.stdout.includes('docker ps'));
@@ -202,7 +202,7 @@ describe('ShellCmdExecutor (mock)', () => {
       log_dir: '/tmp/logs',
     };
     const started = Date.now();
-    const exec = new ShellCmdExecutor(config);
+    const exec = new SshShellExecExecutor(config);
     const result = await exec.execute('ls -la', 30);
     const elapsed = Date.now() - started;
     assert.equal(result.exit_code, 0);
@@ -228,7 +228,7 @@ describe('ShellCmdExecutor (mock)', () => {
       log_save: false,
       log_dir: '/tmp/logs',
     };
-    const exec = new ShellCmdExecutor(config);
+    const exec = new SshShellExecExecutor(config);
     const r1 = await exec.execute('cmd1', 5, 'board-a');
     const r2 = await exec.execute('cmd2', 5, 'board-a');
     // mock 会话工厂为每个会话生成 ssh_1、ssh_2…，复用时应只开 1 个会话
@@ -256,7 +256,7 @@ describe('ShellCmdExecutor (mock)', () => {
       log_save: false,
       log_dir: '/tmp/logs',
     };
-    const exec = new ShellCmdExecutor(config);
+    const exec = new SshShellExecExecutor(config);
     await exec.execute('cmd1', 5, 'board-a');
     // 手动关闭会话，模拟远端断开：下一次 execute 应重新 open 新会话
     const sessions = [...(exec as unknown as { sessions: Map<string, unknown> }).sessions.values()];
