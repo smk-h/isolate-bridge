@@ -255,6 +255,7 @@ export class SessionManager {
     logger.info(`[session] opening ${session.session_id} device=${session.device ?? 'default'}`);
     const shell = await this.factory.open(session.device);
     this.factories.set(session.session_id, shell);
+    // 输出序号与最后活跃时间随会话初始化，供后续落盘与空闲判定使用
     this.stdoutSeq.set(session.session_id, session.stdout_seq ?? 0);
     this.lastActive.set(session.session_id, Date.now());
 
@@ -364,6 +365,13 @@ export class SessionManager {
 
   // ── 内部 ──
 
+  /**
+   * 把一段 shell 输出落盘到 stdout/<seq>.output（stderr 合并进同一输出流）
+   * 异步落盘后推进 seq，并更新最后活跃时间
+   * @param session - 会话结构体
+   * @param chunk - 输出文本块
+   * @param stderr - 是否为 stderr 输出（用于打日志，落盘仍并入 stdout）
+   */
   private appendStdout(session: SessionTask, chunk: string, stderr = false): void {
     const seq = this.stdoutSeq.get(session.session_id) ?? 0;
     // stderr 也并入 stdout 输出流（交互式 shell 场景 stderr 极少单独使用）
@@ -378,6 +386,10 @@ export class SessionManager {
     }
   }
 
+  /**
+   * 关闭并移除指定会话的底层 shell（不存在时静默跳过）
+   * @param id - 会话 id
+   */
   private async closeShell(id: string): Promise<void> {
     const shell = this.factories.get(id);
     if (shell) {

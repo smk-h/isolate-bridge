@@ -140,11 +140,12 @@ export class Ssh2Executor implements CmdExecutor {
         keepaliveInterval: 15000,
       };
 
-      // 认证：优先私钥，其次密码
+      // 认证方式：优先私钥（可带 passphrase），其次密码，两者皆无则报错
       if (sshConfig.private_key_path) {
         readFile(sshConfig.private_key_path, 'utf-8')
           .then((keyContent) => {
             connectCfg.privateKey = keyContent;
+            // 密码在私钥场景下作为私钥 passphrase（若配置了）
             if (sshConfig.password) {
               connectCfg.passphrase = sshConfig.password;
             }
@@ -161,11 +162,13 @@ export class Ssh2Executor implements CmdExecutor {
         return;
       }
 
+      // 连接超时兜底：超时强制断连并拒绝
       const timer = setTimeout(() => {
         client.end();
         reject(new Error(`[executor] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
       }, this.connectTimeoutMs + 5000);
 
+      // 握手成功后清除超时定时器并交付 Client
       client.once('ready', () => {
         clearTimeout(timer);
         resolve(client);
@@ -200,6 +203,7 @@ export class Ssh2Executor implements CmdExecutor {
       }, timeoutMs);
 
       session.client.exec(cmd, (err, s) => {
+        // exec 通道打开失败：直接返回错误信息
         if (err) {
           if (settled) return;
           settled = true;
@@ -217,11 +221,14 @@ export class Ssh2Executor implements CmdExecutor {
         let stderr = '';
         let exitCode: number | null = null;
 
+        // 分别累积 stdout / stderr 输出
         s.on('data', (chunk: Buffer) => { stdout += chunk.toString('utf-8'); });
         s.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString('utf-8'); });
+        // exit 事件仅记录退出码，最终以 close 事件为准交付结果
         s.on('exit', (code: number | null) => {
           exitCode = code;
         });
+        // 通道关闭：命令执行完毕，交付最终结果
         s.on('close', () => {
           if (settled) return;
           settled = true;
@@ -233,6 +240,7 @@ export class Ssh2Executor implements CmdExecutor {
             timed_out: false,
           });
         });
+        // 通道异常：附上已收集的 stderr 与错误信息返回
         s.on('error', (e: Error) => {
           if (settled) return;
           settled = true;

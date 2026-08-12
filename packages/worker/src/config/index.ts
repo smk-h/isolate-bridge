@@ -160,12 +160,14 @@ export function parseConfig(argv: string[]): WorkerConfig {
   const devices: DeviceSshMap = {};
   const rawDevices = file.devices ?? {};
   for (const [name, dev] of Object.entries(rawDevices)) {
+    // 跳过 default 保留键与非法设备名
     if (name === 'default' || !isValidDeviceName(name)) {
       continue;
     }
     if (!dev || typeof dev !== 'object') {
       continue;
     }
+    // 逐字段解析：host/port 缺失或无用户名时视为无效设备跳过
     const host = pickString(dev.host);
     const port = pickNumber(dev.port, 22);
     const username = pickString(dev.username);

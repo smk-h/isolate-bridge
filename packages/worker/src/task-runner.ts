@@ -103,6 +103,12 @@ export async function processTask(
 
 /**
  * 构造审计日志条目
+ * @param task - 任务结构体（取其 task_id / cmd / exit_code 等字段）
+ * @param policyResult - 安全策略校验结果
+ * @param sshTarget - 已建立的 SSH 会话 id（无则传 null）
+ * @param startTime - 任务开始时间戳（毫秒），用于计算耗时
+ * @param cancelled - 任务是否被取消
+ * @returns 审计日志条目
  */
 function makeAuditEntry(
   task: CommandTask,

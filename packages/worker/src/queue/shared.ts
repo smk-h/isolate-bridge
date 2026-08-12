@@ -162,10 +162,12 @@ export async function writeOverflowOutput(
   const stdoutFull = join(root, stdoutPath);
   const stderrFull = join(root, stderrPath);
 
+  // stdout 分包：先写临时文件再 rename，保证原子性（读者不会读到半成品）
   const stdoutTmp = `${stdoutFull}${TMP_SUFFIX}`;
   await writeFile(stdoutTmp, stdout, 'utf-8');
   await rename(stdoutTmp, stdoutFull);
 
+  // stderr 分包：同样原子写入
   const stderrTmp = `${stderrFull}${TMP_SUFFIX}`;
   await writeFile(stderrTmp, stderr, 'utf-8');
   await rename(stderrTmp, stderrFull);
@@ -273,6 +275,7 @@ export async function gcResults(root: string, ttlSec: number): Promise<number> {
   const now = Date.now();
   const ttlMs = ttlSec * 1000;
   let cleaned = 0;
+  // 分别扫描 completed/ 与 failed/ 两个结果目录
   const dirs = [QUEUE_DIRS.completed, QUEUE_DIRS.failed];
   for (const dir of dirs) {
     const fullDir = join(root, dir);
@@ -280,11 +283,13 @@ export async function gcResults(root: string, ttlSec: number): Promise<number> {
     try {
       entries = await readdir(fullDir);
     } catch {
+      // 目录不存在/不可读时跳过该目录
       continue;
     }
     for (const name of entries) {
       const filePath = join(fullDir, name);
       try {
+        // 超保留期的结果文件直接删除
         const fileStat = await stat(filePath);
         if (now - fileStat.mtimeMs > ttlMs) {
           await unlink(filePath);

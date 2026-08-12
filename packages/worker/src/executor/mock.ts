@@ -55,6 +55,10 @@ class MockShellSession implements ShellSession {
     this.emitStdout(`[mock-shell] session ${sessionId} ready (device=${device})\n`);
   }
 
+  /**
+   * 写入 stdin（交互式输入）：按行回显并模拟结束标记回显
+   * @param data - 输入内容（UTF-8 文本）
+   */
   write(data: string): void {
     // 输入按行回显，模拟交互式 shell 的 echo
     for (const line of data.split(/\r?\n/)) {
@@ -76,6 +80,11 @@ class MockShellSession implements ShellSession {
   onClose(cb: () => void): void { this.closeCbs.push(cb); }
   offClose(cb: () => void): void { this.removeCb(this.closeCbs, cb); }
 
+  /**
+   * 从订阅回调数组中移除指定回调
+   * @param arr - 回调数组
+   * @param cb - 待移除的回调
+   */
   private removeCb<T>(arr: Array<T>, cb: T): void {
     const idx = arr.indexOf(cb);
     if (idx !== -1) {
@@ -92,6 +101,10 @@ class MockShellSession implements ShellSession {
     return Promise.resolve();
   }
 
+  /**
+   * 向所有 stdout 订阅者广播一段输出
+   * @param chunk - 输出的 UTF-8 文本块
+   */
   private emitStdout(chunk: string): void {
     for (const cb of [...this.stdoutCbs]) cb(chunk);
   }

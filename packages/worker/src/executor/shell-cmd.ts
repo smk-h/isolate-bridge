@@ -65,10 +65,12 @@ export class ShellCmdExecutor implements CmdExecutor {
    */
   private getOrOpenSession(device?: string): Promise<ShellSession> {
     const normalized = device && device.trim() !== '' ? device : 'default';
+    // 命中已缓存会话直接复用，避免重复握手
     const cached = this.sessions.get(normalized);
     if (cached) {
       return Promise.resolve(cached);
     }
+    // 已有正在建立中的连接则复用该 Promise，避免同一设备并发重复建连
     const inFlight = this.opening.get(normalized);
     if (inFlight) {
       return inFlight;
@@ -88,6 +90,7 @@ export class ShellCmdExecutor implements CmdExecutor {
         return session;
       })
       .finally(() => {
+        // 建连流程结束（成功或失败）即清除 in-flight 记录，允许下次重试
         this.opening.delete(normalized);
       });
     this.opening.set(normalized, p);

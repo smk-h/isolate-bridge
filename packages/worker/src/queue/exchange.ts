@@ -200,6 +200,7 @@ export async function gcInboundResults(root: string, ttlSec: number): Promise<nu
     return 0;
   }
   for (const name of entries) {
+    // 跳过写了一半的临时文件，避免误删正在写入的结果
     if (name.endsWith(TMP_SUFFIX)) {
       continue;
     }
@@ -209,6 +210,7 @@ export async function gcInboundResults(root: string, ttlSec: number): Promise<nu
     }
     const filePath = join(inboundDir, name);
     try {
+      // 超保留期的结果文件（含大输出分包）删除
       const fileStat = await stat(filePath);
       if (now - fileStat.mtimeMs > ttlMs) {
         await unlink(filePath);

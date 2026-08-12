@@ -56,6 +56,10 @@ class Ssh2ShellSession implements ShellSession {
     });
   }
 
+  /**
+   * 写入 stdin（交互式 shell 输入）
+   * @param data - 输入内容（UTF-8 文本）
+   */
   write(data: string): void {
     this.stream.write(data, 'utf-8');
   }
@@ -67,6 +71,11 @@ class Ssh2ShellSession implements ShellSession {
   onClose(cb: () => void): void { this.closeCbs.push(cb); }
   offClose(cb: () => void): void { this.removeCb(this.closeCbs, cb); }
 
+  /**
+   * 从订阅回调数组中移除指定回调
+   * @param arr - 回调数组
+   * @param cb - 待移除的回调
+   */
   private removeCb<T>(arr: Array<T>, cb: T): void {
     const idx = arr.indexOf(cb);
     if (idx !== -1) {
@@ -110,6 +119,7 @@ export class Ssh2ShellSessionFactory implements ShellSessionFactory {
 
   async open(device?: string): Promise<ShellSession> {
     const normalized = device && device.trim() !== '' ? device : 'default';
+    // 按设备查 SSH 配置，未找到则抛错（调用方回写失败结果）
     const sshConfig = findSshConfig(this.config, normalized === 'default' ? undefined : normalized);
     if (!sshConfig) {
       throw new Error(`no ssh config for device "${normalized}"`);
@@ -118,12 +128,14 @@ export class Ssh2ShellSessionFactory implements ShellSessionFactory {
     const sessionId = `ssh_${++this.counter}`;
     logger.info(`[executor] opening shell ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
 
+    // 建连 → 打开 shell channel + pty → 封装为会话对象
     const client = await this.connect(sshConfig, sessionId);
     this.clients.add(client);
 
     const stream = await this.openShellChannel(client, sessionId);
     const session = new Ssh2ShellSession(sessionId, normalized, stream);
     this.sessions.add(session);
+    // 会话关闭时同步释放连接与缓存记录
     session.onClose(() => {
       this.sessions.delete(session);
       this.clients.delete(client);
