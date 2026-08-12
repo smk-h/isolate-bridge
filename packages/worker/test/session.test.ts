@@ -29,7 +29,7 @@ import {
   checkSessionCloseMarker,
   writeSessionCloseMarker,
   SessionManager,
-} from '../src/session.js';
+} from '../src/session/index.js';
 import { MockShellSessionFactory } from '../src/executor/index.js';
 
 let root: string;

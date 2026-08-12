@@ -6,6 +6,15 @@
  * Date       : 2026/08/12
  * Version    : 0.0.1
  * Description: 交互式 shell 会话管理——基于文件队列做 stdin/stdout 双向摆渡
+ *
+ *   职责边界（与 executor/ 解耦）：
+ *     - 本模块（session/index.ts）：**长生命周期**会话管理——负责对每个 running
+ *       会话建立 shell、轮询 stdin 注入、将输出落盘、处理关闭与空闲超时，
+ *       会话生命周期全程由本模块驱动（tick）。
+ *     - executor/shell-cmd.ts：**短生命周期**单命令执行——在 shell 通道上跑单条命令，
+ *       用完即走，长连接复用由它自己管理。
+ *   两者共享 executor/ 的 ShellSession 接口，职责清晰无重复。
+ *
  *   会话目录约定（<hgfs_root>/sessions/<session_id>/）：
  *     - session.json  会话元信息（SessionTask，status=running）
  *     - stdin/        内网写入的输入文件（<seq>.input），Worker 轮询读取后注入 shell
@@ -33,8 +42,9 @@ import {
 } from '@smai-kit/msgferry-shared';
 import type { SessionTask } from '@smai-kit/msgferry-shared';
 
-import type { ShellSession, ShellSessionFactory } from './executor/index.js';
-import { logger } from './log.js';
+// 仅依赖 executor/ 的 ShellSession 协议接口，不耦合具体 ssh2/mock 实现
+import type { ShellSession, ShellSessionFactory } from '../executor/index.js';
+import { logger } from '../log.js';
 
 const TMP_SUFFIX = '.tmp';
 const INPUT_SUFFIX = '.input';

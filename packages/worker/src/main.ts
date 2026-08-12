@@ -28,7 +28,7 @@ import {
   listSessions,
   readSessionMeta,
   SessionManager,
-} from './session.js';
+} from './session/index.js';
 import { AuditLogger } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 import { processTask } from './task-runner.js';
