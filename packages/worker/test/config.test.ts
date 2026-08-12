@@ -16,7 +16,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseConfig, validateConfig, isValidDeviceName, findSshConfig } from '../src/config.js';
+import { parseConfig, validateConfig, isValidDeviceName, findSshConfig } from '../src/config/index.js';
 
 import { stringify as stringifyYaml } from 'yaml';
 

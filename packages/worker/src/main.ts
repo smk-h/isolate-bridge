@@ -4,166 +4,37 @@
  * File name  : main.ts
  * Author     : MsgFerry
  * Date       : 2026/08/07
- * Version    : 0.0.1
+ * Version    : 0.0.2
  * Description: Worker 主进程入口——组装模块、主循环、信号处理、优雅退出
  * ======================================================
  */
 
-import { parseConfig, validateConfig } from './config.js';
-import type { WorkerConfig } from './config.js';
+import { parseConfig, validateConfig } from './config/index.js';
 import { ensureSharedTemplates } from './bootstrap.js';
 import { createBackoff } from './backoff.js';
 import { statSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
-  initQueueDirs,
-  listPending,
-  readTask,
   acquireLock,
-  transitionToProcessing,
-  writeResult,
-  checkCancelled,
-  writeCancelledResult,
-  writeHeartbeat,
-  writeHeartbeatExchange,
-  initExchangeDirs,
-  listOutbound,
-  readOutboundTask,
-  writeResultExchange,
-  checkCancelledExchange,
-  writeCancelledResultExchange,
-  removeCancelMarker,
-} from './queue.js';
-import { loadPolicy, checkCommand, createPolicyWatcher } from './policy.js';
-import type { PolicyRule, PolicyResult } from './policy.js';
-import { createExecutor, createShellSessionFactory, ShellCmdExecutor } from './executor.js';
-import { Ssh2Executor } from './executor.js';
-import type { CmdExecutor } from './executor.js';
+  createQueueStrategy,
+} from './queue/index.js';
+import type { QueueModeStrategy } from './queue/index.js';
+import { loadPolicy, createPolicyWatcher } from './policy.js';
+import { createExecutor, createShellSessionFactory, ShellCmdExecutor } from './executor/index.js';
+import { Ssh2Executor } from './executor/index.js';
 import {
   initSessionsDir,
   listSessions,
   readSessionMeta,
   SessionManager,
-} from './session.js';
-import { AuditLogger, formatSystemTime } from './audit.js';
-import type { AuditEntry } from './audit.js';
+} from './session/index.js';
+import { AuditLogger } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
+import { processTask } from './task-runner.js';
 
 import { logger } from './log.js';
 import { WORKER_CONFIG_FILE, resolveUnderRoot, SessionStatus } from '@smai-kit/msgferry-shared';
-import type { CommandTask } from '@smai-kit/msgferry-shared';
-
-/**
- * 处理单个任务：抢占 → 策略校验 → SSH 执行 → 取消检查 → 回写
- * @param config - Worker 配置
- * @param root - HGFS 共享根目录
- * @param task - 任务结构体（会被原地修改）
- * @param pid - Worker 进程 PID
- * @param policyRule - 安全策略规则
- * @param executor - SSH 执行器
- * @param auditLogger - 审计日志器
- */
-async function processTask(
-  config: WorkerConfig,
-  root: string,
-  task: CommandTask,
-  pid: number,
-  policyRule: PolicyRule,
-  executor: CmdExecutor,
-  auditLogger: AuditLogger,
-): Promise<void> {
-  const startTime = Date.now();
-  // 按队列模式流转：exchange 从 outbound/ 领取，shared 从 pending/ 领取
-  await transitionToProcessing(root, task, pid, config.queue_mode === 'exchange' ? 'outbound' : 'pending');
-  logger.info(`[worker] task processing: task_id=${task.task_id} pid=${pid}`);
-
-  // 安全策略校验
-  const policyResult = checkCommand(policyRule, task.cmd);
-  if (!policyResult.allowed) {
-    task.status = 'failed';
-    task.policy_blocked = true;
-    task.error_msg = 'blocked_by_policy';
-    task.end_time = Date.now();
-    // 按队列模式回写：exchange 写 inbound/，shared 写 failed/
-    if (config.queue_mode === 'exchange') {
-      await writeResultExchange(root, task, config.max_inline_bytes);
-    } else {
-      await writeResult(root, task, config.max_inline_bytes);
-    }
-    await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
-    logger.warn(`[worker] task blocked by policy: task_id=${task.task_id} reason=${policyResult.reason} cmd=${task.cmd}`);
-    return;
-  }
-  logger.info(`[worker] policy check passed: task_id=${task.task_id}`);
-
-  // SSH 执行
-  logger.info(`[worker] ssh executing: task_id=${task.task_id} timeout_sec=${task.timeout_sec} cmd=${task.cmd}`);
-  const cmdResult = await executor.execute(task.cmd, task.timeout_sec, task.device);
-  // 取已建立会话 id 作为审计 ssh_target（Ssh2Executor 有，MockExecutor 无）
-  const sshTarget = executor instanceof Ssh2Executor
-    ? (executor.getSessionId(task.device) ?? null)
-    : null;
-  logger.info(`[worker] ssh executed: task_id=${task.task_id} exit_code=${cmdResult.exit_code} timed_out=${cmdResult.timed_out}`);
-  task.stdout = cmdResult.stdout;
-  task.stderr = cmdResult.stderr;
-  task.stdout_size = Buffer.byteLength(cmdResult.stdout, 'utf-8');
-  task.stderr_size = Buffer.byteLength(cmdResult.stderr, 'utf-8');
-  task.exit_code = cmdResult.exit_code;
-  task.error_msg = cmdResult.stderr || (cmdResult.timed_out ? 'execution_timeout' : null);
-  task.end_time = Date.now();
-
-  // 取消检查与孤儿回收（按队列模式：exchange 查 outbound/cancel_<id>.marker）
-  const cancelled = config.queue_mode === 'exchange'
-    ? await checkCancelledExchange(root, task.task_id)
-    : await checkCancelled(root, task.task_id);
-  if (cancelled) {
-    task.status = 'cancelled';
-    // 按模式回写取消结果：exchange 写 inbound/result_<id>.result
-    if (config.queue_mode === 'exchange') {
-      await writeCancelledResultExchange(root, task);
-    } else {
-      await writeCancelledResult(root, task);
-    }
-    await auditLogger.log(makeAuditEntry(task, policyResult, sshTarget, startTime, true));
-    logger.warn(`[worker] task cancelled: task_id=${task.task_id}`);
-    return;
-  }
-
-  // 正常回写（按队列模式：exchange 写 inbound/，shared 写 completed|failed/）
-  task.status = cmdResult.exit_code === 0 ? 'completed' : 'failed';
-  if (config.queue_mode === 'exchange') {
-    await writeResultExchange(root, task, config.max_inline_bytes);
-  } else {
-    await writeResult(root, task, config.max_inline_bytes);
-  }
-  await auditLogger.log(makeAuditEntry(task, policyResult, sshTarget, startTime, false));
-  logger.info(`[worker] task done: task_id=${task.task_id} status=${task.status} exit_code=${task.exit_code} duration_ms=${Date.now() - startTime}`);
-}
-
-/**
- * 构造审计日志条目
- */
-function makeAuditEntry(
-  task: CommandTask,
-  policyResult: PolicyResult,
-  sshTarget: string | null,
-  startTime: number,
-  cancelled: boolean,
-): AuditEntry {
-  const now = Date.now();
-  return {
-    task_id: task.task_id,
-    cmd_summary: task.cmd.slice(0, 200),
-    policy_result: policyResult,
-    ssh_target: sshTarget,
-    exit_code: task.exit_code,
-    duration_ms: now - startTime,
-    cancelled,
-    timestamp: now,
-    system_time: formatSystemTime(now),
-  };
-}
 
 /** 配置文件变更检测间隔（毫秒） */
 const CONFIG_WATCH_INTERVAL_MS = 2000;
@@ -237,6 +108,25 @@ function startConfigWatcher(root: string): void {
   timer.unref?.();
 }
 
+/**
+ * 恢复 exec_mode=shell 时遗留的 running 会话
+ * @param root - HGFS 共享根目录
+ * @param sessionManager - 会话管理器
+ */
+async function resumeSessions(root: string, sessionManager: SessionManager): Promise<void> {
+  const resume = await listSessions(root);
+  for (const sid of resume) {
+    const meta = await readSessionMeta(root, sid);
+    if (meta && meta.status === SessionStatus.Running) {
+      try {
+        await sessionManager.open(meta);
+      } catch (err) {
+        logger.error(`[worker] resume session ${sid} failed: ${(err as Error).message}`);
+      }
+    }
+  }
+}
+
 /** 主函数占位，下一步追加实现 */
 export async function main(): Promise<void> {
   const config = parseConfig(process.argv);
@@ -260,17 +150,18 @@ export async function main(): Promise<void> {
   logger.info(`[worker] heartbeat_interval_sec: ${config.heartbeat_interval_sec}`);
   logger.info(`[worker] result_ttl_sec: ${config.result_ttl_sec}`);
 
+  // 队列策略：收敛 shared/exchange 分支（选目录、回写、取消、心跳、GC）
+  const strategy: QueueModeStrategy = createQueueStrategy(config.queue_mode);
+
   // 启动引导：自动补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
   await ensureSharedTemplates(root);
 
   // 配置文件变更检测：mtime 变化即预校验新配置并热重启（须在 ensureSharedTemplates 之后）
   startConfigWatcher(root);
 
-  await initQueueDirs(root);
-  // exchange 模式额外初始化 outbound/inbound 单向信箱目录
-  if (config.queue_mode === 'exchange') {
-    await initExchangeDirs(root);
-  }
+  // 按队列模式初始化目录（exchange 额外建 outbound/inbound 信箱）
+  await strategy.initDirs(root);
+
   let policyRule = await loadPolicy(config.policy_file);
   const watcher = createPolicyWatcher(config.policy_file, 10000, (r) => {
     policyRule = r;
@@ -286,25 +177,15 @@ export async function main(): Promise<void> {
   if (config.exec_mode === 'shell') {
     await initSessionsDir(root);
     sessionManager = new SessionManager(root, createShellSessionFactory(config));
-    const resume = await listSessions(root);
-    for (const sid of resume) {
-      const meta = await readSessionMeta(root, sid);
-      if (meta && meta.status === SessionStatus.Running) {
-        try {
-          await sessionManager.open(meta);
-        } catch (err) {
-          logger.error(`[worker] resume session ${sid} failed: ${(err as Error).message}`);
-        }
-      }
-    }
+    await resumeSessions(root, sessionManager);
   }
   // 会话空闲超时（毫秒）：exec_mode=shell 时以任务超时为基准做保护
   const sessionIdleTimeoutMs = config.exec_mode === 'shell' ? config.result_ttl_sec * 1000 : 0;
 
   let processedCount = 0;
   const getStats = () => ({ processedCount, queueDepth: 0 });
-  const heartbeatLoop = startHeartbeatLoop(root, config.heartbeat_interval_sec, getStats, config.queue_mode);
-  const gcLoop = startGcLoop(root, config.result_ttl_sec, 60, config.queue_mode);
+  const heartbeatLoop = startHeartbeatLoop(root, config.heartbeat_interval_sec, getStats, strategy);
+  const gcLoop = startGcLoop(root, config.result_ttl_sec, 60, strategy);
 
   let shuttingDown = false;
   process.on('SIGINT', () => { shuttingDown = true; });
@@ -312,7 +193,7 @@ export async function main(): Promise<void> {
 
   const backoff = createBackoff(config.polling.initial_interval_ms, config.polling.max_interval_ms);
 
-  // 主循环：按队列模式分支（shared=扫 pending/，exchange=扫 outbound/）
+  // 主循环：任务领取 → 处理 → 消费后清理
   while (!shuttingDown) {
     // 交互式会话驱动（exec_mode=shell）：注入 stdin、处理关闭/空闲超时
     if (sessionManager && sessionManager.size > 0) {
@@ -324,9 +205,7 @@ export async function main(): Promise<void> {
     }
 
     try {
-      const tasks = config.queue_mode === 'exchange'
-        ? await listOutbound(root)
-        : await listPending(root);
+      const tasks = await strategy.listTasks(root);
       if (tasks.length === 0) {
         await sleep(backoff.next());
         continue;
@@ -343,15 +222,10 @@ export async function main(): Promise<void> {
             continue;
           }
           logger.info(`[worker] task acquired: task_id=${taskId}`);
-          // 按模式读取任务：exchange 读 outbound/，shared 读 pending/
-          const task = config.queue_mode === 'exchange'
-            ? await readOutboundTask(root, taskId)
-            : await readTask(root, taskId);
-          await processTask(config, root, task, process.pid, policyRule, executor, auditLogger);
-          // exchange 模式：任务消费后清理其取消标记（避免残留被下次整目录同步再看到）
-          if (config.queue_mode === 'exchange') {
-            await removeCancelMarker(root, taskId);
-          }
+          const task = await strategy.readTask(root, taskId);
+          await processTask(config, root, task, process.pid, policyRule, executor, auditLogger, strategy);
+          // 消费后清理取消残留（exchange 删除 outbound 取消标记，shared 无操作）
+          await strategy.afterConsumed(root, taskId);
           processedCount++;
         } catch (err) {
           logger.error(`[worker] task ${taskId} failed:`, err);
@@ -378,23 +252,14 @@ export async function main(): Promise<void> {
   } else if (executor instanceof ShellCmdExecutor) {
     await executor.close();
   }
-  await writeHeartbeat(root, {
+  // 退出心跳（策略决定落盘位置）
+  await strategy.writeHeartbeat(root, {
     pid: process.pid,
     last_beat: Date.now(),
     processed_count: processedCount,
     queue_depth: 0,
     shutdown_at: Date.now(),
   });
-  // exchange 模式：退出心跳也落一份到 inbound/
-  if (config.queue_mode === 'exchange') {
-    await writeHeartbeatExchange(root, {
-      pid: process.pid,
-      last_beat: Date.now(),
-      processed_count: processedCount,
-      queue_depth: 0,
-      shutdown_at: Date.now(),
-    });
-  }
   await auditLogger.flush();
   await auditLogger.close();
   logger.info('[worker] shutdown complete');

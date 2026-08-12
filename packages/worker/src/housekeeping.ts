@@ -3,14 +3,14 @@
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
  * File name  : housekeeping.ts
  * Author     : MsgFerry
- * Date       : 2026/08/07
+ * Date       : 2026/08/12
  * Version    : 0.0.1
  * Description: 心跳与 GC 周期循环
  * ======================================================
  */
 
-import { writeHeartbeat, gcResults, writeHeartbeatExchange, gcInboundResults } from './queue.js';
-import type { Heartbeat } from './queue.js';
+import type { QueueModeStrategy } from './queue/index.js';
+import type { Heartbeat } from './queue/index.js';
 
 import { logger } from './log.js';
 
@@ -27,14 +27,14 @@ interface LoopHandle {
  * @param root - HGFS 共享根目录
  * @param intervalSec - 心跳写入间隔（秒）
  * @param getStats - 获取统计数据的回调
- * @param queueMode - 队列模式（exchange 额外落一份 inbound/heartbeat.json）
+ * @param strategy - 队列策略（心跳落盘位置由策略决定：exchange 额外落 inbound）
  * @returns 带 stop 方法的句柄
  */
 export function startHeartbeatLoop(
   root: string,
   intervalSec: number,
   getStats: HeartbeatStatsGetter,
-  queueMode: 'shared' | 'exchange' = 'shared',
+  strategy: QueueModeStrategy,
 ): LoopHandle {
   const timer = setInterval(async () => {
     try {
@@ -46,11 +46,7 @@ export function startHeartbeatLoop(
         queue_depth: stats.queueDepth,
         shutdown_at: null,
       };
-      await writeHeartbeat(root, hb);
-      // exchange 模式：心跳额外落 inbound/heartbeat.json，随结果批次被内网 -g 拉回
-      if (queueMode === 'exchange') {
-        await writeHeartbeatExchange(root, hb);
-      }
+      await strategy.writeHeartbeat(root, hb);
     } catch {
       // 心跳写入失败不阻塞主循环，仅告警
       logger.warn('[housekeeping] heartbeat write failed');
@@ -70,22 +66,18 @@ export function startHeartbeatLoop(
  * @param root - HGFS 共享根目录
  * @param ttlSec - 结果保留期（秒）
  * @param intervalSec - GC 扫描间隔（秒）
- * @param queueMode - 队列模式（exchange 扫 inbound/，shared 扫 completed/failed）
+ * @param strategy - 队列策略（GC 目标由策略决定：exchange 扫 inbound，shared 扫 completed/failed）
  * @returns 带 stop 方法的句柄
  */
 export function startGcLoop(
   root: string,
   ttlSec: number,
   intervalSec: number,
-  queueMode: 'shared' | 'exchange' = 'shared',
+  strategy: QueueModeStrategy,
 ): LoopHandle {
   const timer = setInterval(async () => {
     try {
-      if (queueMode === 'exchange') {
-        await gcInboundResults(root, ttlSec);
-      } else {
-        await gcResults(root, ttlSec);
-      }
+      await strategy.gcResults(root, ttlSec);
     } catch {
       // GC 失败不阻塞主循环，仅告警
       logger.warn('[housekeeping] gc failed');
