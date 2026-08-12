@@ -14,7 +14,7 @@ export * from './log.js';
 export * from './bootstrap.js';
 export * from './config.js';
 export * from './backoff.js';
-export * from './queue.js';
+export * from './queue/index.js';
 export * from './policy.js';
 export * from './executor/index.js';
 export * from './audit.js';

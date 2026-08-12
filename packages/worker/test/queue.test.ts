@@ -36,7 +36,7 @@ import {
   writeHeartbeatExchange,
   removeCancelMarker,
   gcInboundResults,
-} from '../src/queue.js';
+} from '../src/queue/index.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 function makeTask(overrides: Partial<CommandTask> = {}): CommandTask {
