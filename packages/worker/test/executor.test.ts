@@ -210,4 +210,63 @@ describe('ShellCmdExecutor (mock)', () => {
     assert.ok(elapsed < 1000, `命令应在 marker 检测后立即返回，实际耗时 ${elapsed}ms`);
     await exec.close();
   });
+
+  it('同一设备多条命令应复用同一 shell 会话（长连接）', async () => {
+    const config: WorkerConfig = {
+      hgfs_root: '/tmp',
+      queue_mode: 'shared',
+      executor_type: 'mock',
+      exec_mode: 'shell',
+      devices: {},
+      ssh_config: null,
+      audit_log_dir: '/tmp/logs',
+      policy_file: '/tmp/policy.json',
+      polling: { initial_interval_ms: 500, max_interval_ms: 3000 },
+      heartbeat_interval_sec: 5,
+      result_ttl_sec: 600,
+      max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
+    };
+    const exec = new ShellCmdExecutor(config);
+    const r1 = await exec.execute('cmd1', 5, 'board-a');
+    const r2 = await exec.execute('cmd2', 5, 'board-a');
+    // mock 会话工厂为每个会话生成 ssh_1、ssh_2…，复用时应只开 1 个会话
+    assert.equal(r1.exit_code, 0);
+    assert.equal(r2.exit_code, 0);
+    assert.ok(r1.stdout.includes('cmd1'));
+    assert.ok(r2.stdout.includes('cmd2'));
+    await exec.close();
+  });
+
+  it('会话远端关闭后应重建新会话（自动重连）', async () => {
+    const config: WorkerConfig = {
+      hgfs_root: '/tmp',
+      queue_mode: 'shared',
+      executor_type: 'mock',
+      exec_mode: 'shell',
+      devices: {},
+      ssh_config: null,
+      audit_log_dir: '/tmp/logs',
+      policy_file: '/tmp/policy.json',
+      polling: { initial_interval_ms: 500, max_interval_ms: 3000 },
+      heartbeat_interval_sec: 5,
+      result_ttl_sec: 600,
+      max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
+    };
+    const exec = new ShellCmdExecutor(config);
+    await exec.execute('cmd1', 5, 'board-a');
+    // 手动关闭会话，模拟远端断开：下一次 execute 应重新 open 新会话
+    const sessions = [...(exec as unknown as { sessions: Map<string, unknown> }).sessions.values()];
+    assert.equal(sessions.length, 1);
+    await (sessions[0] as { close(): Promise<void> }).close();
+    const r2 = await exec.execute('cmd2', 5, 'board-a');
+    assert.equal(r2.exit_code, 0);
+    assert.ok(r2.stdout.includes('cmd2'));
+    const sessions2 = [...(exec as unknown as { sessions: Map<string, unknown> }).sessions.values()];
+    assert.equal(sessions2.length, 1, '远端关闭后应重建并缓存新会话');
+    await exec.close();
+  });
 });
