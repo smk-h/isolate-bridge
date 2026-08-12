@@ -1,0 +1,53 @@
+sequenceDiagram
+    autonumber
+    participant AI as 内网 MCP/Claude Code
+    participant HGFS as HGFS 共享目录<br/>sessions
+    participant W as SessionManager<br/>(Worker 外网)
+    participant F as SshSessionFactory<br/>shell + pty
+    participant A as 设备A<br/>(SSH daemon)
+
+    Note over W: 交互式 shell 会话：长生命周期 stdin/stdout 文件摆渡，<br/>受 HGFS 轮询延迟限制，仅适合低频交互
+
+    rect rgb(240, 248, 255)
+    Note over AI,A: 阶段一：打开会话 —— 建连 + shell channel + pty
+    AI->>HGFS: 提交 session 任务<br/>写 session.json(status=running) + 初始命令
+    W->>HGFS: 轮询发现 running 会话，open(session)
+    W->>F: factory.open(device)
+    F->>A: TCP 握手 → SSH 密钥交换 → 认证
+    A-->>F: ready（握手完成）
+    F->>A: client.shell() 打开 shell channel + pty
+    A-->>F: 交互式 shell 就绪（不回显结束）
+    F-->>W: 返回 ShellSession（sessionId=ssh_1）
+    W->>W: 订阅 onStdout/onStderr/onClose
+    Note over W: 注入初始命令（session.cmd）
+    W->>A: shell.write(cmd + newline)
+    end
+
+    rect rgb(255, 250, 240)
+    Note over AI,A: 阶段二：stdin 注入 —— 内网写、Worker 轮询注入
+    AI->>HGFS: 写 stdin 目录下 seq.input 文件
+    W->>HGFS: tick 轮询 listStdinInputs()
+    HGFS-->>W: [seq=1, 2, ...] 待注入序号
+    W->>HGFS: 读取并删除 1.input
+    W->>A: shell.write(content)  # 注入 shell
+    Note over W: 更新 lastActive（供空闲超时判定）
+    end
+
+    rect rgb(240, 255, 240)
+    Note over AI,A: 阶段三：stdout 回写 —— shell 输出落盘供内网读取
+    A-->>W: shell 输出 chunk（stdout）
+    W->>W: onStdout 回调 → appendStdout
+    W->>HGFS: 写 stdout 目录下 seq.output（原子写）
+    AI->>HGFS: 轮询读取 seq.output
+    HGFS-->>AI: 返回输出文本（AI 读取到命令结果）
+    end
+
+    rect rgb(255, 240, 248)
+    Note over AI,A: 阶段四：关闭 —— 三种触发方式
+    AI->>HGFS: 写 close.marker（主动关闭）
+    Note over W: 或 空闲超时(idle_timeout)<br/>或 远端关闭(remote_closed)
+    W->>W: finalize(session, 终态) → 回写 session.json
+    W->>F: shell.close()  # 关闭 channel + 释放连接
+    F-->>W: 会话已关闭，从缓存移除
+    Note over W: Worker 优雅退出时 closeAll() 全量关闭
+    end
