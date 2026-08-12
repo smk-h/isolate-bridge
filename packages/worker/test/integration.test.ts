@@ -19,7 +19,7 @@ import { initQueueDirs, listPending, acquireLock, readTask } from '../src/queue.
 import { transitionToProcessing, writeResult, checkCancelled, writeCancelledResult } from '../src/queue.js';
 import { initExchangeDirs, listOutbound, readOutboundTask, writeResultExchange, checkCancelledExchange, writeCancelledResultExchange } from '../src/queue.js';
 import { loadPolicy, checkCommand } from '../src/policy.js';
-import { MockSshExecutor } from '../src/executor.js';
+import { MockSshExecutor } from '../src/executor/index.js';
 import { AuditLogger, formatSystemTime } from '../src/audit.js';
 import type { AuditEntry } from '../src/audit.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';

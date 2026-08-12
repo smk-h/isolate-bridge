@@ -19,7 +19,7 @@ import {
   ShellCmdExecutor,
   createExecutor,
   createShellSessionFactory,
-} from '../src/executor.js';
+} from '../src/executor/index.js';
 import type { WorkerConfig } from '../src/config.js';
 
 describe('MockSshExecutor', () => {

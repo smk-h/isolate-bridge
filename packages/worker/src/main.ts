@@ -37,9 +37,9 @@ import {
 } from './queue.js';
 import { loadPolicy, checkCommand, createPolicyWatcher } from './policy.js';
 import type { PolicyRule, PolicyResult } from './policy.js';
-import { createExecutor, createShellSessionFactory, ShellCmdExecutor } from './executor.js';
-import { Ssh2Executor } from './executor.js';
-import type { CmdExecutor } from './executor.js';
+import { createExecutor, createShellSessionFactory, ShellCmdExecutor } from './executor/index.js';
+import { Ssh2Executor } from './executor/index.js';
+import type { CmdExecutor } from './executor/index.js';
 import {
   initSessionsDir,
   listSessions,

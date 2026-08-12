@@ -16,6 +16,6 @@ export * from './config.js';
 export * from './backoff.js';
 export * from './queue.js';
 export * from './policy.js';
-export * from './executor.js';
+export * from './executor/index.js';
 export * from './audit.js';
 export * from './housekeeping.js';

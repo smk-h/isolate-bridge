@@ -33,7 +33,7 @@ import {
 } from '@smai-kit/msgferry-shared';
 import type { SessionTask } from '@smai-kit/msgferry-shared';
 
-import type { ShellSession, ShellSessionFactory } from './executor.js';
+import type { ShellSession, ShellSessionFactory } from './executor/index.js';
 import { logger } from './log.js';
 
 const TMP_SUFFIX = '.tmp';
