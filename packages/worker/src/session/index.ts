@@ -44,7 +44,7 @@ import type { SessionTask } from '@smai-kit/msgferry-shared';
 
 // 仅依赖 executor/ 的 ShellSession 协议接口，不耦合具体 ssh2/mock 实现
 import type { ShellSession, ShellSessionFactory } from '../executor/index.js';
-import { logger } from '../log.js';
+import { logger } from '../log/index.js';
 
 const TMP_SUFFIX = '.tmp';
 const INPUT_SUFFIX = '.input';

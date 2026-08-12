@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { DEFAULT_POLICY, checkCommand, parseCmd } from '../src/policy.js';
+import { DEFAULT_POLICY, checkCommand, parseCmd } from '../src/policy/index.js';
 
 describe('policy checkCommand', () => {
   it('白名单命中应通过', () => {

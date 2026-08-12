@@ -23,7 +23,7 @@
  */
 
 import type { WorkerConfig } from '../config/index.js';
-import { logger } from '../log.js';
+import { logger } from '../log/index.js';
 import { createShellSessionFactory } from './factory.js';
 import type { CmdExecutor, CmdResult, ShellSession, ShellSessionFactory } from './types.js';
 

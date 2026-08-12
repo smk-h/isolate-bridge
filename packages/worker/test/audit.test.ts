@@ -15,8 +15,8 @@ import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, utimesSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { AuditLogger, formatSystemTime } from '../src/audit.js';
-import type { AuditEntry } from '../src/audit.js';
+import { AuditLogger, formatSystemTime } from '../src/log/index.js';
+import type { AuditEntry } from '../src/log/index.js';
 
 function makeEntry(overrides: Partial<AuditEntry> = {}): AuditEntry {
   return {

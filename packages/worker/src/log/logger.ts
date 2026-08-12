@@ -1,7 +1,7 @@
 /**
  * =====================================================
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
- * File name  : log.ts
+ * File name  : logger.ts
  * Author     : MsgFerry
  * Date       : 2026/08/09
  * Version    : 0.0.1

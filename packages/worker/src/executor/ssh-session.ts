@@ -18,7 +18,7 @@ import type { ConnectConfig } from 'ssh2';
 import type { WorkerConfig } from '../config/index.js';
 import { findSshConfig } from '../config/index.js';
 import type { SshConfig } from '../config/index.js';
-import { logger } from '../log.js';
+import { logger } from '../log/index.js';
 import type { ShellSession, ShellSessionFactory } from './types.js';
 
 /** ssh2 shell channel + pty 的交互式会话封装 */

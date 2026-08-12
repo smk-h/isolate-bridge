@@ -16,7 +16,8 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync, readFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ensureSharedTemplates } from '../src/bootstrap.js';
+import { ensureConfigTemplate } from '../src/config/index.js';
+import { ensurePolicyTemplate } from '../src/policy/index.js';
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
@@ -35,10 +36,11 @@ afterEach(() => {
   roots = [];
 });
 
-describe('ensureSharedTemplates', () => {
+describe('config/policy 模板引导', () => {
   it('creates config/worker.yaml and policy/policy.json when missing', async () => {
     const root = makeRoot();
-    await ensureSharedTemplates(root);
+    await ensureConfigTemplate(root);
+    await ensurePolicyTemplate(root);
 
     const cfgPath = join(root, 'config', 'worker.yaml');
     const polPath = join(root, 'policy', 'policy.json');
@@ -81,7 +83,8 @@ describe('ensureSharedTemplates', () => {
     writeFileSync(join(cfgDir, 'worker.yaml'), customCfg);
     writeFileSync(join(polDir, 'policy.json'), customPol);
 
-    await ensureSharedTemplates(root);
+    await ensureConfigTemplate(root);
+    await ensurePolicyTemplate(root);
 
     assert.equal(readFileSync(join(cfgDir, 'worker.yaml'), 'utf-8'), customCfg);
     assert.equal(readFileSync(join(polDir, 'policy.json'), 'utf-8'), customPol);
@@ -89,10 +92,12 @@ describe('ensureSharedTemplates', () => {
 
   it('is idempotent when run twice', async () => {
     const root = makeRoot();
-    await ensureSharedTemplates(root);
+    await ensureConfigTemplate(root);
+    await ensurePolicyTemplate(root);
     const cfgPath = join(root, 'config', 'worker.yaml');
     const before = readFileSync(cfgPath, 'utf-8');
-    await ensureSharedTemplates(root);
+    await ensureConfigTemplate(root);
+    await ensurePolicyTemplate(root);
     assert.equal(readFileSync(cfgPath, 'utf-8'), before);
   });
 });

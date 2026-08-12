@@ -12,7 +12,7 @@
 import { join } from 'node:path';
 import { writeFile, readdir, readFile, unlink, stat, mkdir } from 'node:fs/promises';
 
-import type { PolicyResult } from './policy.js';
+import type { PolicyResult } from '../policy/index.js';
 
 /** 审计日志条目 */
 export interface AuditEntry {

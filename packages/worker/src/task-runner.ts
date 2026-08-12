@@ -14,15 +14,15 @@
 import type { WorkerConfig } from './config/index.js';
 import type { QueueModeStrategy } from './queue/index.js';
 import { transitionToProcessing } from './queue/index.js';
-import { checkCommand } from './policy.js';
-import type { PolicyRule, PolicyResult } from './policy.js';
+import { checkCommand } from './policy/index.js';
+import type { PolicyRule, PolicyResult } from './policy/index.js';
 import type { CmdExecutor } from './executor/index.js';
 import { SshExecExecutor } from './executor/index.js';
-import type { AuditLogger } from './audit.js';
-import { formatSystemTime } from './audit.js';
-import type { AuditEntry } from './audit.js';
+import type { AuditLogger } from './log/index.js';
+import { formatSystemTime } from './log/index.js';
+import type { AuditEntry } from './log/index.js';
 
-import { logger } from './log.js';
+import { logger } from './log/index.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 /**

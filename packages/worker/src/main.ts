@@ -9,8 +9,7 @@
  * ======================================================
  */
 
-import { parseConfig, validateConfig } from './config/index.js';
-import { ensureSharedTemplates } from './bootstrap.js';
+import { parseConfig, validateConfig, ensureConfigTemplate } from './config/index.js';
 import { createBackoff } from './backoff.js';
 import { statSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -20,7 +19,7 @@ import {
   createQueueStrategy,
 } from './queue/index.js';
 import type { QueueModeStrategy } from './queue/index.js';
-import { loadPolicy, createPolicyWatcher } from './policy.js';
+import { loadPolicy, createPolicyWatcher, ensurePolicyTemplate } from './policy/index.js';
 import {
   createExecutor,
   createShellSessionFactory,
@@ -33,11 +32,9 @@ import {
   readSessionMeta,
   SessionManager,
 } from './session/index.js';
-import { AuditLogger } from './audit.js';
+import { AuditLogger, logger } from './log/index.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 import { processTask } from './task-runner.js';
-
-import { logger } from './log.js';
 import { WORKER_CONFIG_FILE, resolveUnderRoot, SessionStatus } from '@smai-kit/msgferry-shared';
 
 /** 配置文件变更检测间隔（毫秒） */
@@ -88,7 +85,7 @@ function restartSelf(cwd: string, argv: string[]): void {
 
 /**
  * 启动配置文件变更检测：mtime 变化即预校验新配置并热重启
- * - 需在 ensureSharedTemplates 之后再调用，确保 baseline 取的是「已就位」的配置
+ * - 需在 ensureConfigTemplate / ensurePolicyTemplate 之后再调用，确保 baseline 取的是「已就位」的配置
  * - 新配置解析失败时不重启，仅告警并更新 baseline，避免对非法配置反复告警
  * @param root - HGFS 共享根目录
  */
@@ -158,9 +155,10 @@ export async function main(): Promise<void> {
   const strategy: QueueModeStrategy = createQueueStrategy(config.queue_mode);
 
   // 启动引导：自动补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
-  await ensureSharedTemplates(root);
+  await ensureConfigTemplate(root);
+  await ensurePolicyTemplate(root);
 
-  // 配置文件变更检测：mtime 变化即预校验新配置并热重启（须在 ensureSharedTemplates 之后）
+  // 配置文件变更检测：mtime 变化即预校验新配置并热重启（须在 ensureConfigTemplate / ensurePolicyTemplate 之后）
   startConfigWatcher(root);
 
   // 按队列模式初始化目录（exchange 额外建 outbound/inbound 信箱）

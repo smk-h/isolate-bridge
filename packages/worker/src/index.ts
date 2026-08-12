@@ -10,12 +10,10 @@
  */
 
 export { main } from './main.js';
-export * from './log.js';
-export * from './bootstrap.js';
+export * from './log/index.js';
 export * from './config/index.js';
 export * from './backoff.js';
 export * from './queue/index.js';
-export * from './policy.js';
+export * from './policy/index.js';
 export * from './executor/index.js';
-export * from './audit.js';
 export * from './housekeeping.js';

@@ -19,7 +19,7 @@ import type { ConnectConfig } from 'ssh2';
 import type { WorkerConfig } from '../config/index.js';
 import { findSshConfig } from '../config/index.js';
 import type { SshConfig } from '../config/index.js';
-import { logger } from '../log.js';
+import { logger } from '../log/index.js';
 import type { CmdExecutor, CmdResult } from './types.js';
 
 /** 已建立的 exec 会话条目（按设备名复用） */

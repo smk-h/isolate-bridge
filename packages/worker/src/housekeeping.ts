@@ -12,7 +12,7 @@
 import type { QueueModeStrategy } from './queue/index.js';
 import type { Heartbeat } from './queue/index.js';
 
-import { logger } from './log.js';
+import { logger } from './log/index.js';
 
 /** 心跳统计获取函数类型 */
 export type HeartbeatStatsGetter = () => { processedCount: number; queueDepth: number };
