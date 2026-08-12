@@ -9,6 +9,7 @@
  * ======================================================
  */
 
+import { logger } from '../log/index.js';
 import type { CmdExecutor, CmdResult, ShellSession, ShellSessionFactory } from './types.js';
 
 /**
@@ -24,6 +25,7 @@ export class MockSshExecutor implements CmdExecutor {
    * @returns 固定文本结果
    */
   async execute(cmd: string, _timeout_sec: number, _device?: string): Promise<CmdResult> {
+    logger.info(`[executor:mock] execute: ${cmd}`);
     // 模拟极短执行延时，便于测试优雅退出窗口
     await new Promise((resolve) => setTimeout(resolve, 10));
     const stdout = `[mock] executed: ${cmd}\n`;
@@ -121,6 +123,7 @@ export class MockShellSessionFactory implements ShellSessionFactory {
     const normalized = device && device.trim() !== '' ? device : 'default';
     const session = new MockShellSession(`ssh_${++this.counter}`, normalized);
     this.sessions.add(session);
+    logger.info(`[executor:mock] shell session opened: device=${normalized} sessionId=${session.sessionId}`);
     return session;
   }
 

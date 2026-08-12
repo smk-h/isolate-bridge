@@ -58,7 +58,7 @@ export class SshExecExecutor implements CmdExecutor {
    */
   async execute(cmd: string, timeout_sec: number, device?: string): Promise<CmdResult> {
     const session = await this.getOrCreateSession(device);
-    logger.info(`[executor] execute on ${session.sessionId} (device=${session.device}): ${cmd}`);
+    logger.info(`[executor:ssh-exec] execute on ${session.sessionId} (device=${session.device}): ${cmd}`);
 
     return this.runCommand(session, cmd, timeout_sec);
   }
@@ -117,12 +117,12 @@ export class SshExecExecutor implements CmdExecutor {
     }
 
     const sessionId = `ssh_${++this.sessionCounter}`;
-    logger.info(`[executor] connecting ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
+    logger.info(`[executor:ssh-exec] connecting ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
 
     const client = await this.connect(sshConfig, sessionId);
     const session: ExecSession = { sessionId, device: normalized, client };
     this.sessions.set(normalized, session);
-    logger.info(`[executor] ${sessionId} connected`);
+    logger.info(`[executor:ssh-exec] ${sessionId} connected`);
     return session;
   }
 
@@ -152,20 +152,20 @@ export class SshExecExecutor implements CmdExecutor {
             client.connect(connectCfg);
           })
           .catch((err) => {
-            reject(new Error(`[executor] ${sessionId} read private key failed: ${err.message}`));
+            reject(new Error(`[executor:ssh-exec] ${sessionId} read private key failed: ${err.message}`));
           });
       } else if (sshConfig.password) {
         connectCfg.password = sshConfig.password;
         client.connect(connectCfg);
       } else {
-        reject(new Error(`[executor] ${sessionId} no auth: neither private_key_path nor password`));
+        reject(new Error(`[executor:ssh-exec] ${sessionId} no auth: neither private_key_path nor password`));
         return;
       }
 
       // 连接超时兜底：超时强制断连并拒绝
       const timer = setTimeout(() => {
         client.end();
-        reject(new Error(`[executor] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
+        reject(new Error(`[executor:ssh-exec] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
       }, this.connectTimeoutMs + 5000);
 
       // 握手成功后清除超时定时器并交付 Client
@@ -176,7 +176,7 @@ export class SshExecExecutor implements CmdExecutor {
 
       client.once('error', (err) => {
         clearTimeout(timer);
-        reject(new Error(`[executor] ${sessionId} connect error: ${err.message}`));
+        reject(new Error(`[executor:ssh-exec] ${sessionId} connect error: ${err.message}`));
       });
     });
   }
@@ -192,7 +192,7 @@ export class SshExecExecutor implements CmdExecutor {
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
-        logger.warn(`[executor] ${session.sessionId} command timed out after ${timeout_sec}s: ${cmd}`);
+        logger.warn(`[executor:ssh-exec] ${session.sessionId} command timed out after ${timeout_sec}s: ${cmd}`);
         // 超时直接回退结果，通道由 ssh2 内部在 close 事件后回收
         resolve({
           stdout: '',

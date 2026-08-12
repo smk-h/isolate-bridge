@@ -79,12 +79,12 @@ export class SshShellExecExecutor implements CmdExecutor {
       .open(normalized)
       .then((session) => {
         this.sessions.set(normalized, session);
-        logger.info(`[executor] shell session cached: device=${normalized} sessionId=${session.sessionId}`);
+        logger.info(`[executor:ssh-shell-exec] shell session cached: device=${normalized} sessionId=${session.sessionId}`);
         // 远端关闭/会话失效时从缓存移除，下次任务自动重连
         session.onClose(() => {
           if (this.sessions.get(normalized) === session) {
             this.sessions.delete(normalized);
-            logger.info(`[executor] shell session evicted: device=${normalized} sessionId=${session.sessionId}`);
+            logger.info(`[executor:ssh-shell-exec] shell session evicted: device=${normalized} sessionId=${session.sessionId}`);
           }
         });
         return session;
@@ -115,7 +115,7 @@ export class SshShellExecExecutor implements CmdExecutor {
     const session = await this.getOrOpenSession(device);
 
     return this.enqueue(normalized, () => {
-      logger.info(`[executor] shell-exec on ${session.sessionId} (device=${session.device}): ${cmd}`);
+      logger.info(`[executor:ssh-shell-exec] shell-exec on ${session.sessionId} (device=${session.device}): ${cmd}`);
       return new Promise<CmdResult>((resolve) => {
         let stdout = '';
         let stderr = '';
@@ -134,7 +134,7 @@ export class SshShellExecExecutor implements CmdExecutor {
         };
 
         const timer = setTimeout(() => {
-          logger.warn(`[executor] ${session.sessionId} shell-exec timed out after ${timeout_sec}s: ${cmd}`);
+          logger.warn(`[executor:ssh-shell-exec] ${session.sessionId} shell-exec timed out after ${timeout_sec}s: ${cmd}`);
           finish({ stdout, stderr, exit_code: null, timed_out: true });
         }, timeout_sec * 1000);
 

@@ -52,7 +52,7 @@ class SshSession implements ShellSession {
       this.closeCbs.length = 0;
     });
     stream.on('error', (e: Error) => {
-      logger.warn(`[executor] ${sessionId} shell stream error: ${e.message}`);
+      logger.warn(`[executor:ssh-session] ${sessionId} shell stream error: ${e.message}`);
     });
   }
 
@@ -126,7 +126,7 @@ export class SshSessionFactory implements ShellSessionFactory {
     }
 
     const sessionId = `ssh_${++this.counter}`;
-    logger.info(`[executor] opening shell ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
+    logger.info(`[executor:ssh-session] opening shell ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
 
     // 建连 → 打开 shell channel + pty → 封装为会话对象
     const client = await this.connect(sshConfig, sessionId);
@@ -140,7 +140,7 @@ export class SshSessionFactory implements ShellSessionFactory {
       this.sessions.delete(session);
       this.clients.delete(client);
     });
-    logger.info(`[executor] ${sessionId} shell opened`);
+    logger.info(`[executor:ssh-session] ${sessionId} shell opened`);
     return session;
   }
 
@@ -183,19 +183,19 @@ export class SshSessionFactory implements ShellSessionFactory {
             doConnect();
           })
           .catch((err) => {
-            reject(new Error(`[executor] ${sessionId} read private key failed: ${err.message}`));
+            reject(new Error(`[executor:ssh-session] ${sessionId} read private key failed: ${err.message}`));
           });
       } else if (sshConfig.password) {
         connectCfg.password = sshConfig.password;
         doConnect();
       } else {
-        reject(new Error(`[executor] ${sessionId} no auth: neither private_key_path nor password`));
+        reject(new Error(`[executor:ssh-session] ${sessionId} no auth: neither private_key_path nor password`));
         return;
       }
 
       const timer = setTimeout(() => {
         client.end();
-        reject(new Error(`[executor] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
+        reject(new Error(`[executor:ssh-session] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
       }, this.connectTimeoutMs + 5000);
 
       client.once('ready', () => {
@@ -204,7 +204,7 @@ export class SshSessionFactory implements ShellSessionFactory {
       });
       client.once('error', (err) => {
         clearTimeout(timer);
-        reject(new Error(`[executor] ${sessionId} connect error: ${err.message}`));
+        reject(new Error(`[executor:ssh-session] ${sessionId} connect error: ${err.message}`));
       });
     });
   }
@@ -213,7 +213,7 @@ export class SshSessionFactory implements ShellSessionFactory {
     return new Promise((resolve, reject) => {
       client.shell({ term: 'xterm', cols: 120, rows: 40 }, (err, stream) => {
         if (err) {
-          reject(new Error(`[executor] ${sessionId} open shell channel failed: ${err.message}`));
+          reject(new Error(`[executor:ssh-session] ${sessionId} open shell channel failed: ${err.message}`));
           return;
         }
         resolve(stream);
