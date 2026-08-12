@@ -10,6 +10,8 @@
     "clean": "pnpm -r exec rimraf dist && rimraf dist",
     "clean:all": "pnpm -r exec rimraf dist node_modules && rimraf dist node_modules",
     "clean-log": "node scripts/clean-log.mjs",
+    "kill-node": "node scripts/kill-node.mjs",
+    "kill-node:dry-run": "node scripts/kill-node.mjs --dry-run",
     "git-sync-force": "node scripts/sync-force.mjs"
   },
   "engines": {
