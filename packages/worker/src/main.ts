@@ -13,6 +13,8 @@ import { parseConfig, validateConfig } from './config.js';
 import type { WorkerConfig } from './config.js';
 import { ensureSharedTemplates } from './bootstrap.js';
 import { createBackoff } from './backoff.js';
+import { statSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
   initQueueDirs,
@@ -43,6 +45,7 @@ import type { AuditEntry } from './audit.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 
 import { logger } from './log.js';
+import { WORKER_CONFIG_FILE, resolveUnderRoot } from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 /**
@@ -156,6 +159,78 @@ function makeAuditEntry(
   };
 }
 
+/** 配置文件变更检测间隔（毫秒） */
+const CONFIG_WATCH_INTERVAL_MS = 2000;
+
+/**
+ * 读取配置文件 mtime（毫秒），文件不存在返回 null
+ * @param file - 配置文件的绝对路径
+ * @returns 修改时间（毫秒），文件不存在时返回 null
+ */
+function configMtimeMs(file: string): number | null {
+  try {
+    return statSync(file).mtimeMs;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 重新拉起当前 Worker 进程并退出旧进程，用于配置文件变更后立即生效
+ * - 先拉起新进程再退出旧进程，避免 STDOUT/STDERR 与 SSH 会话被同时占用两份
+ * - Windows 要点（已实测）：
+ *   1) 父进程 process.exit() 会销毁其控制台窗口，连带杀死 stdio:inherit 的
+ *      子进程 → 必须 detached:true（新进程独立进程组）
+ *   2) 即便 detached，若子进程仍继承控制台句柄（stdio inherit），关闭终端
+ *      窗口（CTRL_CLOSE_EVENT 广播到控制台所有附属进程）同样会杀死它
+ *      → stdio:'ignore' 让新进程彻底脱离控制台，关闭启动终端也不受影响，
+ *        日志改走 --log-save 落盘（新进程继承父进程的 LOG_SAVE/LOG_DIR 环境变量）
+ * - 不写 shutdown_at 心跳：新进程数秒内会覆盖为正常心跳，避免短暂被判离线
+ * @param cwd - 当前工作目录（透传给新进程）
+ * @param argv - 当前进程 argv（新进程沿用相同启动参数）
+ */
+function restartSelf(cwd: string, argv: string[]): void {
+  logger.warn('[worker] config file changed, restarting to apply new config...');
+  const child = spawn(process.execPath, argv.slice(1), {
+    cwd,
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+  child.on('error', (err) => {
+    logger.error(`[worker] restart spawn failed: ${err.message}`);
+    process.exit(1);
+  });
+  // 短暂等待新进程接管后退出旧进程
+  setTimeout(() => process.exit(0), 800);
+}
+
+/**
+ * 启动配置文件变更检测：mtime 变化即预校验新配置并热重启
+ * - 需在 ensureSharedTemplates 之后再调用，确保 baseline 取的是「已就位」的配置
+ * - 新配置解析失败时不重启，仅告警并更新 baseline，避免对非法配置反复告警
+ * @param root - HGFS 共享根目录
+ */
+function startConfigWatcher(root: string): void {
+  const configFile = resolveUnderRoot(root, WORKER_CONFIG_FILE);
+  let baseline = configMtimeMs(configFile);
+  const timer = setInterval(() => {
+    const current = configMtimeMs(configFile);
+    if (current === null || current === baseline) {
+      return;
+    }
+    baseline = current;
+    try {
+      parseConfig(process.argv);
+    } catch (err) {
+      logger.error(`[worker] new config is invalid, keep running: ${(err as Error).message}`);
+      return;
+    }
+    restartSelf(process.cwd(), process.argv);
+  }, CONFIG_WATCH_INTERVAL_MS);
+  timer.unref?.();
+}
+
 /** 主函数占位，下一步追加实现 */
 export async function main(): Promise<void> {
   const config = parseConfig(process.argv);
@@ -180,6 +255,9 @@ export async function main(): Promise<void> {
 
   // 启动引导：自动补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
   await ensureSharedTemplates(root);
+
+  // 配置文件变更检测：mtime 变化即预校验新配置并热重启（须在 ensureSharedTemplates 之后）
+  startConfigWatcher(root);
 
   await initQueueDirs(root);
   // exchange 模式额外初始化 outbound/inbound 单向信箱目录
