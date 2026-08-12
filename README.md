@@ -135,6 +135,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 ```yaml
 queue_mode: shared      # 共享目录，免同步（默认）
 executor: ssh2          # 或 mock（联调，无需真实 SSH）
+exec_mode: command      # 任务执行模式：command=一次性命令（默认）| shell=交互式 shell
 # devices / policy_file / polling / heartbeat 等按需
 devices:
   default:
@@ -143,6 +144,8 @@ devices:
     username: root
     password: your_password
 ```
+
+> **exec_mode 说明**：`command`（默认）使用 SSH `exec` 通道执行一次性命令（请求-响应式）；`shell` 改用 SSH `shell` 通道 + pty 执行命令，**适用于目标设备不支持 exec 通道、仅支持交互式登录 shell 的场景**（如部分 Dropbear / 受限登录 shell）。两种模式通过 `config/worker.yaml` 的 `exec_mode` 一键切换，Worker 检测到配置变更会自动热重启生效。
 
 > 需要业务日志落盘时，追加两个命令行参数：`--log-save 1 --log-dir logs/worker`。日志与审计目录默认落在 `<hgfs_root>/logs/worker`。
 
@@ -230,6 +233,7 @@ msgferry-worker --hgfs-root E:\MyLinux\VMware\sharedir\vm_share
 queue_mode: exchange    # 扫 outbound/ 领任务，结果写 inbound/
 result_ttl_sec: 3600    # 交换模式建议调大，防结果未拉回就被 GC 清掉
 executor: ssh2
+exec_mode: command      # 任务执行模式：command=一次性命令（默认）| shell=交互式 shell
 ```
 
 - exchange 模式下 Worker **无需配置任何同步命令**——它直接挂载交换服务器（即共享目录），天然同步。
@@ -282,6 +286,12 @@ node test/test_work_ssh.mjs --host <ip> --username <user> --password <pass> --po
 node test/mcp-client.mjs                # shared 模式
 node test/mcp-client.mjs --exchange     # exchange 模式
 node test/mcp-client.mjs --device local # 指定设备名连接
+
+# 单独测试 Worker（无需启动 MCP Server，直接操作共享目录生成任务/获取结果）
+node test/test_worker_single.mjs                          # shared 模式（默认，写 pending/ 读 completed|failed/）
+node test/test_worker_single.mjs --exchange               # exchange 模式（写 outbound/ 读 inbound/）
+node test/test_worker_single.mjs --cmd "docker ps" --cmd "uname -a"  # 自定义命令（可多次）
+node test/test_worker_single.mjs --device local --timeout 15          # 指定设备与超时
 
 # 模拟文件交换服务器脚本（cp 模拟 file_transfer，供 exchange 模式使用）
 node scripts/sync-mock.mjs -pd <src-file> <dst-dir>   # 上传方向

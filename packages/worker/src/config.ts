@@ -39,11 +39,15 @@ export interface SshConfig {
 /** 设备名 → SSH 连接配置 的字典（多设备） */
 export type DeviceSshMap = Record<string, SshConfig>;
 
+/** 任务执行模式：command=一次性命令（exec channel）；shell=交互式 shell（shell channel + pty） */
+export type ExecMode = 'command' | 'shell';
+
 /** Worker 启动配置 */
 export interface WorkerConfig {
   hgfs_root: string;                    // HGFS 共享根目录绝对路径
   queue_mode: 'shared' | 'exchange';    // 队列模式：shared=共享目录 / exchange=文件交换服务器
   executor_type: 'mock' | 'ssh2';       // SSH 执行器选择
+  exec_mode: ExecMode;                  // 任务执行模式：command=一次性命令（默认）/ shell=交互式 shell
   devices: DeviceSshMap;                // 多设备：设备名 → SSH 连接信息（设备名仅字母/数字/下划线/连字符）
   ssh_config: SshConfig | null;          // 默认/兼容设备（旧 ssh 字段），真实模式必填，mock 模式 null
   audit_log_dir: string;                // 审计日志目录（当前固定与 log_dir 一致：<hgfs_root>/logs/worker）
@@ -72,6 +76,7 @@ export interface DeviceSshFileShape {
 export interface WorkerConfigFileShape {
   queue_mode?: string;
   executor?: string;
+  exec_mode?: string;                            // command（默认）| shell
   devices?: Record<string, DeviceSshFileShape>;  // 多设备（推荐）：设备名 → SSH 连接信息
   ssh?: DeviceSshFileShape;                      // 兼容旧字段：单默认设备
   policy_file?: string;
@@ -186,6 +191,14 @@ export function parseConfig(argv: string[]): WorkerConfig {
   const executorType = (
     pickString(file.executor, 'mock') ?? 'mock'
   ) as 'mock' | 'ssh2';
+
+  // 执行模式：command=一次性命令（默认）| shell=交互式 shell
+  const execMode = (
+    pickString(file.exec_mode, 'command') ?? 'command'
+  ) as ExecMode;
+  if (execMode !== 'command' && execMode !== 'shell') {
+    throw new Error(`invalid exec_mode "${execMode}": must be command or shell`);
+  }
 
   // 队列模式：shared（共享目录，默认）| exchange（文件交换服务器单向信箱）
   const queueMode = (
@@ -307,6 +320,7 @@ export function parseConfig(argv: string[]): WorkerConfig {
     hgfs_root: hgfsRoot,
     queue_mode: queueMode,
     executor_type: executorType,
+    exec_mode: execMode,
     devices,
     ssh_config: sshConfig,
     // audit_log_dir 保留但暂不与配置文件耦合：固定与业务日志目录一致（<hgfs_root>/logs/worker），

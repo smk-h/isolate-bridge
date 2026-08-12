@@ -52,6 +52,40 @@ export interface CmdExecutor {
 }
 
 /**
+ * 交互式 shell 会话接口（协议无关）
+ * 基于 ssh2 shell channel + pty 建立，支持 stdin 注入与 stdout/stderr 订阅，
+ * 供交互式 shell 任务做低频 stdin/stdout 文件摆渡。
+ */
+export interface ShellSession {
+  /** 会话 id，形如 ssh_N */
+  readonly sessionId: string;
+  /** 目标设备名（normalize 后） */
+  readonly device: string;
+  /** 写入 stdin（交互式 shell 输入） */
+  write(data: string): void;
+  /** 订阅 stdout 输出（UTF-8 文本，每次回调一个数据块） */
+  onStdout(cb: (chunk: string) => void): void;
+  /** 订阅 stderr 输出（UTF-8 文本） */
+  onStderr(cb: (chunk: string) => void): void;
+  /** 订阅会话关闭（远端关闭或本地主动关闭触发） */
+  onClose(cb: () => void): void;
+  /** 主动关闭会话并回收通道 */
+  close(): Promise<void>;
+}
+
+/** 会话工厂：按设备打开交互式 shell 会话 */
+export interface ShellSessionFactory {
+  /**
+   * 打开一个交互式 shell 会话
+   * @param device - 目标设备名（可选，未指定走默认设备）
+   * @returns 已就绪的会话
+   */
+  open(device?: string): Promise<ShellSession>;
+  /** 关闭所有已建立的会话（Worker 优雅退出时调用） */
+  closeAll(): Promise<void>;
+}
+
+/**
  * Mock SSH 执行器
  * 执行时打印命令信息并返回固定文本，不真实连网
  */
@@ -73,6 +107,78 @@ export class MockSshExecutor implements CmdExecutor {
       exit_code: 0,
       timed_out: false,
     };
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+// Mock 交互式 shell 会话（测试用，不真实连网）
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * Mock 交互式 shell 会话
+ * 打开时生成唯一 sessionId，写入的输入会回显为 mock 输出，供测试验证摆渡链路。
+ */
+class MockShellSession implements ShellSession {
+  readonly sessionId: string;
+  readonly device: string;
+  private readonly stdoutCbs: Array<(chunk: string) => void> = [];
+  private readonly stderrCbs: Array<(chunk: string) => void> = [];
+  private readonly closeCbs: Array<() => void> = [];
+  private closed = false;
+
+  constructor(sessionId: string, device: string) {
+    this.sessionId = sessionId;
+    this.device = device;
+    // 打开后回显一行提示
+    this.emitStdout(`[mock-shell] session ${sessionId} ready (device=${device})\n`);
+  }
+
+  write(data: string): void {
+    // 输入按行回显，模拟交互式 shell 的 echo
+    for (const line of data.split(/\r?\n/)) {
+      if (line !== '') {
+        this.emitStdout(`[mock-shell] $ ${line}\n`);
+      }
+    }
+  }
+
+  onStdout(cb: (chunk: string) => void): void { this.stdoutCbs.push(cb); }
+  onStderr(cb: (chunk: string) => void): void { this.stderrCbs.push(cb); }
+  onClose(cb: () => void): void { this.closeCbs.push(cb); }
+
+  close(): Promise<void> {
+    if (this.closed) return Promise.resolve();
+    this.closed = true;
+    this.emitStdout('[mock-shell] session closed\n');
+    for (const cb of this.closeCbs) cb();
+    this.closeCbs.length = 0;
+    return Promise.resolve();
+  }
+
+  private emitStdout(chunk: string): void {
+    for (const cb of [...this.stdoutCbs]) cb(chunk);
+  }
+}
+
+/**
+ * Mock 会话工厂：每次 open 都新建一个 MockShellSession，不真实连网
+ */
+export class MockShellSessionFactory implements ShellSessionFactory {
+  private readonly sessions = new Set<MockShellSession>();
+  private counter = 0;
+
+  async open(device?: string): Promise<ShellSession> {
+    const normalized = device && device.trim() !== '' ? device : 'default';
+    const session = new MockShellSession(`ssh_${++this.counter}`, normalized);
+    this.sessions.add(session);
+    return session;
+  }
+
+  async closeAll(): Promise<void> {
+    for (const s of [...this.sessions]) {
+      await s.close();
+      this.sessions.delete(s);
+    }
   }
 }
 
@@ -316,18 +422,279 @@ export class Ssh2Executor implements CmdExecutor {
   }
 }
 
+// ────────────────────────────────────────────────────────────────
+// ssh2 真实交互式 shell 会话与工厂
+// ────────────────────────────────────────────────────────────────
+
+/** ssh2 shell channel + pty 的交互式会话封装 */
+class Ssh2ShellSession implements ShellSession {
+  readonly sessionId: string;
+  readonly device: string;
+  private readonly stream: import('ssh2').ClientChannel;
+  private readonly stdoutCbs: Array<(chunk: string) => void> = [];
+  private readonly stderrCbs: Array<(chunk: string) => void> = [];
+  private readonly closeCbs: Array<() => void> = [];
+  private closed = false;
+
+  constructor(sessionId: string, device: string, stream: import('ssh2').ClientChannel) {
+    this.sessionId = sessionId;
+    this.device = device;
+    this.stream = stream;
+
+    stream.on('data', (chunk: Buffer) => {
+      const text = chunk.toString('utf-8');
+      for (const cb of [...this.stdoutCbs]) cb(text);
+    });
+    if (stream.stderr) {
+      stream.stderr.on('data', (chunk: Buffer) => {
+        const text = chunk.toString('utf-8');
+        for (const cb of [...this.stderrCbs]) cb(text);
+      });
+    }
+    stream.on('close', () => {
+      this.closed = true;
+      for (const cb of [...this.closeCbs]) cb();
+      this.closeCbs.length = 0;
+    });
+    stream.on('error', (e: Error) => {
+      logger.warn(`[executor] ${sessionId} shell stream error: ${e.message}`);
+    });
+  }
+
+  write(data: string): void {
+    this.stream.write(data, 'utf-8');
+  }
+
+  onStdout(cb: (chunk: string) => void): void { this.stdoutCbs.push(cb); }
+  onStderr(cb: (chunk: string) => void): void { this.stderrCbs.push(cb); }
+  onClose(cb: () => void): void { this.closeCbs.push(cb); }
+
+  close(): Promise<void> {
+    if (this.closed) return Promise.resolve();
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
+      this.stream.once('close', finish);
+      try {
+        this.stream.end();
+      } catch {
+        finish();
+      }
+      // 兜底：1s 内未关闭也强行结束
+      setTimeout(finish, 1000);
+    });
+  }
+}
+
+/**
+ * ssh2 真实会话工厂
+ * 每个会话独立建立一条 SSH 连接，打开 shell channel + pty 后交回会话对象。
+ * 与一次性命令执行器（Ssh2Executor）解耦，会话生命周期由调用方（session.ts）管理。
+ */
+export class Ssh2ShellSessionFactory implements ShellSessionFactory {
+  private readonly sessions = new Set<Ssh2ShellSession>();
+  private readonly clients = new Set<import('ssh2').Client>();
+  private counter = 0;
+  private readonly connectTimeoutMs = 10000;
+
+  constructor(private readonly config: WorkerConfig) {}
+
+  async open(device?: string): Promise<ShellSession> {
+    const normalized = device && device.trim() !== '' ? device : 'default';
+    const sshConfig = findSshConfig(this.config, normalized === 'default' ? undefined : normalized);
+    if (!sshConfig) {
+      throw new Error(`no ssh config for device "${normalized}"`);
+    }
+
+    const sessionId = `ssh_${++this.counter}`;
+    logger.info(`[executor] opening shell ${sessionId}: device=${normalized} host=${sshConfig.host}:${sshConfig.port} user=${sshConfig.username}`);
+
+    const client = await this.connect(sshConfig, sessionId);
+    this.clients.add(client);
+
+    const stream = await this.openShellChannel(client, sessionId);
+    const session = new Ssh2ShellSession(sessionId, normalized, stream);
+    this.sessions.add(session);
+    session.onClose(() => {
+      this.sessions.delete(session);
+      this.clients.delete(client);
+    });
+    logger.info(`[executor] ${sessionId} shell opened`);
+    return session;
+  }
+
+  async closeAll(): Promise<void> {
+    const sessions = [...this.sessions];
+    this.sessions.clear();
+    for (const s of sessions) {
+      await s.close();
+    }
+    const clients = [...this.clients];
+    this.clients.clear();
+    for (const c of clients) {
+      try {
+        c.end();
+      } catch {
+        // 忽略单连接关闭异常
+      }
+    }
+  }
+
+  private connect(sshConfig: SshConfig, sessionId: string): Promise<import('ssh2').Client> {
+    return new Promise((resolve, reject) => {
+      const client = new Client();
+      const connectCfg: ConnectConfig = {
+        host: sshConfig.host,
+        port: sshConfig.port,
+        username: sshConfig.username,
+        readyTimeout: this.connectTimeoutMs,
+        keepaliveInterval: 15000,
+      };
+
+      const doConnect = () => client.connect(connectCfg);
+      if (sshConfig.private_key_path) {
+        readFile(sshConfig.private_key_path, 'utf-8')
+          .then((keyContent) => {
+            connectCfg.privateKey = keyContent;
+            if (sshConfig.password) {
+              connectCfg.passphrase = sshConfig.password;
+            }
+            doConnect();
+          })
+          .catch((err) => {
+            reject(new Error(`[executor] ${sessionId} read private key failed: ${err.message}`));
+          });
+      } else if (sshConfig.password) {
+        connectCfg.password = sshConfig.password;
+        doConnect();
+      } else {
+        reject(new Error(`[executor] ${sessionId} no auth: neither private_key_path nor password`));
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        client.end();
+        reject(new Error(`[executor] ${sessionId} connect timeout after ${this.connectTimeoutMs}ms`));
+      }, this.connectTimeoutMs + 5000);
+
+      client.once('ready', () => {
+        clearTimeout(timer);
+        resolve(client);
+      });
+      client.once('error', (err) => {
+        clearTimeout(timer);
+        reject(new Error(`[executor] ${sessionId} connect error: ${err.message}`));
+      });
+    });
+  }
+
+  private openShellChannel(client: import('ssh2').Client, sessionId: string): Promise<import('ssh2').ClientChannel> {
+    return new Promise((resolve, reject) => {
+      client.shell({ term: 'xterm', cols: 120, rows: 40 }, (err, stream) => {
+        if (err) {
+          reject(new Error(`[executor] ${sessionId} open shell channel failed: ${err.message}`));
+          return;
+        }
+        resolve(stream);
+      });
+    });
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+// 交互式 shell 通道命令执行器（exec_mode: shell）
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * 基于交互式 shell 通道的单命令执行器
+ * 适用于目标设备不支持 exec 通道、仅支持交互式 shell（如部分 Dropbear/受限登录 shell）
+ * 的场景：打开 shell channel + pty，把 cmd 作为输入注入，收集 stdout 到超时或会话关闭。
+ * 复用 ShellSessionFactory 建立连接，执行完后关闭会话回收通道。
+ */
+export class ShellCmdExecutor implements CmdExecutor {
+  private readonly factory: ShellSessionFactory;
+
+  constructor(config: WorkerConfig) {
+    this.factory = createShellSessionFactory(config);
+  }
+
+  async execute(cmd: string, timeout_sec: number, device?: string): Promise<CmdResult> {
+    const session = await this.factory.open(device);
+    logger.info(`[executor] shell-exec on ${session.sessionId} (device=${session.device}): ${cmd}`);
+
+    return new Promise<CmdResult>((resolve) => {
+      let stdout = '';
+      let stderr = '';
+      let settled = false;
+
+      const finish = (result: CmdResult) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        void session.close().finally(() => resolve(result));
+      };
+
+      const timer = setTimeout(() => {
+        logger.warn(`[executor] ${session.sessionId} shell-exec timed out after ${timeout_sec}s: ${cmd}`);
+        finish({ stdout, stderr, exit_code: null, timed_out: true });
+      }, timeout_sec * 1000);
+
+      session.onStdout((chunk) => { stdout += chunk; });
+      session.onStderr((chunk) => { stderr += chunk; });
+      session.onClose(() => {
+        // 会话提前关闭（远端退出），收集到的输出作为结果返回
+        finish({ stdout, stderr, exit_code: null, timed_out: false });
+      });
+
+      // 注入命令并回车执行
+      session.write(`${cmd}\n`);
+    });
+  }
+
+  /** 关闭所有底层会话（Worker 优雅退出时调用） */
+  async close(): Promise<void> {
+    await this.factory.closeAll();
+  }
+}
+
 /**
  * 按 config 选择执行器
+ * - executor_type=mock：返回 MockSshExecutor（mock 模式忽略 exec_mode）
+ * - executor_type=ssh2 且 exec_mode=shell：返回基于交互式 shell 通道的 ShellCmdExecutor
+ * - executor_type=ssh2 且 exec_mode=command（默认）：返回一次性命令 Ssh2Executor
  * @param config - Worker 配置
  * @returns 执行器实例
- * @throws {Error} executor_type 既非 mock 也非 ssh2 时抛错
+ * @throws {Error} executor_type 非法时抛错
  */
 export function createExecutor(config: WorkerConfig): CmdExecutor {
   if (config.executor_type === 'mock') {
     return new MockSshExecutor();
   }
   if (config.executor_type === 'ssh2') {
+    if (config.exec_mode === 'shell') {
+      return new ShellCmdExecutor(config);
+    }
     return new Ssh2Executor(config);
+  }
+  throw new Error(`unknown executor_type: ${config.executor_type}`);
+}
+
+/**
+ * 按 config 选择会话工厂（交互式 shell）
+ * @param config - Worker 配置
+ * @returns 会话工厂实例
+ * @throws {Error} executor_type 既非 mock 也非 ssh2 时抛错
+ */
+export function createShellSessionFactory(config: WorkerConfig): ShellSessionFactory {
+  if (config.executor_type === 'mock') {
+    return new MockShellSessionFactory();
+  }
+  if (config.executor_type === 'ssh2') {
+    return new Ssh2ShellSessionFactory(config);
   }
   throw new Error(`unknown executor_type: ${config.executor_type}`);
 }

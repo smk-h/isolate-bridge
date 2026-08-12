@@ -12,7 +12,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MockSshExecutor, Ssh2Executor, createExecutor } from '../src/executor.js';
+import {
+  MockSshExecutor,
+  MockShellSessionFactory,
+  Ssh2Executor,
+  ShellCmdExecutor,
+  createExecutor,
+  createShellSessionFactory,
+} from '../src/executor.js';
 import type { WorkerConfig } from '../src/config.js';
 
 describe('MockSshExecutor', () => {
@@ -41,6 +48,7 @@ describe('createExecutor', () => {
       hgfs_root: '/tmp',
       queue_mode: 'shared',
       executor_type: 'mock',
+      exec_mode: 'command',
       devices: {},
       ssh_config: null,
       audit_log_dir: '/tmp/logs',
@@ -61,6 +69,7 @@ describe('createExecutor', () => {
       hgfs_root: '/tmp',
       queue_mode: 'shared',
       executor_type: 'ssh2',
+      exec_mode: 'command',
       devices: {},
       ssh_config: { host: 'h', port: 22, username: 'u', private_key_path: null, password: null },
       audit_log_dir: '/tmp/logs',
@@ -74,5 +83,101 @@ describe('createExecutor', () => {
     };
     const exec = createExecutor(config);
     assert.ok(exec instanceof Ssh2Executor);
+  });
+
+  it('ssh2 + exec_mode=shell 应返回 ShellCmdExecutor（交互式 shell 通道）', () => {
+    const config: WorkerConfig = {
+      hgfs_root: '/tmp',
+      queue_mode: 'shared',
+      executor_type: 'ssh2',
+      exec_mode: 'shell',
+      devices: {},
+      ssh_config: { host: 'h', port: 22, username: 'u', private_key_path: null, password: null },
+      audit_log_dir: '/tmp/logs',
+      policy_file: '/tmp/policy.json',
+      polling: { initial_interval_ms: 500, max_interval_ms: 3000 },
+      heartbeat_interval_sec: 5,
+      result_ttl_sec: 600,
+      max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
+    };
+    const exec = createExecutor(config);
+    assert.ok(exec instanceof ShellCmdExecutor);
+  });
+
+  it('mock 会话工厂应返回 MockShellSessionFactory 实例', () => {
+    const config: WorkerConfig = {
+      hgfs_root: '/tmp',
+      queue_mode: 'shared',
+      executor_type: 'mock',
+      exec_mode: 'shell',
+      devices: {},
+      ssh_config: null,
+      audit_log_dir: '/tmp/logs',
+      policy_file: '/tmp/policy.json',
+      polling: { initial_interval_ms: 500, max_interval_ms: 3000 },
+      heartbeat_interval_sec: 5,
+      result_ttl_sec: 600,
+      max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
+    };
+    const factory = createShellSessionFactory(config);
+    assert.ok(factory instanceof MockShellSessionFactory);
+  });
+});
+
+describe('MockShellSessionFactory', () => {
+  it('open 返回会话，write 输入被回显到 stdout', async () => {
+    const factory = new MockShellSessionFactory();
+    const session = await factory.open('board-100');
+    assert.equal(session.device, 'board-100');
+
+    let stdout = '';
+    session.onStdout((chunk) => { stdout += chunk; });
+    session.write('ls -la\n');
+    session.write('echo hi\n');
+    assert.ok(stdout.includes('[mock-shell]'));
+    assert.ok(stdout.includes('ls -la'));
+    assert.ok(stdout.includes('echo hi'));
+
+    await factory.closeAll();
+  });
+
+  it('close 触发 onClose 回调', async () => {
+    const factory = new MockShellSessionFactory();
+    const session = await factory.open();
+    let closed = false;
+    session.onClose(() => { closed = true; });
+    await session.close();
+    assert.equal(closed, true);
+    await factory.closeAll();
+  });
+});
+
+describe('ShellCmdExecutor (mock)', () => {
+  it('execute 通过 mock shell 回显输入并返回结果', async () => {
+    const config: WorkerConfig = {
+      hgfs_root: '/tmp',
+      queue_mode: 'shared',
+      executor_type: 'mock',
+      exec_mode: 'shell',
+      devices: {},
+      ssh_config: null,
+      audit_log_dir: '/tmp/logs',
+      policy_file: '/tmp/policy.json',
+      polling: { initial_interval_ms: 500, max_interval_ms: 3000 },
+      heartbeat_interval_sec: 5,
+      result_ttl_sec: 600,
+      max_inline_bytes: 65536,
+      log_save: false,
+      log_dir: '/tmp/logs',
+    };
+    const exec = new ShellCmdExecutor(config);
+    const result = await exec.execute('docker ps', 1);
+    assert.ok(result.stdout.includes('[mock-shell]'));
+    assert.ok(result.stdout.includes('docker ps'));
+    await exec.close();
   });
 });
