@@ -15,9 +15,9 @@ import { readFile } from 'node:fs/promises';
 import { Client } from 'ssh2';
 import type { ConnectConfig } from 'ssh2';
 
-import type { WorkerConfig } from '../config.js';
-import { findSshConfig } from '../config.js';
-import type { SshConfig } from '../config.js';
+import type { WorkerConfig } from '../config/index.js';
+import { findSshConfig } from '../config/index.js';
+import type { SshConfig } from '../config/index.js';
 import { logger } from '../log.js';
 import type { ShellSession, ShellSessionFactory } from './types.js';
 

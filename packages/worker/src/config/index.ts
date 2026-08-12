@@ -1,16 +1,17 @@
 /**
  * =====================================================
  * Copyright © sumu. 2022-present. Tech. Co., Ltd. All rights reserved.
- * File name  : config.ts
+ * File name  : index.ts
  * Author     : MsgFerry
- * Date       : 2026/08/07
- * Version    : 0.0.3
+ * Date       : 2026/08/12
+ * Version    : 0.0.1
  * Description: Worker 启动配置解析与校验
  *   配置来源收敛为三类：
  *     1. 命令行参数：仅 --hgfs-root（必填）、--log-save、--log-dir（日志两个字段）
  *     2. 配置文件：<hgfs_root>/config/worker.yaml（其余全部可配置项）
  *     3. 内置默认值：配置文件未定义的项兜底
  *   不再支持任何环境变量配置（含 MSGFERRY_* 与日志 LOG_SAVE / LOG_DIR）。
+ *   设备解析与 SSH 查找见 config/device.ts。
  * ======================================================
  */
 
@@ -27,17 +28,13 @@ import {
   readYamlConfigFile,
 } from '@smai-kit/msgferry-shared';
 
-/** SSH 连接配置（真实模式必填） */
-export interface SshConfig {
-  host: string;
-  port: number;
-  username: string;
-  private_key_path: string | null;
-  password: string | null;
-}
-
-/** 设备名 → SSH 连接配置 的字典（多设备） */
-export type DeviceSshMap = Record<string, SshConfig>;
+import {
+  resolveDefaultDevice,
+  isValidDeviceName,
+  pickNumber,
+  pickString,
+} from './device.js';
+import type { SshConfig, DeviceSshMap, DeviceSshFileShape } from './device.js';
 
 /** 任务执行模式：command=一次性命令（exec channel）；shell=交互式 shell（shell channel + pty） */
 export type ExecMode = 'command' | 'shell';
@@ -63,15 +60,6 @@ export interface WorkerConfig {
   log_dir: string;                      // 业务日志目录（命令行 --log-dir，默认 <hgfs_root>/logs/worker）
 }
 
-/** 设备级 SSH 连接配置的原始（文件）结构 */
-export interface DeviceSshFileShape {
-  host?: string;
-  port?: number | string;
-  username?: string;
-  private_key_path?: string | null;
-  password?: string | null;
-}
-
 /** Worker 配置文件（<hgfs_root>/config/worker.yaml）的扁平结构 */
 export interface WorkerConfigFileShape {
   queue_mode?: string;
@@ -87,20 +75,6 @@ export interface WorkerConfigFileShape {
   heartbeat_interval_sec?: number | string;
   result_ttl_sec?: number | string;
   max_inline_bytes?: number | string;
-}
-
-/** 设备名合法性正则：仅允许字母、数字、下划线、连字符，不允许特殊符号 */
-const DEVICE_NAME_RE = /^[A-Za-z0-9_-]+$/;
-
-/**
- * 校验设备名是否合法
- * 约定推荐使用 board-xxx，但不强制校验前缀；仅约束字符集：
- * 字母、数字、下划线、连字符，不允许空格与任何特殊符号。
- * @param name - 设备名
- * @returns 是否合法
- */
-export function isValidDeviceName(name: string): boolean {
-  return DEVICE_NAME_RE.test(name);
 }
 
 /** 默认日志/审计目录名（相对共享根目录） */
@@ -146,33 +120,6 @@ function pickArg(argv: string[], flag: string): string | undefined {
 }
 
 /**
- * 数值型配置取值（仅配置文件 + 默认值），非法值回退到默认值
- * @param fileValue - 配置文件中的原始值
- * @param defaultValue - 内置默认值
- * @returns 解析后的数值
- */
-function pickNumber(fileValue: unknown, defaultValue: number): number {
-  if (fileValue === undefined || fileValue === null || fileValue === '') {
-    return defaultValue;
-  }
-  const n = Number(fileValue);
-  return Number.isFinite(n) ? n : defaultValue;
-}
-
-/**
- * 字符串型配置取值（仅配置文件 + 默认值），空串视为未配置
- * @param fileValue - 配置文件中的原始值
- * @param defaultValue - 内置默认值
- * @returns 解析后的字符串
- */
-function pickString(fileValue: unknown, defaultValue?: string): string | undefined {
-  if (fileValue !== undefined && fileValue !== null && fileValue !== '') {
-    return String(fileValue);
-  }
-  return defaultValue;
-}
-
-/**
  * 解析命令行参数与配置文件，产出 WorkerConfig
  * - 命令行仅支持 --hgfs-root / --log-save / --log-dir
  * - 其余全部从 <hgfs_root>/config/worker.yaml 读取，未定义项走内置默认值
@@ -209,7 +156,7 @@ export function parseConfig(argv: string[]): WorkerConfig {
   }
 
   // 多设备解析：设备名 → SSH 连接信息
-  // 1. 默认设备（兼容旧用法）：配置文件旧 ssh 字段 > 配置文件 devices.default > 无
+  // 1. 命名设备（排除 default 键与非法设备名）
   const devices: DeviceSshMap = {};
   const rawDevices = file.devices ?? {};
   for (const [name, dev] of Object.entries(rawDevices)) {
@@ -236,40 +183,10 @@ export function parseConfig(argv: string[]): WorkerConfig {
     };
   }
 
-  // 2. 默认设备（default 键或旧 ssh 字段）：host 存在才构建
-  const defaultHost =
-    pickString(rawDevices.default?.host) ??
-    (file.ssh?.host !== undefined ? String(file.ssh.host) : undefined);
-  const defaultPort = pickNumber(
-    rawDevices.default?.port ?? file.ssh?.port,
-    22,
-  );
-  const defaultUser =
-    pickString(rawDevices.default?.username) ??
-    (file.ssh?.username !== undefined ? String(file.ssh.username) : undefined);
-  const defaultKey = pickString(rawDevices.default?.private_key_path ?? file.ssh?.private_key_path);
-  const defaultPassword = pickString(rawDevices.default?.password ?? file.ssh?.password);
-
-  // 多设备场景下也允许同时提供“默认设备”，与旧 ssh 字段一致
-  if (defaultHost && defaultUser) {
-    devices.default = {
-      host: defaultHost,
-      port: defaultPort,
-      username: defaultUser,
-      private_key_path: defaultKey ?? null,
-      password: defaultPassword ?? null,
-    };
-  }
-
-  // 兼容旧用法：executor 为 ssh2 时，若配置了旧 ssh 字段（无 devices），把它作为默认设备
-  if (executorType === 'ssh2' && !devices.default && file.ssh?.host) {
-    devices.default = {
-      host: String(file.ssh.host),
-      port: defaultPort,
-      username: String(file.ssh.username ?? ''),
-      private_key_path: defaultKey ?? null,
-      password: defaultPassword ?? null,
-    };
+  // 2. 默认设备（default 键或旧 ssh 字段）+ 旧 ssh 字段兜底，统一收敛到 device.ts
+  const defaultDevice = resolveDefaultDevice(rawDevices, file.ssh, executorType);
+  if (defaultDevice) {
+    devices.default = defaultDevice;
   }
 
   // SSH 配置仅在真实模式才有意义：executor 为 mock 时即便配置文件有 ssh 字段也忽略
@@ -340,21 +257,6 @@ export function parseConfig(argv: string[]): WorkerConfig {
 }
 
 /**
- * 按设备名查找 SSH 连接配置
- * 后续连接 SSH 时可通过设备名查询对应的 ip/host 及账号信息。
- * 查找顺序：devices[设备名] > devices.default（若传入 default 或未命中时回退）> ssh_config（旧兼容）
- * @param config - Worker 配置
- * @param deviceName - 设备名（不传或为空时返回默认设备）
- * @returns SSH 连接配置，未找到返回 undefined
- */
-export function findSshConfig(config: WorkerConfig, deviceName?: string): SshConfig | undefined {
-  if (deviceName && isValidDeviceName(deviceName) && config.devices[deviceName]) {
-    return config.devices[deviceName];
-  }
-  return config.devices.default ?? config.ssh_config ?? undefined;
-}
-
-/**
  * 校验配置完整性，校验失败抛错
  * @param config - WorkerConfig 配置对象
  * @throws {Error} hgfs_root 不存在或不可读写时抛错；ssh2 模式缺配置时抛错
@@ -392,3 +294,6 @@ export function validateConfig(config: WorkerConfig): void {
     }
   }
 }
+
+export type { SshConfig, DeviceSshMap, DeviceSshFileShape } from './device.js';
+export { findSshConfig, isValidDeviceName } from './device.js';

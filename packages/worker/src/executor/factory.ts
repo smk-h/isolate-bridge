@@ -9,7 +9,7 @@
  * ======================================================
  */
 
-import type { WorkerConfig } from '../config.js';
+import type { WorkerConfig } from '../config/index.js';
 import { Ssh2Executor } from './command.js';
 import { MockSshExecutor, MockShellSessionFactory } from './mock.js';
 import { ShellCmdExecutor } from './shell-cmd.js';

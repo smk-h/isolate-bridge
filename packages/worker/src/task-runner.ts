@@ -11,7 +11,7 @@
  * ======================================================
  */
 
-import type { WorkerConfig } from './config.js';
+import type { WorkerConfig } from './config/index.js';
 import type { QueueModeStrategy } from './queue/index.js';
 import { transitionToProcessing } from './queue/index.js';
 import { checkCommand } from './policy.js';

@@ -20,7 +20,7 @@ import {
   createExecutor,
   createShellSessionFactory,
 } from '../src/executor/index.js';
-import type { WorkerConfig } from '../src/config.js';
+import type { WorkerConfig } from '../src/config/index.js';
 
 describe('MockSshExecutor', () => {
   it('execute 应返回含 mock 标记的固定文本', async () => {

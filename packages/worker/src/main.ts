@@ -9,7 +9,7 @@
  * ======================================================
  */
 
-import { parseConfig, validateConfig } from './config.js';
+import { parseConfig, validateConfig } from './config/index.js';
 import { ensureSharedTemplates } from './bootstrap.js';
 import { createBackoff } from './backoff.js';
 import { statSync } from 'node:fs';
