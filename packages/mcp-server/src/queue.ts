@@ -20,7 +20,7 @@ import {
   unlink,
 } from 'node:fs/promises';
 
-import { QUEUE_DIRS, HEARTBEAT_FILE, EXCHANGE_DIRS } from '@smai-kit/msgferry-shared';
+import { QUEUE_DIRS, HEARTBEAT_FILE, EXCHANGE_DIRS, taskFileName, parseTaskIdFromFileName } from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 /** 心跳内容（与 worker 同构，mcp-server 不依赖 worker 包） */
@@ -50,12 +50,55 @@ export async function initQueueDirs(root: string): Promise<void> {
 }
 
 /**
+ * 在指定目录中按完整 task_id 匹配任务文件名
+ * 由于任务文件名只保留 task_id 前 8 位，读取时需扫描目录并校验内容中的完整 task_id。
+ * @param root - HGFS 共享根目录
+ * @param dir - 队列目录名
+ * @param taskId - 完整任务唯一标识
+ * @param suffix - 文件后缀（如 .json / .result）
+ * @returns 匹配的文件完整路径，未找到返回 null
+ */
+async function findTaskFileByTaskId(
+  root: string,
+  dir: string,
+  taskId: string,
+  suffix: string = JSON_SUFFIX,
+): Promise<string | null> {
+  const fullDir = join(root, dir);
+  let entries: string[];
+  try {
+    entries = await readdir(fullDir);
+  } catch {
+    return null;
+  }
+  const shortId = taskId.slice(0, 8).toUpperCase();
+  for (const name of entries) {
+    if (!name.endsWith(suffix) || name.endsWith(TMP_SUFFIX)) {
+      continue;
+    }
+    if (parseTaskIdFromFileName(name).toUpperCase() !== shortId) {
+      continue;
+    }
+    try {
+      const content = await readFile(join(fullDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as { task_id?: string };
+      if (parsed.task_id === taskId) {
+        return join(fullDir, name);
+      }
+    } catch {
+      // 单个文件解析失败跳过，继续下一个
+    }
+  }
+  return null;
+}
+
+/**
  * 原子提交任务到 pending/ 目录（.tmp → rename）
  * @param root - HGFS 共享根目录
  * @param task - 任务结构体
  */
 export async function submitTask(root: string, task: CommandTask): Promise<void> {
-  const targetPath = join(root, QUEUE_DIRS.pending, `${task.task_id}${JSON_SUFFIX}`);
+  const targetPath = join(root, QUEUE_DIRS.pending, taskFileName(task.submit_time, task.task_id));
   const tmpPath = `${targetPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, targetPath);
@@ -71,21 +114,13 @@ export async function taskExists(
   root: string,
   taskId: string,
 ): Promise<'pending' | 'processing' | null> {
-  const pendingPath = join(root, QUEUE_DIRS.pending, `${taskId}${JSON_SUFFIX}`);
-  try {
-    await stat(pendingPath);
+  if (await findTaskFileByTaskId(root, QUEUE_DIRS.pending, taskId)) {
     return 'pending';
-  } catch {
-    // pending 不存在，继续检查 processing
   }
-
-  const processingPath = join(root, QUEUE_DIRS.processing, `${taskId}${JSON_SUFFIX}`);
-  try {
-    await stat(processingPath);
+  if (await findTaskFileByTaskId(root, QUEUE_DIRS.processing, taskId)) {
     return 'processing';
-  } catch {
-    return null;
   }
+  return null;
 }
 
 /**
@@ -95,21 +130,30 @@ export async function taskExists(
  * @returns 找到则返回 CommandTask，全部不存在返回 null
  */
 export async function readResult(root: string, taskId: string): Promise<CommandTask | null> {
-  const candidates = [
-    join(root, QUEUE_DIRS.completed, `${taskId}${JSON_SUFFIX}`),
-    join(root, QUEUE_DIRS.failed, `${taskId}${JSON_SUFFIX}`),
-    join(root, QUEUE_DIRS.cancelled, `${taskId}${CANCELLED_RESULT_SUFFIX}`),
-  ];
-
-  for (const filePath of candidates) {
+  const completedPath = await findTaskFileByTaskId(root, QUEUE_DIRS.completed, taskId);
+  if (completedPath) {
     try {
-      const content = await readFile(filePath, 'utf-8');
-      return JSON.parse(content) as CommandTask;
+      return JSON.parse(await readFile(completedPath, 'utf-8')) as CommandTask;
     } catch {
-      // 文件不存在，尝试下一个
+      // 解析失败继续
     }
   }
-
+  const failedPath = await findTaskFileByTaskId(root, QUEUE_DIRS.failed, taskId);
+  if (failedPath) {
+    try {
+      return JSON.parse(await readFile(failedPath, 'utf-8')) as CommandTask;
+    } catch {
+      // 解析失败继续
+    }
+  }
+  const cancelledPath = await findTaskFileByTaskId(root, QUEUE_DIRS.cancelled, taskId, CANCELLED_RESULT_SUFFIX);
+  if (cancelledPath) {
+    try {
+      return JSON.parse(await readFile(cancelledPath, 'utf-8')) as CommandTask;
+    } catch {
+      // 解析失败继续
+    }
+  }
   return null;
 }
 
@@ -125,7 +169,10 @@ export async function readTaskFromDir(
   dir: 'pending' | 'processing',
   taskId: string,
 ): Promise<CommandTask | null> {
-  const filePath = join(root, dir, `${taskId}${JSON_SUFFIX}`);
+  const filePath = await findTaskFileByTaskId(root, dir, taskId);
+  if (filePath === null) {
+    return null;
+  }
   try {
     const content = await readFile(filePath, 'utf-8');
     return JSON.parse(content) as CommandTask;
@@ -214,11 +261,11 @@ export async function initExchangeDirs(root: string): Promise<void> {
  * @returns 任务文件相对路径 `outbound/<id>.json`（供 syncPush 上传；目录前缀由同步命令模板承担）
  */
 export async function writeOutboundTask(root: string, task: CommandTask): Promise<string> {
-  const targetPath = join(root, EXCHANGE_DIRS.outbound, `${task.task_id}${JSON_SUFFIX}`);
+  const targetPath = join(root, EXCHANGE_DIRS.outbound, taskFileName(task.submit_time, task.task_id));
   const tmpPath = `${targetPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, targetPath);
-  return join(EXCHANGE_DIRS.outbound, `${task.task_id}${JSON_SUFFIX}`);
+  return join(EXCHANGE_DIRS.outbound, taskFileName(task.submit_time, task.task_id));
 }
 
 /**
@@ -228,20 +275,13 @@ export async function writeOutboundTask(root: string, task: CommandTask): Promis
  * @returns 存在返回 true
  */
 export async function exchangeTaskPending(root: string, taskId: string): Promise<boolean> {
-  const outboundPath = join(root, EXCHANGE_DIRS.outbound, `${taskId}${JSON_SUFFIX}`);
-  const sentPath = join(root, EXCHANGE_DIRS.outbound, EXCHANGE_DIRS.sent, `${taskId}${JSON_SUFFIX}`);
-  try {
-    await stat(outboundPath);
+  if (await findTaskFileByTaskId(root, EXCHANGE_DIRS.outbound, taskId)) {
     return true;
-  } catch {
-    // outbound 不存在，继续检查 sent/
   }
-  try {
-    await stat(sentPath);
+  if (await findTaskFileByTaskId(root, join(EXCHANGE_DIRS.outbound, EXCHANGE_DIRS.sent), taskId)) {
     return true;
-  } catch {
-    return false;
   }
+  return false;
 }
 
 /**
@@ -250,8 +290,12 @@ export async function exchangeTaskPending(root: string, taskId: string): Promise
  * @param taskId - 任务唯一标识
  */
 export async function archiveSentTask(root: string, taskId: string): Promise<void> {
-  const srcPath = join(root, EXCHANGE_DIRS.outbound, `${taskId}${JSON_SUFFIX}`);
-  const dstPath = join(root, EXCHANGE_DIRS.outbound, EXCHANGE_DIRS.sent, `${taskId}${JSON_SUFFIX}`);
+  const srcPath = await findTaskFileByTaskId(root, EXCHANGE_DIRS.outbound, taskId);
+  if (srcPath === null) {
+    return;
+  }
+  const fileName = srcPath.split(/[\\/]/).pop() as string;
+  const dstPath = join(root, EXCHANGE_DIRS.outbound, EXCHANGE_DIRS.sent, fileName);
   await rename(srcPath, dstPath).catch(() => {
     // 文件已被归档或不存在时忽略（幂等）
   });
@@ -280,20 +324,32 @@ export async function writeOutboundCancelMarker(root: string, taskId: string): P
  */
 export async function readResultExchange(root: string, taskId: string): Promise<CommandTask | null> {
   const inboundDir = join(root, EXCHANGE_DIRS.inbound);
-  const candidates = [
-    join(inboundDir, `${EXCHANGE_RESULT_PREFIX}${taskId}${JSON_SUFFIX}`),
-    join(inboundDir, `${EXCHANGE_RESULT_PREFIX}${taskId}${CANCELLED_RESULT_SUFFIX}`),
-  ];
-
-  for (const filePath of candidates) {
+  let entries: string[];
+  try {
+    entries = await readdir(inboundDir);
+  } catch {
+    return null;
+  }
+  const shortId = taskId.slice(0, 8).toUpperCase();
+  for (const name of entries) {
+    if (name.endsWith(TMP_SUFFIX) || !name.startsWith(EXCHANGE_RESULT_PREFIX)) {
+      continue;
+    }
+    // result_<带时间戳基名>.json|.result
+    const stripped = name.slice(EXCHANGE_RESULT_PREFIX.length);
+    if (parseTaskIdFromFileName(stripped).toUpperCase() !== shortId) {
+      continue;
+    }
     try {
-      const content = await readFile(filePath, 'utf-8');
-      return JSON.parse(content) as CommandTask;
+      const content = await readFile(join(inboundDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as CommandTask;
+      if (parsed.task_id === taskId) {
+        return parsed;
+      }
     } catch {
-      // 文件不存在或解析失败，尝试下一个
+      // 单个文件解析失败跳过
     }
   }
-
   return null;
 }
 
@@ -327,11 +383,21 @@ export async function listInboundResults(root: string): Promise<string[]> {
   }
   const ids: string[] = [];
   for (const name of entries) {
-    if (name.startsWith(TMP_SUFFIX) || name.endsWith(TMP_SUFFIX)) {
+    if (name.endsWith(TMP_SUFFIX)) {
       continue;
     }
-    if (name.startsWith(EXCHANGE_RESULT_PREFIX) && name.endsWith(JSON_SUFFIX)) {
-      ids.push(name.slice(EXCHANGE_RESULT_PREFIX.length, -JSON_SUFFIX.length));
+    if (!name.startsWith(EXCHANGE_RESULT_PREFIX)) {
+      continue;
+    }
+    // 读取内容解析完整 task_id
+    try {
+      const content = await readFile(join(inboundDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as { task_id?: string };
+      if (parsed.task_id) {
+        ids.push(parsed.task_id);
+      }
+    } catch {
+      // 单个文件解析失败跳过
     }
   }
   return ids;

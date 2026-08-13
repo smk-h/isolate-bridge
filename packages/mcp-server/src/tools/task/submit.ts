@@ -21,6 +21,7 @@ import {
   HEARTBEAT,
   OUTPUT,
   logger,
+  formatBeijingTimestamp,
 } from '@smai-kit/msgferry-shared';
 
 import type { McpServerConfig } from '../../config.js';
@@ -102,9 +103,9 @@ function makeCommandTask(taskId: string, cmd: string, timeoutSec: number, device
     cmd,
     device,
     timeout_sec: timeoutSec,
-    submit_time: Date.now(),
-    start_time: 0,
-    end_time: 0,
+    submit_time: formatBeijingTimestamp(Date.now()),
+    start_time: '',
+    end_time: '',
     stdout: '',
     stderr: '',
     stdout_size: 0,
