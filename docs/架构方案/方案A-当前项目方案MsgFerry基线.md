@@ -83,7 +83,7 @@ vm_share/
 ├─ completed/      # 执行成功结果
 ├─ failed/         # 执行失败/超时/策略拦截任务
 ├─ cancelled/      # 内网取消标记 + 取消后结果（审计）
-├─ outputs/        # 大输出分包文件（<task_id>.stdout 等）
+├─ outputs/        # 大输出分包文件（<时间戳-uuid8>.stdout 等）
 ├─ heartbeat.json  # 外网 Worker 心跳
 └─ policy/         # 外网本地维护的命令策略文件（不通过队列下发）
 ```
@@ -132,9 +132,9 @@ export interface CommandTask {
   depends_on: string[];             // 依赖的 task_id 列表
   cmd: string;                     // 待执行 SSH 命令
   timeout_sec: number;              // 超时上限（秒）
-  submit_time: number;              // 提交时间戳（ms epoch）
-  start_time: number;
-  end_time: number;
+  submit_time: string;              // 任务产生时间（北京时间 YYYY-MM-DD HH:mm:ss.SSS）
+  start_time: string;
+  end_time: string;
   stdout: string;                   // 内联 stdout（截断至 max_inline_bytes）
   stderr: string;
   stdout_size: number;

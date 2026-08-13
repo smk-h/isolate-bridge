@@ -39,6 +39,7 @@ import {
   SESSIONS_DIR,
   SESSION,
   SessionStatus,
+  formatBeijingTimestamp,
 } from '@smai-kit/msgferry-shared';
 import type { SessionTask } from '@smai-kit/msgferry-shared';
 
@@ -434,7 +435,7 @@ export class SessionManager {
     return this.enqueueWrite(id, async () => {
       try {
         session.status = status;
-        session.end_time = Date.now();
+        session.end_time = formatBeijingTimestamp(Date.now());
         session.error_msg = reason;
         await writeSessionMeta(this.root, session);
         logger.info(`[session] ${session.session_id} finalized status=${status} reason=${reason}`);
