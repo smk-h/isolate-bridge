@@ -449,7 +449,7 @@ devices:
 # policy_file / polling / heartbeat / result_ttl_sec / max_inline_bytes 等按需
 ```
 
-更多 Worker 配置文件与路径细节见 [`docs/worker-config.md`](worker-config.md)。
+更多 Worker 配置文件与路径细节见 [docs/配置指南.md](配置指南.md)。
 
 ### 2. MCP Server 配置
 
