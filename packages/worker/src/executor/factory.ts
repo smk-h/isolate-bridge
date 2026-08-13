@@ -15,6 +15,8 @@ import { SshExecExecutor } from './ssh-exec.js';
 import { SshShellExecExecutor } from './ssh-shell-exec.js';
 import { SshSessionFactory } from './ssh-session.js';
 import type { CmdExecutor, ShellSessionFactory } from './types.js';
+import { SSH_SHELL_LOG_DIR } from '@smai-kit/msgferry-shared';
+import { join } from 'node:path';
 
 /**
  * 按 config 选择执行器
@@ -45,8 +47,10 @@ export function createExecutor(config: WorkerConfig): CmdExecutor {
  * @throws {Error} executor_type 既非 mock 也非 ssh2 时抛错
  */
 export function createShellSessionFactory(config: WorkerConfig): ShellSessionFactory {
+  // SSH shell 原始会话日志根目录：<hgfs_root>/logs/ssh-shell（LOG_SAVE 开启时有效）
+  const logRoot = join(config.hgfs_root, SSH_SHELL_LOG_DIR);
   if (config.executor_type === 'mock') {
-    return new MockShellSessionFactory();
+    return new MockShellSessionFactory(logRoot);
   }
   if (config.executor_type === 'ssh2') {
     return new SshSessionFactory(config);

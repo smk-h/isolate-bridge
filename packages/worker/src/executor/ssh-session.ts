@@ -15,6 +15,8 @@ import { findSshConfig } from '../config/index.js';
 import { logger } from '../log/index.js';
 import { connectClient } from './ssh-conn.js';
 import type { ShellSession, ShellSessionFactory } from './types.js';
+import { FileLogger, isLogSaveEnabled, SSH_SHELL_LOG_DIR } from '@smai-kit/msgferry-shared';
+import { join } from 'node:path';
 
 /** ssh2 shell channel + pty 的交互式会话封装 */
 class SshSession implements ShellSession {
@@ -24,20 +26,33 @@ class SshSession implements ShellSession {
   private readonly stdoutCbs: Array<(chunk: string) => void> = [];
   private readonly stderrCbs: Array<(chunk: string) => void> = [];
   private readonly closeCbs: Array<() => void> = [];
+  private readonly fileLogger = new FileLogger();
   private closed = false;
 
-  constructor(sessionId: string, device: string, stream: import('ssh2').ClientChannel) {
+  constructor(
+    sessionId: string,
+    device: string,
+    stream: import('ssh2').ClientChannel,
+    logRoot?: string,
+  ) {
     this.sessionId = sessionId;
     this.device = device;
     this.stream = stream;
 
+    // SSH shell 原始会话日志：仅 LOG_SAVE 开启时落盘到 <logRoot>/<device>/ssh_<id>_<ts>.log
+    if (logRoot && isLogSaveEnabled()) {
+      this.fileLogger.enableForShell(logRoot, device, sessionId);
+    }
+
     stream.on('data', (chunk: Buffer) => {
       const text = chunk.toString('utf-8');
+      this.fileLogger.write(text);
       for (const cb of [...this.stdoutCbs]) cb(text);
     });
     if (stream.stderr) {
       stream.stderr.on('data', (chunk: Buffer) => {
         const text = chunk.toString('utf-8');
+        this.fileLogger.write(text);
         for (const cb of [...this.stderrCbs]) cb(text);
       });
     }
@@ -80,6 +95,7 @@ class SshSession implements ShellSession {
 
   close(): Promise<void> {
     if (this.closed) return Promise.resolve();
+    this.fileLogger.disable();
     return new Promise((resolve) => {
       let done = false;
       const finish = () => {
@@ -127,7 +143,9 @@ export class SshSessionFactory implements ShellSessionFactory {
     this.clients.add(client);
 
     const stream = await this.openShellChannel(client, sessionId);
-    const session = new SshSession(sessionId, normalized, stream);
+    // SSH shell 原始会话日志根目录：<hgfs_root>/logs/ssh-shell（LOG_SAVE 开启时有效）
+    const logRoot = join(this.config.hgfs_root, SSH_SHELL_LOG_DIR);
+    const session = new SshSession(sessionId, normalized, stream, logRoot);
     this.sessions.add(session);
     // 会话关闭时同步释放连接与缓存记录
     session.onClose(() => {
