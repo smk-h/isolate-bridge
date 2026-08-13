@@ -224,6 +224,22 @@ async closeAll(): Promise<void> {
 - `stdout/`：Worker 回写的输出文件（`<seq>.output`），供内网轮询读取
 - `close.marker`：内网写入的关闭标记，触发会话关闭
 
+### 0. 原始会话日志（SSH shell 会话原始日志）
+
+除业务摆渡目录（`sessions/`）外，Worker 还会在 **`LOG_SAVE` 开启**时，为每个 SSH shell 会话写一份**原始输入输出合并日志**，目录与命名约定如下：
+
+```
+<hgfs_root>/logs/ssh-shell/<deviceName>/ssh_<id>_<YYYY-MM-DD_HHMMSS>.log
+```
+
+- **目录**：`<hgfs_root>/logs/ssh-shell/<deviceName>/`（设备名 normalize 后，如 `default`、`board-100`）。
+- **文件名**：`ssh_<id>_<fileTimestamp()>.log`，其中 `<id>` 为会话号（即 `sessionId` 的 `ssh_` 后部分，如 `ssh_1` → `ssh_1_2026-08-11_231426.log`）。
+- **开关**：复用 `LOG_SAVE` 环境变量（与业务日志一致），无需单独命令行开关；`LOG_SAVE` 未开启时该日志不落盘。
+- **写入时机**：会话 `open()` 时初始化 FileLogger（写入 BOM 头部），每次 stdout/stderr 数据到达时按行写入，会话 `close()` 时冲刷残留行缓冲并关闭。
+- **日志格式**：与参考项目 embedded-mcp-toolkit 一致——首行为 `=~=~=~=~=~=~=~=~=~=~=~= Mcp Server log <北京时间> =~=~=~=~=~=~=~=~=~=~=~=`；每行 `[YYYY-MM-DD HH:mm:ss] <清洗后的原始行>`。pty 会把注入的命令回显进 stdout，因此**输入（命令）与输出天然合并在一份日志里**，无需单独分 stdin/stdout 目录。
+
+相关实现：[FileLogger](../packages/shared/src/file-logger.ts)、[SshSession](../packages/worker/src/executor/ssh-session.ts)。
+
 ### 1. 打开会话 SessionManager.open()
 
 ```ts
