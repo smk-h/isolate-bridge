@@ -72,6 +72,9 @@ export const LOG_DIRS = {
 /** 交互式会话根目录（位于共享根目录下），每个会话占 <root>/sessions/<session_id>/ */
 export const SESSIONS_DIR = 'sessions' as const;
 
+/** SSH shell 会话原始日志目录（位于共享根目录下），每个设备占 <root>/logs/ssh-shell/<device>/ */
+export const SSH_SHELL_LOG_DIR = 'logs/ssh-shell' as const;
+
 /** 交互式会话摆渡子目录与序号文件约定 */
 export const SESSION = {
   /** stdin 摆渡子目录名（相对会话根目录） */
