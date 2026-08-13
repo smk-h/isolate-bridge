@@ -1,1 +1,1783 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" data-diagram-type="SEQUENCE" style="width:1014px;height:1287px;background:#FFFFFF;" width="1014px" height="1287px" viewBox="0 0 1014 1287" zoomAndPan="magnify" preserveAspectRatio="none" contentStyleType="text/css"><?plantuml 1.2026.7beta11?><defs/><g font-family="sans-serif" lengthAdjust="spacing"><g class="title" data-source-line="18"><text x="168.703" y="35.421" fill="#000" font-size="22" textLength="674.911" font-weight="700" font-family="'Segoe UI'">MsgFerry 完整执行流程：从内网 Claude 提交到设备 A 执行回传</text></g><rect x="473.538" y="530.648" width="494.942" height="238.078" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><rect x="473.538" y="530.648" width="494.942" height="238.078" fill="none" style="stroke:#7A93BE;stroke-width:1;"/><rect x="492.538" y="617.719" width="297.084" height="90.234" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><rect x="492.538" y="617.719" width="297.084" height="90.234" fill="none" style="stroke:#7A93BE;stroke-width:1;"/><g><title>Claude Code</title><rect x="65.954" y="110.203" width="8" height="1113.102" fill="#000" fill-opacity="0"/><line x1="69.454" y1="110.203" x2="69.454" y2="1223.305" style="stroke:#7A93BE;stroke-width:1;stroke-dasharray:5,5;"/></g><g><title>MCP . TypeScript ..</title><rect x="226.061" y="110.203" width="8" height="1113.102" fill="#000" fill-opacity="0"/><line x1="229.561" y1="110.203" x2="229.561" y2="1223.305" style="stroke:#7A93BE;stroke-width:1;stroke-dasharray:5,5;"/></g><g><title>HGFS ..</title><rect x="505.038" y="110.203" width="8" height="1113.102" fill="#000" fill-opacity="0"/><line x1="508.538" y1="110.203" x2="508.538" y2="1223.305" style="stroke:#7A93BE;stroke-width:1;stroke-dasharray:5,5;"/></g><g><title>Node Worker</title><rect x="770.122" y="110.203" width="8" height="1113.102" fill="#000" fill-opacity="0"/><line x1="773.622" y1="110.203" x2="773.622" y2="1223.305" style="stroke:#7A93BE;stroke-width:1;stroke-dasharray:5,5;"/></g><g><title>.. A</title><rect x="948.98" y="110.203" width="8" height="1113.102" fill="#000" fill-opacity="0"/><line x1="952.48" y1="110.203" x2="952.48" y2="1223.305" style="stroke:#7A93BE;stroke-width:1;stroke-dasharray:5,5;"/></g><rect x="20" y="61.609" width="98.908" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="25" y="79.604" fill="#1F2933" font-size="14" textLength="88.908" font-family="'Segoe UI'">Claude Code</text><text x="49.992" y="95.901" fill="#1F2933" font-size="14" textLength="38.924" font-family="'Segoe UI'">(内网)</text><rect x="148.908" y="61.609" width="161.307" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="153.908" y="79.604" fill="#1F2933" font-size="14" textLength="151.307" font-family="'Segoe UI'">MCP / TypeScript 工具</text><text x="210.1" y="95.901" fill="#1F2933" font-size="14" textLength="38.924" font-family="'Segoe UI'">(内网)</text><rect x="440.76" y="61.609" width="135.556" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="473.155" y="79.604" fill="#1F2933" font-size="14" textLength="70.766" font-family="'Segoe UI'">HGFS 队列</text><text x="445.76" y="95.901" fill="#1F2933" font-size="14" textLength="125.556" font-family="'Segoe UI'">(pending/done/...)</text><rect x="722.808" y="61.609" width="101.629" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="727.808" y="79.604" fill="#1F2933" font-size="14" textLength="91.629" font-family="'Segoe UI'">Node Worker</text><text x="736.759" y="95.901" fill="#1F2933" font-size="14" textLength="73.726" font-family="'Segoe UI'">(Windows)</text><rect x="911.642" y="61.609" width="81.675" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="931.466" y="79.604" fill="#1F2933" font-size="14" textLength="42.027" font-family="'Segoe UI'">设备 A</text><text x="916.642" y="95.901" fill="#1F2933" font-size="14" textLength="71.675" font-family="'Segoe UI'">(外网 SSH)</text><rect x="20" y="1228.305" width="98.908" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="25" y="1246.3" fill="#1F2933" font-size="14" textLength="88.908" font-family="'Segoe UI'">Claude Code</text><text x="49.992" y="1262.597" fill="#1F2933" font-size="14" textLength="38.924" font-family="'Segoe UI'">(内网)</text><rect x="148.908" y="1228.305" width="161.307" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="153.908" y="1246.3" fill="#1F2933" font-size="14" textLength="151.307" font-family="'Segoe UI'">MCP / TypeScript 工具</text><text x="210.1" y="1262.597" fill="#1F2933" font-size="14" textLength="38.924" font-family="'Segoe UI'">(内网)</text><rect x="440.76" y="1228.305" width="135.556" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="473.155" y="1246.3" fill="#1F2933" font-size="14" textLength="70.766" font-family="'Segoe UI'">HGFS 队列</text><text x="445.76" y="1262.597" fill="#1F2933" font-size="14" textLength="125.556" font-family="'Segoe UI'">(pending/done/...)</text><rect x="722.808" y="1228.305" width="101.629" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="727.808" y="1246.3" fill="#1F2933" font-size="14" textLength="91.629" font-family="'Segoe UI'">Node Worker</text><text x="736.759" y="1262.597" fill="#1F2933" font-size="14" textLength="73.726" font-family="'Segoe UI'">(Windows)</text><rect x="911.642" y="1228.305" width="81.675" height="42.594" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="2.5" ry="2.5"/><text x="931.466" y="1246.3" fill="#1F2933" font-size="14" textLength="42.027" font-family="'Segoe UI'">设备 A</text><text x="916.642" y="1262.597" fill="#1F2933" font-size="14" textLength="71.675" font-family="'Segoe UI'">(外网 SSH)</text><rect x="10" y="138.77" width="993.317" height="3" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><line x1="10" y1="138.77" x2="1003.317" y2="138.77" style="stroke:#000;stroke-width:0.5;"/><line x1="10" y1="141.77" x2="1003.317" y2="141.77" style="stroke:#000;stroke-width:0.5;"/><rect x="432.396" y="128.203" width="148.526" height="23.133" fill="#FFF" style="stroke:#000;stroke-width:1;"/><text x="438.396" y="144.27" fill="#000" font-size="13" textLength="130" font-weight="700" font-family="'Segoe UI'">阶段一：内网提交任务</text><polygon points="217.561,177.305,227.561,181.305,217.561,185.305,221.561,181.305" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="69.454" y1="181.305" x2="223.561" y2="181.305" style="stroke:#5A5A5A;stroke-width:1;"/><text x="76.454" y="176.475" fill="#333" font-size="12" textLength="84.903" font-family="'Segoe UI'">生成 Shell 指令</text><polygon points="496.538,205.273,506.538,209.273,496.538,213.273,500.538,209.273" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="229.561" y1="209.273" x2="502.538" y2="209.273" style="stroke:#5A5A5A;stroke-width:1;"/><text x="236.561" y="204.443" fill="#333" font-size="12" textLength="97.84" font-family="'Segoe UI'">检查 task_id 幂等</text><path d="M150.346,222.273 L150.346,247.273 L587.346,247.273 L587.346,232.273 L577.346,222.273 L150.346,222.273" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M577.346,222.273 L577.346,232.273 L587.346,232.273 L577.346,222.273" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="230.135" y="239.34" fill="#5C4A00" font-size="13" textLength="268.83" font-family="'Segoe UI'">pending/processing 已存在同 id 则拒绝重提</text><polygon points="496.538,268.375,506.538,272.375,496.538,276.375,500.538,272.375" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="229.561" y1="272.375" x2="502.538" y2="272.375" style="stroke:#5A5A5A;stroke-width:1;"/><text x="236.561" y="267.545" fill="#333" font-size="12" textLength="254.977" font-family="'Segoe UI'">写 .tmp → rename pending/&lt;task_id>.json</text><rect x="10" y="300.941" width="993.317" height="3" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><line x1="10" y1="300.941" x2="1003.317" y2="300.941" style="stroke:#000;stroke-width:0.5;"/><line x1="10" y1="303.941" x2="1003.317" y2="303.941" style="stroke:#000;stroke-width:0.5;"/><rect x="425.896" y="290.375" width="161.526" height="23.133" fill="#FFF" style="stroke:#000;stroke-width:1;"/><text x="431.896" y="306.442" fill="#000" font-size="13" textLength="143" font-weight="700" font-family="'Segoe UI'">阶段二：外网消费并抢占</text><polygon points="519.538,339.477,509.538,343.477,519.538,347.477,515.538,343.477" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="343.477" x2="772.622" y2="343.477" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="338.646" fill="#333" font-size="12" textLength="158.432" font-family="'Segoe UI'">轮询 pending (500ms 退避)</text><polygon points="519.538,367.445,509.538,371.445,519.538,375.445,515.538,371.445" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="371.445" x2="772.622" y2="371.445" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="366.615" fill="#333" font-size="12" textLength="214.963" font-family="'Segoe UI'">创建 processing/&lt;task_id>.lock 抢占</text><path d="M501.859,384.445 L501.859,409.445 L779.859,409.445 L779.859,394.445 L769.859,384.445 L501.859,384.445" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M769.859,384.445 L769.859,394.445 L779.859,394.445 L769.859,384.445" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="507.859" y="401.512" fill="#5C4A00" font-size="13" textLength="257.442" font-family="'Segoe UI'">O_CREAT|O_EXCL，创建成功者拥有执行权</text><polygon points="519.538,430.547,509.538,434.547,519.538,438.547,515.538,434.547" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="434.547" x2="772.622" y2="434.547" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="429.717" fill="#333" font-size="12" textLength="187.143" font-family="'Segoe UI'">二次确认 processing 无同 id 文件</text><rect x="10" y="463.113" width="993.317" height="3" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><line x1="10" y1="463.113" x2="1003.317" y2="463.113" style="stroke:#000;stroke-width:0.5;"/><line x1="10" y1="466.113" x2="1003.317" y2="466.113" style="stroke:#000;stroke-width:0.5;"/><rect x="425.896" y="452.547" width="161.526" height="23.133" fill="#FFF" style="stroke:#000;stroke-width:1;"/><text x="431.896" y="468.614" fill="#000" font-size="13" textLength="143" font-weight="700" font-family="'Segoe UI'">阶段三：安全校验与执行</text><line x1="773.622" y1="505.648" x2="815.622" y2="505.648" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="815.622" y1="505.648" x2="815.622" y2="518.648" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="774.622" y1="518.648" x2="815.622" y2="518.648" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="784.622,514.648,774.622,518.648,784.622,522.648,780.622,518.648" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="780.622" y="500.818" fill="#333" font-size="12" textLength="100.044" font-family="'Segoe UI'">命令白/黑名单校验</text><path d="M473.538,530.648 L537.981,530.648 L537.981,537.781 L527.981,547.781 L473.538,547.781 L473.538,530.648" style="stroke:#7A93BE;stroke-width:1;" fill="#F7F9FC"/><rect x="473.538" y="530.648" width="494.942" height="238.078" fill="none" style="stroke:#7A93BE;stroke-width:1;"/><text x="488.538" y="543.715" fill="#000" font-size="13" textLength="19.443" font-weight="700" font-family="'Segoe UI'">alt</text><text x="552.981" y="542.859" fill="#000" font-size="11" textLength="54.054" font-weight="700" font-family="'Segoe UI'">[校验通过]</text><polygon points="940.48,573.75,950.48,577.75,940.48,581.75,944.48,577.75" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="773.622" y1="577.75" x2="946.48" y2="577.75" style="stroke:#5A5A5A;stroke-width:1;"/><text x="780.622" y="572.92" fill="#333" font-size="12" textLength="76.073" font-family="'Segoe UI'">SSH 执行命令</text><polygon points="784.622,601.719,774.622,605.719,784.622,609.719,780.622,605.719" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="778.622" y1="605.719" x2="951.48" y2="605.719" style="stroke:#5A5A5A;stroke-width:1;stroke-dasharray:2,2;"/><text x="790.622" y="600.889" fill="#333" font-size="12" textLength="154.857" font-family="'Segoe UI'">stdout / stderr / exit_code</text><path d="M492.538,617.719 L556.981,617.719 L556.981,624.852 L546.981,634.852 L492.538,634.852 L492.538,617.719" style="stroke:#7A93BE;stroke-width:1;" fill="#F7F9FC"/><rect x="492.538" y="617.719" width="297.084" height="90.234" fill="none" style="stroke:#7A93BE;stroke-width:1;"/><text x="507.538" y="630.786" fill="#000" font-size="13" textLength="19.443" font-weight="700" font-family="'Segoe UI'">alt</text><text x="571.981" y="629.929" fill="#000" font-size="11" textLength="90.1" font-weight="700" font-family="'Segoe UI'">[输出超过 64KB]</text><polygon points="519.538,660.82,509.538,664.82,519.538,668.82,515.538,664.82" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="664.82" x2="772.622" y2="664.82" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="659.99" fill="#333" font-size="12" textLength="182.051" font-family="'Segoe UI'">落盘 outputs/&lt;task_id>.stdout</text><path d="M556.002,677.82 L556.002,702.82 L726.002,702.82 L726.002,687.82 L716.002,677.82 L556.002,677.82" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M716.002,677.82 L716.002,687.82 L726.002,687.82 L716.002,677.82" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="562.002" y="694.887" fill="#5C4A00" font-size="13" textLength="149.157" font-family="'Segoe UI'">结构体只保留摘要 + 指针</text><line x1="473.538" y1="722.953" x2="968.48" y2="722.953" style="stroke:#7A93BE;stroke-width:1;stroke-dasharray:2,2;"/><text x="478.538" y="735.164" fill="#000" font-size="11" textLength="54.054" font-weight="700" font-family="'Segoe UI'">[校验失败]</text><polygon points="519.538,756.727,509.538,760.727,519.538,764.727,515.538,760.727" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="760.727" x2="772.622" y2="760.727" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="755.896" fill="#333" font-size="12" textLength="241.084" font-family="'Segoe UI'">写 failed，error_msg=blocked_by_policy</text><rect x="10" y="803.293" width="993.317" height="3" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><line x1="10" y1="803.293" x2="1003.317" y2="803.293" style="stroke:#000;stroke-width:0.5;"/><line x1="10" y1="806.293" x2="1003.317" y2="806.293" style="stroke:#000;stroke-width:0.5;"/><rect x="425.896" y="792.727" width="161.526" height="23.133" fill="#FFF" style="stroke:#000;stroke-width:1;"/><text x="431.896" y="808.793" fill="#000" font-size="13" textLength="143" font-weight="700" font-family="'Segoe UI'">阶段四：结果回写与消费</text><polygon points="519.538,841.828,509.538,845.828,519.538,849.828,515.538,845.828" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="845.828" x2="772.622" y2="845.828" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="840.998" fill="#333" font-size="12" textLength="136.401" font-family="'Segoe UI'">回写 completed / failed</text><polygon points="217.561,869.797,227.561,873.797,217.561,877.797,221.561,873.797" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="69.454" y1="873.797" x2="223.561" y2="873.797" style="stroke:#5A5A5A;stroke-width:1;"/><text x="76.454" y="868.967" fill="#333" font-size="12" textLength="72.001" font-family="'Segoe UI'">轮询结果目录</text><polygon points="80.454,897.766,70.454,901.766,80.454,905.766,76.454,901.766" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="74.454" y1="901.766" x2="228.561" y2="901.766" style="stroke:#5A5A5A;stroke-width:1;stroke-dasharray:2,2;"/><text x="86.454" y="896.936" fill="#333" font-size="12" textLength="81.393" font-family="'Segoe UI'">读取结果 JSON</text><path d="M150.346,914.766 L150.346,939.766 L587.346,939.766 L587.346,924.766 L577.346,914.766 L150.346,914.766" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M577.346,914.766 L577.346,924.766 L587.346,924.766 L577.346,914.766" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="228.859" y="931.833" fill="#5C4A00" font-size="13" textLength="271.381" font-family="'Segoe UI'">truncated=true 则按指针读 outputs/ 大文件</text><rect x="10" y="965.465" width="993.317" height="3" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><line x1="10" y1="965.465" x2="1003.317" y2="965.465" style="stroke:#000;stroke-width:0.5;"/><line x1="10" y1="968.465" x2="1003.317" y2="968.465" style="stroke:#000;stroke-width:0.5;"/><rect x="432.396" y="954.898" width="148.526" height="23.133" fill="#FFF" style="stroke:#000;stroke-width:1;"/><text x="438.396" y="970.965" fill="#000" font-size="13" textLength="130" font-weight="700" font-family="'Segoe UI'">阶段五：超时取消兜底</text><polygon points="496.538,1004,506.538,1008,496.538,1012,500.538,1008" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="229.561" y1="1008" x2="502.538" y2="1008" style="stroke:#5A5A5A;stroke-width:1;"/><text x="236.561" y="1003.17" fill="#333" font-size="12" textLength="163.383" font-family="'Segoe UI'">超时写 cancelled/&lt;task_id></text><polygon points="519.538,1031.969,509.538,1035.969,519.538,1039.969,515.538,1035.969" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="1035.969" x2="772.622" y2="1035.969" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="1031.139" fill="#333" font-size="12" textLength="125.063" font-family="'Segoe UI'">回写前检查 cancelled/</text><path d="M427.858,1048.969 L427.858,1073.969 L853.858,1073.969 L853.858,1058.969 L843.858,1048.969 L427.858,1048.969" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M843.858,1048.969 L843.858,1058.969 L853.858,1058.969 L843.858,1048.969" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="433.858" y="1066.036" fill="#5C4A00" font-size="13" textLength="405.444" font-family="'Segoe UI'">已取消则写 cancelled/&lt;task_id>.result(审计)，不污染 completed</text><rect x="10" y="1099.668" width="993.317" height="3" fill="#FFF" style="stroke:#FFF;stroke-width:1;"/><line x1="10" y1="1099.668" x2="1003.317" y2="1099.668" style="stroke:#000;stroke-width:0.5;"/><line x1="10" y1="1102.668" x2="1003.317" y2="1102.668" style="stroke:#000;stroke-width:0.5;"/><rect x="445.396" y="1089.102" width="122.526" height="23.133" fill="#FFF" style="stroke:#000;stroke-width:1;"/><text x="451.396" y="1105.168" fill="#000" font-size="13" textLength="104" font-weight="700" font-family="'Segoe UI'">阶段六：心跳保活</text><polygon points="519.538,1138.203,509.538,1142.203,519.538,1146.203,515.538,1142.203" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="513.538" y1="1142.203" x2="772.622" y2="1142.203" style="stroke:#5A5A5A;stroke-width:1;"/><text x="525.538" y="1137.373" fill="#333" font-size="12" textLength="136.717" font-family="'Segoe UI'">每 5s 写 heartbeat.json</text><polygon points="496.538,1166.172,506.538,1170.172,496.538,1174.172,500.538,1170.172" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="229.561" y1="1170.172" x2="502.538" y2="1170.172" style="stroke:#5A5A5A;stroke-width:1;"/><text x="236.561" y="1165.342" fill="#333" font-size="12" textLength="72.001" font-family="'Segoe UI'">提交前读心跳</text><path d="M150.346,1183.172 L150.346,1208.172 L587.346,1208.172 L587.346,1193.172 L577.346,1183.172 L150.346,1183.172" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M577.346,1183.172 L577.346,1193.172 L587.346,1193.172 L577.346,1183.172" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="198.225" y="1200.239" fill="#5C4A00" font-size="13" textLength="332.649" font-family="'Segoe UI'">now - last_beat > 15s 则返回 worker_offline，不提交</text><?plantuml-src ZLLTJnjN47tVNp6bBq5jW2IGYAgEP2yuQKiWgQdeGoLhyLvWoxAxtLsNKlK1cXhiO8Vl1CSauDGqKTIOfYM6u3ZybyhtUlsKlz3P3zTh86bjMLhvdZapvypCtG_C2J95G9C5IU6CIKdH15sOWb4XDZckgt55v5LPrU73iFFn8Om9GLId9MKSnWJP8BuJaOm9STaCguevA21tMuICgmI--gpD1mhgkZhjSVS4xU_9GplU0rnoFcS18jAF12vSz1r5o7TneiJ8JK4tfPYa2OePKdMHw1xNbM3lfL3_VmISLD_7z_U6G-yFyjLx8NonjwNU1dn06iEVGlvVHTUm1ErKBU4huTum_qxuUva7LPE4pcXjgF_oIPIVfxyhrDtLTGBXqzl3TmVnd3CbKoPmmnWF4rsV0LfCiurzbdfYvTFivLpjwUBRrm-gvRjqFb6hh00l2t6H05jQhXuLQF8Fg_Y65XOW26u4pJsgljxXEArfCRHvCRmgac-KSovHUni81l1yA_86VnCwONX68v6OBcacq8DTcZWu4JKyD3JG6dVzMZW2zSrjchoFM8qe8ivufwWgfBEZeyEDkjKQCeZLm8YgJn8TGqOa1HV3S94ZhSY6HBkAmZtRX4ZakeliuxX001ENMF5bzN0MdNBhTEsfbilqJXu20OxZUJX_rIaSFe7Q-ZPBBaDaWiWoiFH2jLpWd2E4tC9pzkiiszu5Kp0cev88zDNFjUSfJi7sWVezqHsQZnraGwccgp5Y6FPYquC_wVDDklMKBgV1ZavcsU9ghVomlf31ibeIqVaiT9XJ6lmzlmewKUp5Rr1-wgM_sl6jeIf-dKTfMwVZ12ibhVrNz5M9tNbCCpkEr946krKfMdkF6uHmhgUhQyg0-kniVUwulGcZoHmj7q5JWY-rhCOcmUNswHznnGz5-I_xWyC_3KNxl-O7thvEkqneBRspRSqcsE8ksqfva_pmTZCZAc2_vslvebKi-F82kx_ZcSRkOLDABSrDsQABAPfuodRozMVfwk5TbxefUiHMirB1TjQobSvwUOKkPsXcmyLpWco2-rYVVM0TBt00JbGVHk50DHR8YSUpFZZlKHgcgCPDt0jym1N51_A3P4PZEC28iscjDsjquSWg9P0MBdT_4SB_FNQd4SkLMcuJa4IBcuRFNfVP0PzojrPUOuz-gLRMwDApwl73saQMhMnQlyt1H_R8rbUJ68QTvGY-HpnTjF32sj_bV9dj0HiJ99c8s1wiNTMZKyPuODJkAn6ZepDHJPMbs0ndCpNTfhaSkkrKi8Kt2hBORZkprZfYxY74r2bD9YOHqHitNUl2kPFeyjLoHLhPyDO08GX4m5wPBjrp0V1vP6Zmp6qpzRWI4p1D09-8irdfb6i64lphBz32azC3TBIEah15x7u9Kw4OcjYYHnkE7lzEUX1RbO3l1nd5D3jsKZbDPRpBeWa-lIZsbU2cJ6RVGToX4mDV_-TeCMyLy-tOhUfXXht8i-srfhl-3YMUs_jmVDiw-0kdW-sNMnl3zfQWnt3wFq7mCXqbWkbU92qNdViMIMLi_nskCtrNr6au3x9Wc56R1wx21PixcRMErz47c7PkyQWwDYRZQzghtQ7-1m00?></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: G Pages: 1 -->
+<svg width="886pt" height="727pt"
+ viewBox="0.00 0.00 886.10 727.04" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 698.24)">
+<title>G</title>
+<polygon fill="white" stroke="transparent" points="-28.8,28.8 -28.8,-698.24 857.3,-698.24 857.3,28.8 -28.8,28.8"/>
+<text text-anchor="middle" x="414.25" y="-651.04" font-family="Noto Sans CJK SC" font-size="18.00">MsgFerry 完整执行流程：从内网 Claude 提交到设备 A 执行回传</text>
+<!-- PH -->
+<g id="node1" class="node">
+<title>PH</title>
+</g>
+<!-- CC -->
+<g id="node2" class="node">
+<title>CC</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M197,-641.44C197,-641.44 145,-641.44 145,-641.44 139,-641.44 133,-635.44 133,-629.44 133,-629.44 133,-617.44 133,-617.44 133,-611.44 139,-605.44 145,-605.44 145,-605.44 197,-605.44 197,-605.44 203,-605.44 209,-611.44 209,-617.44 209,-617.44 209,-629.44 209,-629.44 209,-635.44 203,-641.44 197,-641.44"/>
+<text text-anchor="middle" x="171" y="-626.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">Claude Code</text>
+<text text-anchor="middle" x="171" y="-615.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(内网)</text>
+</g>
+<!-- PH&#45;&gt;CC -->
+<!-- ph_0 -->
+<g id="node7" class="node">
+<title>ph_0</title>
+<path fill="#fffbe6" stroke="transparent" d="M127.83,-597.44C127.83,-597.44 12.17,-597.44 12.17,-597.44 8.83,-597.44 5.5,-594.11 5.5,-590.77 5.5,-590.77 5.5,-584.11 5.5,-584.11 5.5,-580.77 8.83,-577.44 12.17,-577.44 12.17,-577.44 127.83,-577.44 127.83,-577.44 131.17,-577.44 134.5,-580.77 134.5,-584.11 134.5,-584.11 134.5,-590.77 134.5,-590.77 134.5,-594.11 131.17,-597.44 127.83,-597.44"/>
+<text text-anchor="middle" x="70" y="-584.64" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段一：内网提交任务</text>
+</g>
+<!-- PH&#45;&gt;ph_0 -->
+<!-- TOOL -->
+<g id="node3" class="node">
+<title>TOOL</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M343.5,-641.44C343.5,-641.44 250.5,-641.44 250.5,-641.44 244.5,-641.44 238.5,-635.44 238.5,-629.44 238.5,-629.44 238.5,-617.44 238.5,-617.44 238.5,-611.44 244.5,-605.44 250.5,-605.44 250.5,-605.44 343.5,-605.44 343.5,-605.44 349.5,-605.44 355.5,-611.44 355.5,-617.44 355.5,-617.44 355.5,-629.44 355.5,-629.44 355.5,-635.44 349.5,-641.44 343.5,-641.44"/>
+<text text-anchor="middle" x="297" y="-626.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">MCP / TypeScript 工具</text>
+<text text-anchor="middle" x="297" y="-615.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(内网)</text>
+</g>
+<!-- CC&#45;&gt;TOOL -->
+<!-- CC_0 -->
+<g id="node8" class="node">
+<title>CC_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-587.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC&#45;&gt;CC_0 -->
+<g id="edge12" class="edge">
+<title>CC&#45;&gt;CC_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-605.04C171,-598.77 171,-592.57 171,-589.86"/>
+</g>
+<!-- Q -->
+<g id="node4" class="node">
+<title>Q</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M514,-641.44C514,-641.44 436,-641.44 436,-641.44 430,-641.44 424,-635.44 424,-629.44 424,-629.44 424,-617.44 424,-617.44 424,-611.44 430,-605.44 436,-605.44 436,-605.44 514,-605.44 514,-605.44 520,-605.44 526,-611.44 526,-617.44 526,-617.44 526,-629.44 526,-629.44 526,-635.44 520,-641.44 514,-641.44"/>
+<text text-anchor="middle" x="475" y="-626.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">HGFS 队列</text>
+<text text-anchor="middle" x="475" y="-615.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(pending/done/...)</text>
+</g>
+<!-- TOOL&#45;&gt;Q -->
+<!-- TOOL_0 -->
+<g id="node9" class="node">
+<title>TOOL_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-587.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL&#45;&gt;TOOL_0 -->
+<g id="edge41" class="edge">
+<title>TOOL&#45;&gt;TOOL_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-605.04C297,-598.77 297,-592.57 297,-589.86"/>
+</g>
+<!-- W -->
+<g id="node5" class="node">
+<title>W</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M620.5,-641.44C620.5,-641.44 567.5,-641.44 567.5,-641.44 561.5,-641.44 555.5,-635.44 555.5,-629.44 555.5,-629.44 555.5,-617.44 555.5,-617.44 555.5,-611.44 561.5,-605.44 567.5,-605.44 567.5,-605.44 620.5,-605.44 620.5,-605.44 626.5,-605.44 632.5,-611.44 632.5,-617.44 632.5,-617.44 632.5,-629.44 632.5,-629.44 632.5,-635.44 626.5,-641.44 620.5,-641.44"/>
+<text text-anchor="middle" x="594" y="-626.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">Node Worker</text>
+<text text-anchor="middle" x="594" y="-615.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(Windows)</text>
+</g>
+<!-- Q&#45;&gt;W -->
+<!-- Q_0 -->
+<g id="node10" class="node">
+<title>Q_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-587.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q&#45;&gt;Q_0 -->
+<g id="edge70" class="edge">
+<title>Q&#45;&gt;Q_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-605.04C475,-598.77 475,-592.57 475,-589.86"/>
+</g>
+<!-- D -->
+<g id="node6" class="node">
+<title>D</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M816.5,-641.44C816.5,-641.44 775.5,-641.44 775.5,-641.44 769.5,-641.44 763.5,-635.44 763.5,-629.44 763.5,-629.44 763.5,-617.44 763.5,-617.44 763.5,-611.44 769.5,-605.44 775.5,-605.44 775.5,-605.44 816.5,-605.44 816.5,-605.44 822.5,-605.44 828.5,-611.44 828.5,-617.44 828.5,-617.44 828.5,-629.44 828.5,-629.44 828.5,-635.44 822.5,-641.44 816.5,-641.44"/>
+<text text-anchor="middle" x="796" y="-626.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">设备 A</text>
+<text text-anchor="middle" x="796" y="-615.44" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(外网 SSH)</text>
+</g>
+<!-- W&#45;&gt;D -->
+<!-- W_0 -->
+<g id="node11" class="node">
+<title>W_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-587.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- W&#45;&gt;W_0 -->
+<g id="edge99" class="edge">
+<title>W&#45;&gt;W_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-605.04C594,-598.77 594,-592.57 594,-589.86"/>
+</g>
+<!-- D_0 -->
+<g id="node12" class="node">
+<title>D_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-587.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- D&#45;&gt;D_0 -->
+<g id="edge128" class="edge">
+<title>D&#45;&gt;D_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-605.04C796,-598.77 796,-592.57 796,-589.86"/>
+</g>
+<!-- ph_4 -->
+<g id="node28" class="node">
+<title>ph_4</title>
+<path fill="#fffbe6" stroke="transparent" d="M133.33,-532.48C133.33,-532.48 6.67,-532.48 6.67,-532.48 3.33,-532.48 0,-529.15 0,-525.81 0,-525.81 0,-519.15 0,-519.15 0,-515.81 3.33,-512.48 6.67,-512.48 6.67,-512.48 133.33,-512.48 133.33,-512.48 136.67,-512.48 140,-515.81 140,-519.15 140,-519.15 140,-525.81 140,-525.81 140,-529.15 136.67,-532.48 133.33,-532.48"/>
+<text text-anchor="middle" x="70" y="-519.68" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段二：外网消费并抢占</text>
+</g>
+<!-- ph_0&#45;&gt;ph_4 -->
+<!-- CC_0&#45;&gt;D_0 -->
+<g id="edge157" class="edge">
+<title>CC_0&#45;&gt;D_0</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M173.35,-587.81C185.79,-589.73 245.38,-598.66 294.5,-601.44 361.5,-605.23 529.43,-603.79 596.5,-601.44 677.7,-598.59 777.14,-589.25 793.63,-587.67"/>
+</g>
+<!-- CC_1 -->
+<g id="node13" class="node">
+<title>CC_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-567.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_0&#45;&gt;CC_1 -->
+<g id="edge13" class="edge">
+<title>CC_0&#45;&gt;CC_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-585.25C171,-581.97 171,-572.82 171,-569.5"/>
+</g>
+<!-- TOOL_1 -->
+<g id="node14" class="node">
+<title>TOOL_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-567.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_0&#45;&gt;TOOL_1 -->
+<g id="edge42" class="edge">
+<title>TOOL_0&#45;&gt;TOOL_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-585.25C297,-581.97 297,-572.82 297,-569.5"/>
+</g>
+<!-- Q_1 -->
+<g id="node15" class="node">
+<title>Q_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-567.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_0&#45;&gt;Q_1 -->
+<g id="edge71" class="edge">
+<title>Q_0&#45;&gt;Q_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-585.25C475,-581.97 475,-572.82 475,-569.5"/>
+</g>
+<!-- W_1 -->
+<g id="node16" class="node">
+<title>W_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-567.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_0&#45;&gt;W_1 -->
+<g id="edge100" class="edge">
+<title>W_0&#45;&gt;W_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-585.25C594,-581.97 594,-572.82 594,-569.5"/>
+</g>
+<!-- D_1 -->
+<g id="node17" class="node">
+<title>D_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-567.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_0&#45;&gt;D_1 -->
+<g id="edge129" class="edge">
+<title>D_0&#45;&gt;D_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-585.25C796,-581.97 796,-572.82 796,-569.5"/>
+</g>
+<!-- CC_1&#45;&gt;TOOL_1 -->
+<g id="edge163" class="edge">
+<title>CC_1&#45;&gt;TOOL_1</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M173.46,-567.28C210.37,-567.28 247.27,-567.28 284.18,-567.28"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="284.59,-570.78 294.59,-567.28 284.59,-563.78 284.59,-570.78"/>
+<text text-anchor="middle" x="250.76" y="-559.28" font-family="Noto Sans CJK SC" font-size="10.00">生成 Shell 指令</text>
+</g>
+<!-- CC_2 -->
+<g id="node18" class="node">
+<title>CC_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-554.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_1&#45;&gt;CC_2 -->
+<g id="edge14" class="edge">
+<title>CC_1&#45;&gt;CC_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-565.01C171,-563.03 171,-559.22 171,-557.24"/>
+</g>
+<!-- TOOL_2 -->
+<g id="node19" class="node">
+<title>TOOL_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-554.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_1&#45;&gt;TOOL_2 -->
+<g id="edge43" class="edge">
+<title>TOOL_1&#45;&gt;TOOL_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-565.01C297,-563.03 297,-559.22 297,-557.24"/>
+</g>
+<!-- Q_2 -->
+<g id="node20" class="node">
+<title>Q_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-554.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_1&#45;&gt;Q_2 -->
+<g id="edge72" class="edge">
+<title>Q_1&#45;&gt;Q_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-565.01C475,-563.03 475,-559.22 475,-557.24"/>
+</g>
+<!-- W_2 -->
+<g id="node21" class="node">
+<title>W_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-554.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_1&#45;&gt;W_2 -->
+<g id="edge101" class="edge">
+<title>W_1&#45;&gt;W_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-565.01C594,-563.03 594,-559.22 594,-557.24"/>
+</g>
+<!-- D_2 -->
+<g id="node22" class="node">
+<title>D_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-554.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_1&#45;&gt;D_2 -->
+<g id="edge130" class="edge">
+<title>D_1&#45;&gt;D_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-565.01C796,-563.03 796,-559.22 796,-557.24"/>
+</g>
+<!-- CC_3 -->
+<g id="node23" class="node">
+<title>CC_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-542.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_2&#45;&gt;CC_3 -->
+<g id="edge15" class="edge">
+<title>CC_2&#45;&gt;CC_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-552.69C171,-550.71 171,-546.9 171,-544.92"/>
+</g>
+<!-- TOOL_2&#45;&gt;Q_2 -->
+<g id="edge164" class="edge">
+<title>TOOL_2&#45;&gt;Q_2</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M299.43,-554.96C353.77,-554.96 408.11,-554.96 462.45,-554.96"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="462.6,-558.46 472.6,-554.96 462.6,-551.46 462.6,-558.46"/>
+<text text-anchor="middle" x="347.04" y="-557.96" font-family="Noto Sans CJK SC" font-size="10.00">检查 task_id 幂等</text>
+</g>
+<!-- TOOL_3 -->
+<g id="node24" class="node">
+<title>TOOL_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-542.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_2&#45;&gt;TOOL_3 -->
+<g id="edge44" class="edge">
+<title>TOOL_2&#45;&gt;TOOL_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-552.69C297,-550.71 297,-546.9 297,-544.92"/>
+</g>
+<!-- Q_3 -->
+<g id="node25" class="node">
+<title>Q_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-542.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_2&#45;&gt;Q_3 -->
+<g id="edge73" class="edge">
+<title>Q_2&#45;&gt;Q_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-552.69C475,-550.71 475,-546.9 475,-544.92"/>
+</g>
+<!-- W_3 -->
+<g id="node26" class="node">
+<title>W_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-542.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_2&#45;&gt;W_3 -->
+<g id="edge102" class="edge">
+<title>W_2&#45;&gt;W_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-552.69C594,-550.71 594,-546.9 594,-544.92"/>
+</g>
+<!-- D_3 -->
+<g id="node27" class="node">
+<title>D_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-542.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_2&#45;&gt;D_3 -->
+<g id="edge131" class="edge">
+<title>D_2&#45;&gt;D_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-552.69C796,-550.71 796,-546.9 796,-544.92"/>
+</g>
+<!-- CC_4 -->
+<g id="node29" class="node">
+<title>CC_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-522.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_3&#45;&gt;CC_4 -->
+<g id="edge16" class="edge">
+<title>CC_3&#45;&gt;CC_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-540.45C171,-537.17 171,-528.02 171,-524.7"/>
+</g>
+<!-- TOOL_3&#45;&gt;Q_3 -->
+<g id="edge165" class="edge">
+<title>TOOL_3&#45;&gt;Q_3</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M299.43,-542.64C353.77,-542.64 408.11,-542.64 462.45,-542.64"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="462.6,-546.14 472.6,-542.64 462.6,-539.14 462.6,-546.14"/>
+<text text-anchor="middle" x="288.54" y="-534.64" font-family="Noto Sans CJK SC" font-size="10.00">写 .tmp → rename pending/&lt;task_id&gt;.json</text>
+</g>
+<!-- TOOL_4 -->
+<g id="node30" class="node">
+<title>TOOL_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-522.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_3&#45;&gt;TOOL_4 -->
+<g id="edge45" class="edge">
+<title>TOOL_3&#45;&gt;TOOL_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-540.45C297,-537.17 297,-528.02 297,-524.7"/>
+</g>
+<!-- Q_4 -->
+<g id="node31" class="node">
+<title>Q_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-522.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_3&#45;&gt;Q_4 -->
+<g id="edge74" class="edge">
+<title>Q_3&#45;&gt;Q_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-540.45C475,-537.17 475,-528.02 475,-524.7"/>
+</g>
+<!-- W_4 -->
+<g id="node32" class="node">
+<title>W_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-522.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_3&#45;&gt;W_4 -->
+<g id="edge103" class="edge">
+<title>W_3&#45;&gt;W_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-540.45C594,-537.17 594,-528.02 594,-524.7"/>
+</g>
+<!-- D_4 -->
+<g id="node33" class="node">
+<title>D_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-522.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_3&#45;&gt;D_4 -->
+<g id="edge132" class="edge">
+<title>D_3&#45;&gt;D_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-540.45C796,-537.17 796,-528.02 796,-524.7"/>
+</g>
+<!-- ph_9 -->
+<g id="node55" class="node">
+<title>ph_9</title>
+<path fill="#fffbe6" stroke="transparent" d="M133.33,-429.52C133.33,-429.52 6.67,-429.52 6.67,-429.52 3.33,-429.52 0,-426.19 0,-422.85 0,-422.85 0,-416.19 0,-416.19 0,-412.85 3.33,-409.52 6.67,-409.52 6.67,-409.52 133.33,-409.52 133.33,-409.52 136.67,-409.52 140,-412.85 140,-416.19 140,-416.19 140,-422.85 140,-422.85 140,-426.19 136.67,-429.52 133.33,-429.52"/>
+<text text-anchor="middle" x="70" y="-416.72" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段三：安全校验与执行</text>
+</g>
+<!-- ph_4&#45;&gt;ph_9 -->
+<!-- CC_4&#45;&gt;D_4 -->
+<g id="edge158" class="edge">
+<title>CC_4&#45;&gt;D_4</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M173.35,-522.85C185.79,-524.77 245.38,-533.7 294.5,-536.48 361.5,-540.27 529.43,-538.83 596.5,-536.48 677.7,-533.63 777.14,-524.29 793.63,-522.71"/>
+</g>
+<!-- CC_5 -->
+<g id="node34" class="node">
+<title>CC_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-502.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_4&#45;&gt;CC_5 -->
+<g id="edge17" class="edge">
+<title>CC_4&#45;&gt;CC_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-520.29C171,-517.01 171,-507.86 171,-504.54"/>
+</g>
+<!-- TOOL_5 -->
+<g id="node35" class="node">
+<title>TOOL_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-502.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_4&#45;&gt;TOOL_5 -->
+<g id="edge46" class="edge">
+<title>TOOL_4&#45;&gt;TOOL_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-520.29C297,-517.01 297,-507.86 297,-504.54"/>
+</g>
+<!-- Q_5 -->
+<g id="node36" class="node">
+<title>Q_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-502.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_4&#45;&gt;Q_5 -->
+<g id="edge75" class="edge">
+<title>Q_4&#45;&gt;Q_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-520.29C475,-517.01 475,-507.86 475,-504.54"/>
+</g>
+<!-- W_5 -->
+<g id="node37" class="node">
+<title>W_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-502.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_4&#45;&gt;W_5 -->
+<g id="edge104" class="edge">
+<title>W_4&#45;&gt;W_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-520.29C594,-517.01 594,-507.86 594,-504.54"/>
+</g>
+<!-- D_5 -->
+<g id="node38" class="node">
+<title>D_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-502.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_4&#45;&gt;D_5 -->
+<g id="edge133" class="edge">
+<title>D_4&#45;&gt;D_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-520.29C796,-517.01 796,-507.86 796,-504.54"/>
+</g>
+<!-- CC_6 -->
+<g id="node39" class="node">
+<title>CC_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-490" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_5&#45;&gt;CC_6 -->
+<g id="edge18" class="edge">
+<title>CC_5&#45;&gt;CC_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-500.05C171,-498.07 171,-494.26 171,-492.28"/>
+</g>
+<!-- TOOL_6 -->
+<g id="node40" class="node">
+<title>TOOL_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-490" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_5&#45;&gt;TOOL_6 -->
+<g id="edge47" class="edge">
+<title>TOOL_5&#45;&gt;TOOL_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-500.05C297,-498.07 297,-494.26 297,-492.28"/>
+</g>
+<!-- Q_6 -->
+<g id="node41" class="node">
+<title>Q_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-490" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_5&#45;&gt;Q_6 -->
+<g id="edge76" class="edge">
+<title>Q_5&#45;&gt;Q_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-500.05C475,-498.07 475,-494.26 475,-492.28"/>
+</g>
+<!-- W_5&#45;&gt;Q_5 -->
+<g id="edge166" class="edge">
+<title>W_5&#45;&gt;Q_5</title>
+<path fill="none" stroke="#e65100" stroke-width="1.1" d="M591.72,-502.32C557.01,-502.32 522.31,-502.32 487.6,-502.32"/>
+<polygon fill="#e65100" stroke="#e65100" stroke-width="1.1" points="487.32,-498.82 477.32,-502.32 487.32,-505.82 487.32,-498.82"/>
+<text text-anchor="middle" x="473.87" y="-505.32" font-family="Noto Sans CJK SC" font-size="10.00">轮询 pending (500ms 退避)</text>
+</g>
+<!-- W_6 -->
+<g id="node42" class="node">
+<title>W_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-490" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_5&#45;&gt;W_6 -->
+<g id="edge105" class="edge">
+<title>W_5&#45;&gt;W_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-500.05C594,-498.07 594,-494.26 594,-492.28"/>
+</g>
+<!-- D_6 -->
+<g id="node43" class="node">
+<title>D_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-490" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_5&#45;&gt;D_6 -->
+<g id="edge134" class="edge">
+<title>D_5&#45;&gt;D_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-500.05C796,-498.07 796,-494.26 796,-492.28"/>
+</g>
+<!-- CC_7 -->
+<g id="node45" class="node">
+<title>CC_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-464.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_6&#45;&gt;CC_7 -->
+<g id="edge19" class="edge">
+<title>CC_6&#45;&gt;CC_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-487.75C171,-483.85 171,-471.82 171,-467.45"/>
+</g>
+<!-- TOOL_7 -->
+<g id="node46" class="node">
+<title>TOOL_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-464.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_6&#45;&gt;TOOL_7 -->
+<g id="edge48" class="edge">
+<title>TOOL_6&#45;&gt;TOOL_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-487.75C297,-483.85 297,-471.82 297,-467.45"/>
+</g>
+<!-- Q_7 -->
+<g id="node47" class="node">
+<title>Q_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-464.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_6&#45;&gt;Q_7 -->
+<g id="edge77" class="edge">
+<title>Q_6&#45;&gt;Q_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-487.75C475,-483.85 475,-471.82 475,-467.45"/>
+</g>
+<!-- W_6&#45;&gt;Q_6 -->
+<g id="edge167" class="edge">
+<title>W_6&#45;&gt;Q_6</title>
+<path fill="none" stroke="#e65100" stroke-width="1.1" d="M591.72,-490C557.01,-490 522.31,-490 487.6,-490"/>
+<polygon fill="#e65100" stroke="#e65100" stroke-width="1.1" points="487.32,-486.5 477.32,-490 487.32,-493.5 487.32,-486.5"/>
+<text text-anchor="middle" x="452.37" y="-482" font-family="Noto Sans CJK SC" font-size="10.00">创建 processing/&lt;task_id&gt;.lock 抢占</text>
+</g>
+<!-- W_7 -->
+<g id="node48" class="node">
+<title>W_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-464.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_6&#45;&gt;W_7 -->
+<g id="edge106" class="edge">
+<title>W_6&#45;&gt;W_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-487.75C594,-483.85 594,-471.82 594,-467.45"/>
+</g>
+<!-- D_7 -->
+<g id="node49" class="node">
+<title>D_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-464.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_6&#45;&gt;D_7 -->
+<g id="edge135" class="edge">
+<title>D_6&#45;&gt;D_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-487.75C796,-483.85 796,-471.82 796,-467.45"/>
+</g>
+<!-- note_7 -->
+<g id="node44" class="node">
+<title>note_7</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="734,-479.84 625,-479.84 625,-449.84 739,-449.84 739,-474.84 734,-479.84"/>
+<polyline fill="none" stroke="#e0b400" points="734,-479.84 734,-474.84 "/>
+<polyline fill="none" stroke="#e0b400" points="739,-474.84 734,-474.84 "/>
+<text text-anchor="middle" x="682" y="-467.84" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">O_CREAT|O_EXCL</text>
+<text text-anchor="middle" x="682" y="-456.84" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">创建成功者拥有执行权</text>
+</g>
+<!-- CC_8 -->
+<g id="node50" class="node">
+<title>CC_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-439.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_7&#45;&gt;CC_8 -->
+<g id="edge20" class="edge">
+<title>CC_7&#45;&gt;CC_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-462.59C171,-458.69 171,-446.66 171,-442.29"/>
+</g>
+<!-- TOOL_8 -->
+<g id="node51" class="node">
+<title>TOOL_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-439.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_7&#45;&gt;TOOL_8 -->
+<g id="edge49" class="edge">
+<title>TOOL_7&#45;&gt;TOOL_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-462.59C297,-458.69 297,-446.66 297,-442.29"/>
+</g>
+<!-- Q_8 -->
+<g id="node52" class="node">
+<title>Q_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-439.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_7&#45;&gt;Q_8 -->
+<g id="edge78" class="edge">
+<title>Q_7&#45;&gt;Q_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-462.59C475,-458.69 475,-446.66 475,-442.29"/>
+</g>
+<!-- W_7&#45;&gt;note_7 -->
+<g id="edge168" class="edge">
+<title>W_7&#45;&gt;note_7</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M596.41,-464.84C605.88,-464.84 615.35,-464.84 624.83,-464.84"/>
+</g>
+<!-- W_8 -->
+<g id="node53" class="node">
+<title>W_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-439.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_7&#45;&gt;W_8 -->
+<g id="edge107" class="edge">
+<title>W_7&#45;&gt;W_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-462.59C594,-458.69 594,-446.66 594,-442.29"/>
+</g>
+<!-- D_8 -->
+<g id="node54" class="node">
+<title>D_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-439.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_7&#45;&gt;D_8 -->
+<g id="edge136" class="edge">
+<title>D_7&#45;&gt;D_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-462.59C796,-458.69 796,-446.66 796,-442.29"/>
+</g>
+<!-- CC_9 -->
+<g id="node56" class="node">
+<title>CC_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-419.52" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_8&#45;&gt;CC_9 -->
+<g id="edge21" class="edge">
+<title>CC_8&#45;&gt;CC_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-437.49C171,-434.21 171,-425.06 171,-421.74"/>
+</g>
+<!-- TOOL_9 -->
+<g id="node57" class="node">
+<title>TOOL_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-419.52" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_8&#45;&gt;TOOL_9 -->
+<g id="edge50" class="edge">
+<title>TOOL_8&#45;&gt;TOOL_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-437.49C297,-434.21 297,-425.06 297,-421.74"/>
+</g>
+<!-- Q_9 -->
+<g id="node58" class="node">
+<title>Q_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-419.52" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_8&#45;&gt;Q_9 -->
+<g id="edge79" class="edge">
+<title>Q_8&#45;&gt;Q_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-437.49C475,-434.21 475,-425.06 475,-421.74"/>
+</g>
+<!-- W_8&#45;&gt;Q_8 -->
+<g id="edge169" class="edge">
+<title>W_8&#45;&gt;Q_8</title>
+<path fill="none" stroke="#e65100" stroke-width="1.1" d="M591.72,-439.68C557.01,-439.68 522.31,-439.68 487.6,-439.68"/>
+<polygon fill="#e65100" stroke="#e65100" stroke-width="1.1" points="487.32,-436.18 477.32,-439.68 487.32,-443.18 487.32,-436.18"/>
+<text text-anchor="middle" x="461.37" y="-442.68" font-family="Noto Sans CJK SC" font-size="10.00">二次确认 processing 无同 id 文件</text>
+</g>
+<!-- W_9 -->
+<g id="node59" class="node">
+<title>W_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-419.52" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_8&#45;&gt;W_9 -->
+<g id="edge108" class="edge">
+<title>W_8&#45;&gt;W_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-437.49C594,-434.21 594,-425.06 594,-421.74"/>
+</g>
+<!-- D_9 -->
+<g id="node60" class="node">
+<title>D_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-419.52" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_8&#45;&gt;D_9 -->
+<g id="edge137" class="edge">
+<title>D_8&#45;&gt;D_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-437.49C796,-434.21 796,-425.06 796,-421.74"/>
+</g>
+<!-- ph_16 -->
+<g id="node93" class="node">
+<title>ph_16</title>
+<path fill="#fffbe6" stroke="transparent" d="M133.33,-287.24C133.33,-287.24 6.67,-287.24 6.67,-287.24 3.33,-287.24 0,-283.91 0,-280.57 0,-280.57 0,-273.91 0,-273.91 0,-270.57 3.33,-267.24 6.67,-267.24 6.67,-267.24 133.33,-267.24 133.33,-267.24 136.67,-267.24 140,-270.57 140,-273.91 140,-273.91 140,-280.57 140,-280.57 140,-283.91 136.67,-287.24 133.33,-287.24"/>
+<text text-anchor="middle" x="70" y="-274.44" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段四：结果回写与消费</text>
+</g>
+<!-- ph_9&#45;&gt;ph_16 -->
+<!-- CC_9&#45;&gt;D_9 -->
+<g id="edge159" class="edge">
+<title>CC_9&#45;&gt;D_9</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M173.35,-419.89C185.79,-421.81 245.38,-430.74 294.5,-433.52 361.5,-437.31 529.43,-435.87 596.5,-433.52 677.7,-430.67 777.14,-421.33 793.63,-419.75"/>
+</g>
+<!-- CC_10 -->
+<g id="node62" class="node">
+<title>CC_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-392.02" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_9&#45;&gt;CC_10 -->
+<g id="edge22" class="edge">
+<title>CC_9&#45;&gt;CC_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-417.15C171,-412.68 171,-398.57 171,-394.28"/>
+</g>
+<!-- TOOL_10 -->
+<g id="node63" class="node">
+<title>TOOL_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-392.02" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_9&#45;&gt;TOOL_10 -->
+<g id="edge51" class="edge">
+<title>TOOL_9&#45;&gt;TOOL_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-417.15C297,-412.68 297,-398.57 297,-394.28"/>
+</g>
+<!-- Q_10 -->
+<g id="node64" class="node">
+<title>Q_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-392.02" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_9&#45;&gt;Q_10 -->
+<g id="edge80" class="edge">
+<title>Q_9&#45;&gt;Q_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-417.15C475,-412.68 475,-398.57 475,-394.28"/>
+</g>
+<!-- W_10 -->
+<g id="node65" class="node">
+<title>W_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-392.02" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_9&#45;&gt;W_10 -->
+<g id="edge109" class="edge">
+<title>W_9&#45;&gt;W_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-417.15C594,-412.68 594,-398.57 594,-394.28"/>
+</g>
+<!-- D_10 -->
+<g id="node66" class="node">
+<title>D_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-392.02" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_9&#45;&gt;D_10 -->
+<g id="edge138" class="edge">
+<title>D_9&#45;&gt;D_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-417.15C796,-412.68 796,-398.57 796,-394.28"/>
+</g>
+<!-- note_10 -->
+<g id="node61" class="node">
+<title>note_10</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="719.83,-401.52 625,-401.52 625,-382.52 723,-382.52 723,-398.35 719.83,-401.52"/>
+<polyline fill="none" stroke="#e0b400" points="719.83,-401.52 719.83,-398.35 "/>
+<polyline fill="none" stroke="#e0b400" points="723,-398.35 719.83,-398.35 "/>
+<text text-anchor="middle" x="674" y="-389.52" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">命令白/黑名单校验</text>
+</g>
+<!-- CC_11 -->
+<g id="node67" class="node">
+<title>CC_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-372.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_10&#45;&gt;CC_11 -->
+<g id="edge23" class="edge">
+<title>CC_10&#45;&gt;CC_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-389.39C171,-385.97 171,-378.11 171,-374.84"/>
+</g>
+<!-- TOOL_11 -->
+<g id="node68" class="node">
+<title>TOOL_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-372.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_10&#45;&gt;TOOL_11 -->
+<g id="edge52" class="edge">
+<title>TOOL_10&#45;&gt;TOOL_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-389.39C297,-385.97 297,-378.11 297,-374.84"/>
+</g>
+<!-- Q_11 -->
+<g id="node69" class="node">
+<title>Q_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-372.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_10&#45;&gt;Q_11 -->
+<g id="edge81" class="edge">
+<title>Q_10&#45;&gt;Q_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-389.39C475,-385.97 475,-378.11 475,-374.84"/>
+</g>
+<!-- W_10&#45;&gt;note_10 -->
+<g id="edge170" class="edge">
+<title>W_10&#45;&gt;note_10</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M596.19,-392.02C605.71,-392.02 615.24,-392.02 624.76,-392.02"/>
+</g>
+<!-- W_11 -->
+<g id="node70" class="node">
+<title>W_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-372.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_10&#45;&gt;W_11 -->
+<g id="edge110" class="edge">
+<title>W_10&#45;&gt;W_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-389.39C594,-385.97 594,-378.11 594,-374.84"/>
+</g>
+<!-- D_11 -->
+<g id="node71" class="node">
+<title>D_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-372.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_10&#45;&gt;D_11 -->
+<g id="edge139" class="edge">
+<title>D_10&#45;&gt;D_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-389.39C796,-385.97 796,-378.11 796,-374.84"/>
+</g>
+<!-- CC_12 -->
+<g id="node72" class="node">
+<title>CC_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-360.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_11&#45;&gt;CC_12 -->
+<g id="edge24" class="edge">
+<title>CC_11&#45;&gt;CC_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-370.09C171,-368.11 171,-364.3 171,-362.32"/>
+</g>
+<!-- TOOL_12 -->
+<g id="node73" class="node">
+<title>TOOL_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-360.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_11&#45;&gt;TOOL_12 -->
+<g id="edge53" class="edge">
+<title>TOOL_11&#45;&gt;TOOL_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-370.09C297,-368.11 297,-364.3 297,-362.32"/>
+</g>
+<!-- Q_12 -->
+<g id="node74" class="node">
+<title>Q_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-360.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_11&#45;&gt;Q_12 -->
+<g id="edge82" class="edge">
+<title>Q_11&#45;&gt;Q_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-370.09C475,-368.11 475,-364.3 475,-362.32"/>
+</g>
+<!-- W_11&#45;&gt;D_11 -->
+<g id="edge171" class="edge">
+<title>W_11&#45;&gt;D_11</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" d="M596.37,-372.36C658.79,-372.36 721.22,-372.36 783.64,-372.36"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="783.66,-375.86 793.66,-372.36 783.66,-368.86 783.66,-375.86"/>
+<text text-anchor="middle" x="722.63" y="-364.36" font-family="Noto Sans CJK SC" font-size="10.00">校验通过：SSH 执行命令</text>
+</g>
+<!-- W_12 -->
+<g id="node75" class="node">
+<title>W_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-360.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_11&#45;&gt;W_12 -->
+<g id="edge111" class="edge">
+<title>W_11&#45;&gt;W_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-370.09C594,-368.11 594,-364.3 594,-362.32"/>
+</g>
+<!-- D_12 -->
+<g id="node76" class="node">
+<title>D_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-360.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_11&#45;&gt;D_12 -->
+<g id="edge140" class="edge">
+<title>D_11&#45;&gt;D_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-370.09C796,-368.11 796,-364.3 796,-362.32"/>
+</g>
+<!-- CC_13 -->
+<g id="node77" class="node">
+<title>CC_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-347.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_12&#45;&gt;CC_13 -->
+<g id="edge25" class="edge">
+<title>CC_12&#45;&gt;CC_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-357.77C171,-355.79 171,-351.98 171,-350"/>
+</g>
+<!-- TOOL_13 -->
+<g id="node78" class="node">
+<title>TOOL_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-347.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_12&#45;&gt;TOOL_13 -->
+<g id="edge54" class="edge">
+<title>TOOL_12&#45;&gt;TOOL_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-357.77C297,-355.79 297,-351.98 297,-350"/>
+</g>
+<!-- Q_13 -->
+<g id="node79" class="node">
+<title>Q_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-347.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_12&#45;&gt;Q_13 -->
+<g id="edge83" class="edge">
+<title>Q_12&#45;&gt;Q_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-357.77C475,-355.79 475,-351.98 475,-350"/>
+</g>
+<!-- W_13 -->
+<g id="node80" class="node">
+<title>W_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-347.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_12&#45;&gt;W_13 -->
+<g id="edge112" class="edge">
+<title>W_12&#45;&gt;W_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-357.77C594,-355.79 594,-351.98 594,-350"/>
+</g>
+<!-- D_12&#45;&gt;W_12 -->
+<g id="edge172" class="edge">
+<title>D_12&#45;&gt;W_12</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" stroke-dasharray="5,2" d="M793.66,-360.04C731.24,-360.04 668.81,-360.04 606.39,-360.04"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="606.37,-356.54 596.37,-360.04 606.37,-363.54 606.37,-356.54"/>
+<text text-anchor="middle" x="724.4" y="-352.04" font-family="Noto Sans CJK SC" font-size="10.00">stdout / stderr / exit_code</text>
+</g>
+<!-- D_13 -->
+<g id="node81" class="node">
+<title>D_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-347.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_12&#45;&gt;D_13 -->
+<g id="edge141" class="edge">
+<title>D_12&#45;&gt;D_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-357.77C796,-355.79 796,-351.98 796,-350"/>
+</g>
+<!-- CC_14 -->
+<g id="node83" class="node">
+<title>CC_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-322.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_13&#45;&gt;CC_14 -->
+<g id="edge26" class="edge">
+<title>CC_13&#45;&gt;CC_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-345.47C171,-341.57 171,-329.54 171,-325.17"/>
+</g>
+<!-- TOOL_14 -->
+<g id="node84" class="node">
+<title>TOOL_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-322.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_13&#45;&gt;TOOL_14 -->
+<g id="edge55" class="edge">
+<title>TOOL_13&#45;&gt;TOOL_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-345.47C297,-341.57 297,-329.54 297,-325.17"/>
+</g>
+<!-- Q_14 -->
+<g id="node85" class="node">
+<title>Q_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-322.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_13&#45;&gt;Q_14 -->
+<g id="edge84" class="edge">
+<title>Q_13&#45;&gt;Q_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-345.47C475,-341.57 475,-329.54 475,-325.17"/>
+</g>
+<!-- W_13&#45;&gt;Q_13 -->
+<g id="edge173" class="edge">
+<title>W_13&#45;&gt;Q_13</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" d="M591.72,-347.72C557.01,-347.72 522.31,-347.72 487.6,-347.72"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="487.32,-344.22 477.32,-347.72 487.32,-351.22 487.32,-344.22"/>
+<text text-anchor="middle" x="431.87" y="-339.72" font-family="Noto Sans CJK SC" font-size="10.00">输出超 64KB：落盘 outputs/&lt;task_id&gt;.stdout</text>
+</g>
+<!-- W_14 -->
+<g id="node86" class="node">
+<title>W_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-322.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_13&#45;&gt;W_14 -->
+<g id="edge113" class="edge">
+<title>W_13&#45;&gt;W_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-345.47C594,-341.57 594,-329.54 594,-325.17"/>
+</g>
+<!-- D_14 -->
+<g id="node87" class="node">
+<title>D_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-322.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_13&#45;&gt;D_14 -->
+<g id="edge142" class="edge">
+<title>D_13&#45;&gt;D_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-345.47C796,-341.57 796,-329.54 796,-325.17"/>
+</g>
+<!-- note_14 -->
+<g id="node82" class="node">
+<title>note_14</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="695.5,-337.56 625.5,-337.56 625.5,-307.56 700.5,-307.56 700.5,-332.56 695.5,-337.56"/>
+<polyline fill="none" stroke="#e0b400" points="695.5,-337.56 695.5,-332.56 "/>
+<polyline fill="none" stroke="#e0b400" points="700.5,-332.56 695.5,-332.56 "/>
+<text text-anchor="middle" x="663" y="-325.56" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">结构体只保留</text>
+<text text-anchor="middle" x="663" y="-314.56" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">摘要 + 指针</text>
+</g>
+<!-- CC_15 -->
+<g id="node88" class="node">
+<title>CC_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-297.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_14&#45;&gt;CC_15 -->
+<g id="edge27" class="edge">
+<title>CC_14&#45;&gt;CC_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-320.31C171,-316.41 171,-304.38 171,-300.01"/>
+</g>
+<!-- TOOL_15 -->
+<g id="node89" class="node">
+<title>TOOL_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-297.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_14&#45;&gt;TOOL_15 -->
+<g id="edge56" class="edge">
+<title>TOOL_14&#45;&gt;TOOL_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-320.31C297,-316.41 297,-304.38 297,-300.01"/>
+</g>
+<!-- Q_15 -->
+<g id="node90" class="node">
+<title>Q_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-297.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_14&#45;&gt;Q_15 -->
+<g id="edge85" class="edge">
+<title>Q_14&#45;&gt;Q_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-320.31C475,-316.41 475,-304.38 475,-300.01"/>
+</g>
+<!-- W_14&#45;&gt;note_14 -->
+<g id="edge174" class="edge">
+<title>W_14&#45;&gt;note_14</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M596.43,-322.56C606.05,-322.56 615.67,-322.56 625.29,-322.56"/>
+</g>
+<!-- W_15 -->
+<g id="node91" class="node">
+<title>W_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-297.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_14&#45;&gt;W_15 -->
+<g id="edge114" class="edge">
+<title>W_14&#45;&gt;W_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-320.31C594,-316.41 594,-304.38 594,-300.01"/>
+</g>
+<!-- D_15 -->
+<g id="node92" class="node">
+<title>D_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-297.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_14&#45;&gt;D_15 -->
+<g id="edge143" class="edge">
+<title>D_14&#45;&gt;D_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-320.31C796,-316.41 796,-304.38 796,-300.01"/>
+</g>
+<!-- CC_16 -->
+<g id="node94" class="node">
+<title>CC_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-277.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_15&#45;&gt;CC_16 -->
+<g id="edge28" class="edge">
+<title>CC_15&#45;&gt;CC_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-295.21C171,-291.93 171,-282.78 171,-279.46"/>
+</g>
+<!-- TOOL_16 -->
+<g id="node95" class="node">
+<title>TOOL_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-277.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_15&#45;&gt;TOOL_16 -->
+<g id="edge57" class="edge">
+<title>TOOL_15&#45;&gt;TOOL_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-295.21C297,-291.93 297,-282.78 297,-279.46"/>
+</g>
+<!-- Q_16 -->
+<g id="node96" class="node">
+<title>Q_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-277.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_15&#45;&gt;Q_16 -->
+<g id="edge86" class="edge">
+<title>Q_15&#45;&gt;Q_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-295.21C475,-291.93 475,-282.78 475,-279.46"/>
+</g>
+<!-- W_15&#45;&gt;Q_15 -->
+<g id="edge175" class="edge">
+<title>W_15&#45;&gt;Q_15</title>
+<path fill="none" stroke="#c62828" stroke-width="1.1" d="M591.72,-297.4C557.01,-297.4 522.31,-297.4 487.6,-297.4"/>
+<polygon fill="#c62828" stroke="#c62828" stroke-width="1.1" points="487.32,-293.9 477.32,-297.4 487.32,-300.9 487.32,-293.9"/>
+<text text-anchor="middle" x="652.87" y="-289.4" font-family="Noto Sans CJK SC" font-size="10.00">校验失败：写 failed，error_msg=blocked_by_policy</text>
+</g>
+<!-- W_16 -->
+<g id="node97" class="node">
+<title>W_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-277.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_15&#45;&gt;W_16 -->
+<g id="edge115" class="edge">
+<title>W_15&#45;&gt;W_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-295.21C594,-291.93 594,-282.78 594,-279.46"/>
+</g>
+<!-- D_16 -->
+<g id="node98" class="node">
+<title>D_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-277.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_15&#45;&gt;D_16 -->
+<g id="edge144" class="edge">
+<title>D_15&#45;&gt;D_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-295.21C796,-291.93 796,-282.78 796,-279.46"/>
+</g>
+<!-- ph_21 -->
+<g id="node120" class="node">
+<title>ph_21</title>
+<path fill="#fffbe6" stroke="transparent" d="M127.83,-184.28C127.83,-184.28 12.17,-184.28 12.17,-184.28 8.83,-184.28 5.5,-180.95 5.5,-177.61 5.5,-177.61 5.5,-170.95 5.5,-170.95 5.5,-167.61 8.83,-164.28 12.17,-164.28 12.17,-164.28 127.83,-164.28 127.83,-164.28 131.17,-164.28 134.5,-167.61 134.5,-170.95 134.5,-170.95 134.5,-177.61 134.5,-177.61 134.5,-180.95 131.17,-184.28 127.83,-184.28"/>
+<text text-anchor="middle" x="70" y="-171.48" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段五：超时取消兜底</text>
+</g>
+<!-- ph_16&#45;&gt;ph_21 -->
+<!-- CC_16&#45;&gt;D_16 -->
+<g id="edge160" class="edge">
+<title>CC_16&#45;&gt;D_16</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M173.35,-277.61C185.79,-279.53 245.38,-288.46 294.5,-291.24 361.5,-295.03 529.43,-293.59 596.5,-291.24 677.7,-288.39 777.14,-279.05 793.63,-277.47"/>
+</g>
+<!-- CC_17 -->
+<g id="node99" class="node">
+<title>CC_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-257.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_16&#45;&gt;CC_17 -->
+<g id="edge29" class="edge">
+<title>CC_16&#45;&gt;CC_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-275.05C171,-271.77 171,-262.62 171,-259.3"/>
+</g>
+<!-- TOOL_17 -->
+<g id="node100" class="node">
+<title>TOOL_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-257.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_16&#45;&gt;TOOL_17 -->
+<g id="edge58" class="edge">
+<title>TOOL_16&#45;&gt;TOOL_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-275.05C297,-271.77 297,-262.62 297,-259.3"/>
+</g>
+<!-- Q_17 -->
+<g id="node101" class="node">
+<title>Q_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-257.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_16&#45;&gt;Q_17 -->
+<g id="edge87" class="edge">
+<title>Q_16&#45;&gt;Q_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-275.05C475,-271.77 475,-262.62 475,-259.3"/>
+</g>
+<!-- W_17 -->
+<g id="node102" class="node">
+<title>W_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-257.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_16&#45;&gt;W_17 -->
+<g id="edge116" class="edge">
+<title>W_16&#45;&gt;W_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-275.05C594,-271.77 594,-262.62 594,-259.3"/>
+</g>
+<!-- D_17 -->
+<g id="node103" class="node">
+<title>D_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-257.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_16&#45;&gt;D_17 -->
+<g id="edge145" class="edge">
+<title>D_16&#45;&gt;D_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-275.05C796,-271.77 796,-262.62 796,-259.3"/>
+</g>
+<!-- CC_18 -->
+<g id="node104" class="node">
+<title>CC_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-244.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_17&#45;&gt;CC_18 -->
+<g id="edge30" class="edge">
+<title>CC_17&#45;&gt;CC_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-254.81C171,-252.83 171,-249.02 171,-247.04"/>
+</g>
+<!-- TOOL_18 -->
+<g id="node105" class="node">
+<title>TOOL_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-244.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_17&#45;&gt;TOOL_18 -->
+<g id="edge59" class="edge">
+<title>TOOL_17&#45;&gt;TOOL_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-254.81C297,-252.83 297,-249.02 297,-247.04"/>
+</g>
+<!-- Q_18 -->
+<g id="node106" class="node">
+<title>Q_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-244.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_17&#45;&gt;Q_18 -->
+<g id="edge88" class="edge">
+<title>Q_17&#45;&gt;Q_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-254.81C475,-252.83 475,-249.02 475,-247.04"/>
+</g>
+<!-- W_17&#45;&gt;Q_17 -->
+<g id="edge176" class="edge">
+<title>W_17&#45;&gt;Q_17</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" d="M591.72,-257.08C557.01,-257.08 522.31,-257.08 487.6,-257.08"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="487.32,-253.58 477.32,-257.08 487.32,-260.58 487.32,-253.58"/>
+<text text-anchor="middle" x="534.37" y="-249.08" font-family="Noto Sans CJK SC" font-size="10.00">回写 completed / failed</text>
+</g>
+<!-- W_18 -->
+<g id="node107" class="node">
+<title>W_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-244.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_17&#45;&gt;W_18 -->
+<g id="edge117" class="edge">
+<title>W_17&#45;&gt;W_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-254.81C594,-252.83 594,-249.02 594,-247.04"/>
+</g>
+<!-- D_18 -->
+<g id="node108" class="node">
+<title>D_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-244.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_17&#45;&gt;D_18 -->
+<g id="edge146" class="edge">
+<title>D_17&#45;&gt;D_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-254.81C796,-252.83 796,-249.02 796,-247.04"/>
+</g>
+<!-- CC_18&#45;&gt;TOOL_18 -->
+<g id="edge177" class="edge">
+<title>CC_18&#45;&gt;TOOL_18</title>
+<path fill="none" stroke="#00838f" stroke-width="1.1" d="M173.46,-244.76C210.37,-244.76 247.27,-244.76 284.18,-244.76"/>
+<polygon fill="#00838f" stroke="#00838f" stroke-width="1.1" points="284.59,-248.26 294.59,-244.76 284.59,-241.26 284.59,-248.26"/>
+<text text-anchor="middle" x="204.51" y="-247.76" font-family="Noto Sans CJK SC" font-size="10.00">轮询结果目录</text>
+</g>
+<!-- CC_19 -->
+<g id="node109" class="node">
+<title>CC_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-232.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_18&#45;&gt;CC_19 -->
+<g id="edge31" class="edge">
+<title>CC_18&#45;&gt;CC_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-242.49C171,-240.51 171,-236.7 171,-234.72"/>
+</g>
+<!-- TOOL_19 -->
+<g id="node110" class="node">
+<title>TOOL_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-232.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_18&#45;&gt;TOOL_19 -->
+<g id="edge60" class="edge">
+<title>TOOL_18&#45;&gt;TOOL_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-242.49C297,-240.51 297,-236.7 297,-234.72"/>
+</g>
+<!-- Q_19 -->
+<g id="node111" class="node">
+<title>Q_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-232.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_18&#45;&gt;Q_19 -->
+<g id="edge89" class="edge">
+<title>Q_18&#45;&gt;Q_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-242.49C475,-240.51 475,-236.7 475,-234.72"/>
+</g>
+<!-- W_19 -->
+<g id="node112" class="node">
+<title>W_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-232.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_18&#45;&gt;W_19 -->
+<g id="edge118" class="edge">
+<title>W_18&#45;&gt;W_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-242.49C594,-240.51 594,-236.7 594,-234.72"/>
+</g>
+<!-- D_19 -->
+<g id="node113" class="node">
+<title>D_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-232.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_18&#45;&gt;D_19 -->
+<g id="edge147" class="edge">
+<title>D_18&#45;&gt;D_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-242.49C796,-240.51 796,-236.7 796,-234.72"/>
+</g>
+<!-- CC_20 -->
+<g id="node115" class="node">
+<title>CC_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-207.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_19&#45;&gt;CC_20 -->
+<g id="edge32" class="edge">
+<title>CC_19&#45;&gt;CC_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-230.19C171,-226.29 171,-214.26 171,-209.89"/>
+</g>
+<!-- TOOL_19&#45;&gt;CC_19 -->
+<g id="edge178" class="edge">
+<title>TOOL_19&#45;&gt;CC_19</title>
+<path fill="none" stroke="#00838f" stroke-width="1.1" stroke-dasharray="5,2" d="M294.59,-232.44C257.68,-232.44 220.78,-232.44 183.87,-232.44"/>
+<polygon fill="#00838f" stroke="#00838f" stroke-width="1.1" points="183.46,-228.94 173.46,-232.44 183.46,-235.94 183.46,-228.94"/>
+<text text-anchor="middle" x="251.04" y="-224.44" font-family="Noto Sans CJK SC" font-size="10.00">读取结果 JSON</text>
+</g>
+<!-- TOOL_20 -->
+<g id="node116" class="node">
+<title>TOOL_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-207.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_19&#45;&gt;TOOL_20 -->
+<g id="edge61" class="edge">
+<title>TOOL_19&#45;&gt;TOOL_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-230.19C297,-226.29 297,-214.26 297,-209.89"/>
+</g>
+<!-- Q_20 -->
+<g id="node117" class="node">
+<title>Q_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-207.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_19&#45;&gt;Q_20 -->
+<g id="edge90" class="edge">
+<title>Q_19&#45;&gt;Q_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-230.19C475,-226.29 475,-214.26 475,-209.89"/>
+</g>
+<!-- W_20 -->
+<g id="node118" class="node">
+<title>W_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-207.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_19&#45;&gt;W_20 -->
+<g id="edge119" class="edge">
+<title>W_19&#45;&gt;W_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-230.19C594,-226.29 594,-214.26 594,-209.89"/>
+</g>
+<!-- D_20 -->
+<g id="node119" class="node">
+<title>D_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-207.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_19&#45;&gt;D_20 -->
+<g id="edge148" class="edge">
+<title>D_19&#45;&gt;D_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-230.19C796,-226.29 796,-214.26 796,-209.89"/>
+</g>
+<!-- note_20 -->
+<g id="node114" class="node">
+<title>note_20</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="421,-222.28 328,-222.28 328,-192.28 426,-192.28 426,-217.28 421,-222.28"/>
+<polyline fill="none" stroke="#e0b400" points="421,-222.28 421,-217.28 "/>
+<polyline fill="none" stroke="#e0b400" points="426,-217.28 421,-217.28 "/>
+<text text-anchor="middle" x="377" y="-210.28" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">truncated=true 则</text>
+<text text-anchor="middle" x="377" y="-199.28" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">按指针读 outputs/</text>
+</g>
+<!-- CC_21 -->
+<g id="node121" class="node">
+<title>CC_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-174.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_20&#45;&gt;CC_21 -->
+<g id="edge33" class="edge">
+<title>CC_20&#45;&gt;CC_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-204.95C171,-199.85 171,-181.6 171,-176.57"/>
+</g>
+<!-- TOOL_20&#45;&gt;note_20 -->
+<g id="edge179" class="edge">
+<title>TOOL_20&#45;&gt;note_20</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M299.19,-207.28C308.71,-207.28 318.24,-207.28 327.76,-207.28"/>
+</g>
+<!-- TOOL_21 -->
+<g id="node122" class="node">
+<title>TOOL_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-174.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_20&#45;&gt;TOOL_21 -->
+<g id="edge62" class="edge">
+<title>TOOL_20&#45;&gt;TOOL_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-204.95C297,-199.85 297,-181.6 297,-176.57"/>
+</g>
+<!-- Q_21 -->
+<g id="node123" class="node">
+<title>Q_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-174.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_20&#45;&gt;Q_21 -->
+<g id="edge91" class="edge">
+<title>Q_20&#45;&gt;Q_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-204.95C475,-199.85 475,-181.6 475,-176.57"/>
+</g>
+<!-- W_21 -->
+<g id="node124" class="node">
+<title>W_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-174.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_20&#45;&gt;W_21 -->
+<g id="edge120" class="edge">
+<title>W_20&#45;&gt;W_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-204.95C594,-199.85 594,-181.6 594,-176.57"/>
+</g>
+<!-- D_21 -->
+<g id="node125" class="node">
+<title>D_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-174.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_20&#45;&gt;D_21 -->
+<g id="edge149" class="edge">
+<title>D_20&#45;&gt;D_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-204.95C796,-199.85 796,-181.6 796,-176.57"/>
+</g>
+<!-- ph_25 -->
+<g id="node142" class="node">
+<title>ph_25</title>
+<path fill="#fffbe6" stroke="transparent" d="M116.83,-82.64C116.83,-82.64 23.17,-82.64 23.17,-82.64 19.83,-82.64 16.5,-79.31 16.5,-75.97 16.5,-75.97 16.5,-69.31 16.5,-69.31 16.5,-65.97 19.83,-62.64 23.17,-62.64 23.17,-62.64 116.83,-62.64 116.83,-62.64 120.17,-62.64 123.5,-65.97 123.5,-69.31 123.5,-69.31 123.5,-75.97 123.5,-75.97 123.5,-79.31 120.17,-82.64 116.83,-82.64"/>
+<text text-anchor="middle" x="70" y="-69.84" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段六：心跳保活</text>
+</g>
+<!-- ph_21&#45;&gt;ph_25 -->
+<!-- CC_21&#45;&gt;D_21 -->
+<g id="edge161" class="edge">
+<title>CC_21&#45;&gt;D_21</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M173.35,-174.65C185.79,-176.57 245.38,-185.5 294.5,-188.28 361.5,-192.07 529.43,-190.63 596.5,-188.28 677.7,-185.43 777.14,-176.09 793.63,-174.51"/>
+</g>
+<!-- CC_22 -->
+<g id="node126" class="node">
+<title>CC_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-154.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_21&#45;&gt;CC_22 -->
+<g id="edge34" class="edge">
+<title>CC_21&#45;&gt;CC_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-172.09C171,-168.81 171,-159.66 171,-156.34"/>
+</g>
+<!-- TOOL_22 -->
+<g id="node127" class="node">
+<title>TOOL_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-154.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_21&#45;&gt;TOOL_22 -->
+<g id="edge63" class="edge">
+<title>TOOL_21&#45;&gt;TOOL_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-172.09C297,-168.81 297,-159.66 297,-156.34"/>
+</g>
+<!-- Q_22 -->
+<g id="node128" class="node">
+<title>Q_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-154.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_21&#45;&gt;Q_22 -->
+<g id="edge92" class="edge">
+<title>Q_21&#45;&gt;Q_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-172.09C475,-168.81 475,-159.66 475,-156.34"/>
+</g>
+<!-- W_22 -->
+<g id="node129" class="node">
+<title>W_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-154.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_21&#45;&gt;W_22 -->
+<g id="edge121" class="edge">
+<title>W_21&#45;&gt;W_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-172.09C594,-168.81 594,-159.66 594,-156.34"/>
+</g>
+<!-- D_22 -->
+<g id="node130" class="node">
+<title>D_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-154.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_21&#45;&gt;D_22 -->
+<g id="edge150" class="edge">
+<title>D_21&#45;&gt;D_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-172.09C796,-168.81 796,-159.66 796,-156.34"/>
+</g>
+<!-- CC_23 -->
+<g id="node131" class="node">
+<title>CC_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-141.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_22&#45;&gt;CC_23 -->
+<g id="edge35" class="edge">
+<title>CC_22&#45;&gt;CC_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-151.85C171,-149.87 171,-146.06 171,-144.08"/>
+</g>
+<!-- TOOL_22&#45;&gt;Q_22 -->
+<g id="edge180" class="edge">
+<title>TOOL_22&#45;&gt;Q_22</title>
+<path fill="none" stroke="#c62828" stroke-width="1.1" d="M299.43,-154.12C353.77,-154.12 408.11,-154.12 462.45,-154.12"/>
+<polygon fill="#c62828" stroke="#c62828" stroke-width="1.1" points="462.6,-157.62 472.6,-154.12 462.6,-150.62 462.6,-157.62"/>
+<text text-anchor="middle" x="386.04" y="-146.12" font-family="Noto Sans CJK SC" font-size="10.00">超时写 cancelled/&lt;task_id&gt;</text>
+</g>
+<!-- TOOL_23 -->
+<g id="node132" class="node">
+<title>TOOL_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-141.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_22&#45;&gt;TOOL_23 -->
+<g id="edge64" class="edge">
+<title>TOOL_22&#45;&gt;TOOL_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-151.85C297,-149.87 297,-146.06 297,-144.08"/>
+</g>
+<!-- Q_23 -->
+<g id="node133" class="node">
+<title>Q_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-141.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_22&#45;&gt;Q_23 -->
+<g id="edge93" class="edge">
+<title>Q_22&#45;&gt;Q_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-151.85C475,-149.87 475,-146.06 475,-144.08"/>
+</g>
+<!-- W_23 -->
+<g id="node134" class="node">
+<title>W_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-141.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_22&#45;&gt;W_23 -->
+<g id="edge122" class="edge">
+<title>W_22&#45;&gt;W_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-151.85C594,-149.87 594,-146.06 594,-144.08"/>
+</g>
+<!-- D_23 -->
+<g id="node135" class="node">
+<title>D_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-141.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_22&#45;&gt;D_23 -->
+<g id="edge151" class="edge">
+<title>D_22&#45;&gt;D_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-151.85C796,-149.87 796,-146.06 796,-144.08"/>
+</g>
+<!-- CC_24 -->
+<g id="node137" class="node">
+<title>CC_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-111.14" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_23&#45;&gt;CC_24 -->
+<g id="edge36" class="edge">
+<title>CC_23&#45;&gt;CC_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-139.57C171,-134.85 171,-117.99 171,-113.33"/>
+</g>
+<!-- TOOL_24 -->
+<g id="node138" class="node">
+<title>TOOL_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-111.14" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_23&#45;&gt;TOOL_24 -->
+<g id="edge65" class="edge">
+<title>TOOL_23&#45;&gt;TOOL_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-139.57C297,-134.85 297,-117.99 297,-113.33"/>
+</g>
+<!-- Q_24 -->
+<g id="node139" class="node">
+<title>Q_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-111.14" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_23&#45;&gt;Q_24 -->
+<g id="edge94" class="edge">
+<title>Q_23&#45;&gt;Q_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-139.57C475,-134.85 475,-117.99 475,-113.33"/>
+</g>
+<!-- W_23&#45;&gt;Q_23 -->
+<g id="edge181" class="edge">
+<title>W_23&#45;&gt;Q_23</title>
+<path fill="none" stroke="#c62828" stroke-width="1.1" d="M591.72,-141.8C557.01,-141.8 522.31,-141.8 487.6,-141.8"/>
+<polygon fill="#c62828" stroke="#c62828" stroke-width="1.1" points="487.32,-138.3 477.32,-141.8 487.32,-145.3 487.32,-138.3"/>
+<text text-anchor="middle" x="534.37" y="-133.8" font-family="Noto Sans CJK SC" font-size="10.00">回写前检查 cancelled/</text>
+</g>
+<!-- W_24 -->
+<g id="node140" class="node">
+<title>W_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-111.14" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_23&#45;&gt;W_24 -->
+<g id="edge123" class="edge">
+<title>W_23&#45;&gt;W_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-139.57C594,-134.85 594,-117.99 594,-113.33"/>
+</g>
+<!-- D_24 -->
+<g id="node141" class="node">
+<title>D_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-111.14" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_23&#45;&gt;D_24 -->
+<g id="edge152" class="edge">
+<title>D_23&#45;&gt;D_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-139.57C796,-134.85 796,-117.99 796,-113.33"/>
+</g>
+<!-- note_24 -->
+<g id="node136" class="node">
+<title>note_24</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="759,-131.64 625,-131.64 625,-90.64 765,-90.64 765,-125.64 759,-131.64"/>
+<polyline fill="none" stroke="#e0b400" points="759,-131.64 759,-125.64 "/>
+<polyline fill="none" stroke="#e0b400" points="765,-125.64 759,-125.64 "/>
+<text text-anchor="middle" x="695" y="-119.64" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">已取消则写</text>
+<text text-anchor="middle" x="695" y="-108.64" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">cancelled/&lt;id&gt;.result(审计)</text>
+<text text-anchor="middle" x="695" y="-97.64" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">不污染 completed</text>
+</g>
+<!-- CC_25 -->
+<g id="node143" class="node">
+<title>CC_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-72.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_24&#45;&gt;CC_25 -->
+<g id="edge37" class="edge">
+<title>CC_24&#45;&gt;CC_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-108.57C171,-102.46 171,-80.3 171,-74.85"/>
+</g>
+<!-- TOOL_25 -->
+<g id="node144" class="node">
+<title>TOOL_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-72.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_24&#45;&gt;TOOL_25 -->
+<g id="edge66" class="edge">
+<title>TOOL_24&#45;&gt;TOOL_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-108.57C297,-102.46 297,-80.3 297,-74.85"/>
+</g>
+<!-- Q_25 -->
+<g id="node145" class="node">
+<title>Q_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-72.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_24&#45;&gt;Q_25 -->
+<g id="edge95" class="edge">
+<title>Q_24&#45;&gt;Q_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-108.57C475,-102.46 475,-80.3 475,-74.85"/>
+</g>
+<!-- W_24&#45;&gt;note_24 -->
+<g id="edge182" class="edge">
+<title>W_24&#45;&gt;note_24</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M596.37,-111.14C605.87,-111.14 615.37,-111.14 624.88,-111.14"/>
+</g>
+<!-- W_25 -->
+<g id="node146" class="node">
+<title>W_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-72.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_24&#45;&gt;W_25 -->
+<g id="edge124" class="edge">
+<title>W_24&#45;&gt;W_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-108.57C594,-102.46 594,-80.3 594,-74.85"/>
+</g>
+<!-- D_25 -->
+<g id="node147" class="node">
+<title>D_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-72.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_24&#45;&gt;D_25 -->
+<g id="edge153" class="edge">
+<title>D_24&#45;&gt;D_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-108.57C796,-102.46 796,-80.3 796,-74.85"/>
+</g>
+<!-- CC_25&#45;&gt;D_25 -->
+<g id="edge162" class="edge">
+<title>CC_25&#45;&gt;D_25</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M173.35,-73.01C185.79,-74.93 245.38,-83.86 294.5,-86.64 361.5,-90.43 529.43,-88.99 596.5,-86.64 677.7,-83.79 777.14,-74.45 793.63,-72.87"/>
+</g>
+<!-- CC_26 -->
+<g id="node148" class="node">
+<title>CC_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-52.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_25&#45;&gt;CC_26 -->
+<g id="edge38" class="edge">
+<title>CC_25&#45;&gt;CC_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-70.45C171,-67.17 171,-58.02 171,-54.7"/>
+</g>
+<!-- TOOL_26 -->
+<g id="node149" class="node">
+<title>TOOL_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-52.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_25&#45;&gt;TOOL_26 -->
+<g id="edge67" class="edge">
+<title>TOOL_25&#45;&gt;TOOL_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-70.45C297,-67.17 297,-58.02 297,-54.7"/>
+</g>
+<!-- Q_26 -->
+<g id="node150" class="node">
+<title>Q_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-52.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_25&#45;&gt;Q_26 -->
+<g id="edge96" class="edge">
+<title>Q_25&#45;&gt;Q_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-70.45C475,-67.17 475,-58.02 475,-54.7"/>
+</g>
+<!-- W_26 -->
+<g id="node151" class="node">
+<title>W_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-52.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_25&#45;&gt;W_26 -->
+<g id="edge125" class="edge">
+<title>W_25&#45;&gt;W_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-70.45C594,-67.17 594,-58.02 594,-54.7"/>
+</g>
+<!-- D_26 -->
+<g id="node152" class="node">
+<title>D_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-52.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_25&#45;&gt;D_26 -->
+<g id="edge154" class="edge">
+<title>D_25&#45;&gt;D_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-70.45C796,-67.17 796,-58.02 796,-54.7"/>
+</g>
+<!-- CC_27 -->
+<g id="node153" class="node">
+<title>CC_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-40.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_26&#45;&gt;CC_27 -->
+<g id="edge39" class="edge">
+<title>CC_26&#45;&gt;CC_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-50.21C171,-48.23 171,-44.42 171,-42.44"/>
+</g>
+<!-- TOOL_27 -->
+<g id="node154" class="node">
+<title>TOOL_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-40.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_26&#45;&gt;TOOL_27 -->
+<g id="edge68" class="edge">
+<title>TOOL_26&#45;&gt;TOOL_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-50.21C297,-48.23 297,-44.42 297,-42.44"/>
+</g>
+<!-- Q_27 -->
+<g id="node155" class="node">
+<title>Q_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-40.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_26&#45;&gt;Q_27 -->
+<g id="edge97" class="edge">
+<title>Q_26&#45;&gt;Q_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-50.21C475,-48.23 475,-44.42 475,-42.44"/>
+</g>
+<!-- W_26&#45;&gt;Q_26 -->
+<g id="edge183" class="edge">
+<title>W_26&#45;&gt;Q_26</title>
+<path fill="none" stroke="#aaaaaa" stroke-width="1.1" d="M591.72,-52.48C557.01,-52.48 522.31,-52.48 487.6,-52.48"/>
+<polygon fill="#aaaaaa" stroke="#aaaaaa" stroke-width="1.1" points="487.32,-48.98 477.32,-52.48 487.32,-55.98 487.32,-48.98"/>
+<text text-anchor="middle" x="534.37" y="-44.48" font-family="Noto Sans CJK SC" font-size="10.00">每 5s 写 heartbeat.json</text>
+</g>
+<!-- W_27 -->
+<g id="node156" class="node">
+<title>W_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-40.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_26&#45;&gt;W_27 -->
+<g id="edge126" class="edge">
+<title>W_26&#45;&gt;W_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-50.21C594,-48.23 594,-44.42 594,-42.44"/>
+</g>
+<!-- D_27 -->
+<g id="node157" class="node">
+<title>D_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-40.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_26&#45;&gt;D_27 -->
+<g id="edge155" class="edge">
+<title>D_26&#45;&gt;D_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-50.21C796,-48.23 796,-44.42 796,-42.44"/>
+</g>
+<!-- CC_28 -->
+<g id="node159" class="node">
+<title>CC_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="171" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- CC_27&#45;&gt;CC_28 -->
+<g id="edge40" class="edge">
+<title>CC_27&#45;&gt;CC_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M171,-37.91C171,-34.01 171,-21.98 171,-17.61"/>
+</g>
+<!-- TOOL_27&#45;&gt;Q_27 -->
+<g id="edge184" class="edge">
+<title>TOOL_27&#45;&gt;Q_27</title>
+<path fill="none" stroke="#aaaaaa" stroke-width="1.1" d="M299.43,-40.16C353.77,-40.16 408.11,-40.16 462.45,-40.16"/>
+<polygon fill="#aaaaaa" stroke="#aaaaaa" stroke-width="1.1" points="462.6,-43.66 472.6,-40.16 462.6,-36.66 462.6,-43.66"/>
+<text text-anchor="middle" x="356.54" y="-43.16" font-family="Noto Sans CJK SC" font-size="10.00">提交前读心跳</text>
+</g>
+<!-- TOOL_28 -->
+<g id="node160" class="node">
+<title>TOOL_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="297" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- TOOL_27&#45;&gt;TOOL_28 -->
+<g id="edge69" class="edge">
+<title>TOOL_27&#45;&gt;TOOL_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M297,-37.91C297,-34.01 297,-21.98 297,-17.61"/>
+</g>
+<!-- Q_28 -->
+<g id="node161" class="node">
+<title>Q_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="475" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- Q_27&#45;&gt;Q_28 -->
+<g id="edge98" class="edge">
+<title>Q_27&#45;&gt;Q_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M475,-37.91C475,-34.01 475,-21.98 475,-17.61"/>
+</g>
+<!-- W_28 -->
+<g id="node162" class="node">
+<title>W_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="594" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_27&#45;&gt;W_28 -->
+<g id="edge127" class="edge">
+<title>W_27&#45;&gt;W_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M594,-37.91C594,-34.01 594,-21.98 594,-17.61"/>
+</g>
+<!-- D_28 -->
+<g id="node163" class="node">
+<title>D_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="796" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- D_27&#45;&gt;D_28 -->
+<g id="edge156" class="edge">
+<title>D_27&#45;&gt;D_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M796,-37.91C796,-34.01 796,-21.98 796,-17.61"/>
+</g>
+<!-- note_28 -->
+<g id="node158" class="node">
+<title>note_28</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="439,-30 328,-30 328,0 444,0 444,-25 439,-30"/>
+<polyline fill="none" stroke="#e0b400" points="439,-30 439,-25 "/>
+<polyline fill="none" stroke="#e0b400" points="444,-25 439,-25 "/>
+<text text-anchor="middle" x="386" y="-18" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">now&#45;last_beat&gt;15s 则</text>
+<text text-anchor="middle" x="386" y="-7" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">返回 worker_offline</text>
+</g>
+<!-- TOOL_28&#45;&gt;note_28 -->
+<g id="edge185" class="edge">
+<title>TOOL_28&#45;&gt;note_28</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M299.43,-15C308.9,-15 318.37,-15 327.84,-15"/>
+</g>
+</g>
+</svg>

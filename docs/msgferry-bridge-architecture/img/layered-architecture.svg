@@ -1,1 +1,316 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" data-diagram-type="DESCRIPTION" style="width:1682px;height:905px;background:#FFFFFF;" width="1682px" height="905px" viewBox="0 0 1682 905" zoomAndPan="magnify" preserveAspectRatio="none" contentStyleType="text/css"><?plantuml 1.2026.7beta11?><defs/><g font-family="sans-serif" lengthAdjust="spacing"><g class="title" data-source-line="23"><text x="389.07" y="35.421" fill="#000" font-size="22" textLength="902.517" font-weight="700" font-family="'Segoe UI'">MsgFerry 双进程协作架构：内网 MCP 服务 + 外网 Node Worker + HGFS 文件队列</text></g><!--cluster intranet--><g class="cluster" data-qualified-name="intranet" id="ent0001" data-source-line="26"><rect x="153.23" y="99.869" width="387" height="316.76" fill="#DDF3E4" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="183.317" y="113.008" fill="#1F2933" font-size="12" textLength="326.826" font-weight="700" font-family="'Segoe UI'">内网虚拟机（VMware 虚拟桌面）— 网络完全隔离，无外网</text></g><!--cluster hgfs--><g class="cluster" data-qualified-name="hgfs" id="ent0005" data-source-line="33"><rect x="44.23" y="483.629" width="993" height="95.94" fill="#FFE8E8" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="354.773" y="496.768" fill="#1F2933" font-size="12" textLength="371.914" font-weight="700" font-family="'Segoe UI'">VMware HGFS 共享文件夹 — 唯一跨域通信介质，不走网卡协议栈</text></g><!--cluster host--><g class="cluster" data-qualified-name="host" id="ent0014" data-source-line="45"><rect x="1069.23" y="276.759" width="376" height="310.81" fill="#DDF3E4" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="1170.663" y="289.898" fill="#1F2933" font-size="12" textLength="173.134" font-weight="700" font-family="'Segoe UI'">Windows 宿主机（公网可达）</text></g><!--entity cc--><g class="entity" data-qualified-name="intranet.cc" id="ent0002" data-source-line="27"><rect x="177.72" y="139.869" width="151.016" height="61.906" fill="#DCE9FB" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="187.72" y="161.008" fill="#1F2933" font-size="12" textLength="76.207" font-family="'Segoe UI'">Claude Code</text><text x="187.72" y="174.977" fill="#1F2933" font-size="12" textLength="60" font-family="'Segoe UI'">唯一智能体</text><text x="187.72" y="188.946" fill="#1F2933" font-size="12" textLength="131.016" font-family="'Segoe UI'">规划 / 分析 / 生成 / 解析</text></g><!--entity mcp--><g class="entity" data-qualified-name="intranet.mcp" id="ent0003" data-source-line="28"><rect x="177.53" y="316.759" width="161.404" height="75.875" fill="#B4C9E8" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="187.53" y="337.898" fill="#1F2933" font-size="12" textLength="69.135" font-family="'Segoe UI'">MCP Server</text><text x="187.53" y="351.867" fill="#1F2933" font-size="12" textLength="73.6" font-family="'Segoe UI'">(TypeScript)</text><text x="187.53" y="365.836" fill="#1F2933" font-size="12" textLength="58.758" font-family="'Segoe UI'">独立进程①</text><text x="187.53" y="379.804" fill="#1F2933" font-size="12" textLength="141.404" font-family="'Segoe UI'">submit / cancel / health</text></g><!--entity inlog--><g class="entity" data-qualified-name="intranet.inlog" id="ent0004" data-source-line="29"><rect x="363.45" y="146.849" width="133.555" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="373.45" y="167.988" fill="#1F2933" font-size="12" textLength="72.001" font-family="'Segoe UI'">内网提交日志</text><text x="373.45" y="181.957" fill="#1F2933" font-size="12" textLength="113.555" font-family="'Segoe UI'">task_id / 时间 / 结果</text></g><!--entity pending--><g class="entity" data-qualified-name="hgfs.pending" id="ent0006" data-source-line="34"><rect x="183.23" y="515.629" width="80" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="193.23" y="536.768" fill="#1F2933" font-size="12" textLength="52.822" font-family="'Segoe UI'">pending/</text><text x="193.23" y="550.737" fill="#1F2933" font-size="12" textLength="60" font-family="'Segoe UI'">待执行任务</text></g><!--entity proc--><g class="entity" data-qualified-name="hgfs.proc" id="ent0007" data-source-line="35"><rect x="298.37" y="515.629" width="89.721" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="308.37" y="536.768" fill="#1F2933" font-size="12" textLength="68.977" font-family="'Segoe UI'">processing/</text><text x="308.37" y="550.737" fill="#1F2933" font-size="12" textLength="69.721" font-family="'Segoe UI'">+ .lock 抢占</text></g><!--entity done--><g class="entity" data-qualified-name="hgfs.done" id="ent0008" data-source-line="36"><rect x="60.37" y="515.629" width="87.711" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="70.37" y="536.768" fill="#1F2933" font-size="12" textLength="67.711" font-family="'Segoe UI'">completed/</text><text x="70.37" y="550.737" fill="#1F2933" font-size="12" textLength="48" font-family="'Segoe UI'">成功结果</text></g><!--entity fail--><g class="entity" data-qualified-name="hgfs.fail" id="ent0009" data-source-line="37"><rect x="423.19" y="515.629" width="100.086" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="433.19" y="536.768" fill="#1F2933" font-size="12" textLength="37.289" font-family="'Segoe UI'">failed/</text><text x="433.19" y="550.737" fill="#1F2933" font-size="12" textLength="80.086" font-family="'Segoe UI'">失败/超时/拦截</text></g><!--entity canc--><g class="entity" data-qualified-name="hgfs.canc" id="ent0010" data-source-line="38"><rect x="701.2" y="515.629" width="102.055" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="711.2" y="536.768" fill="#1F2933" font-size="12" textLength="61.248" font-family="'Segoe UI'">cancelled/</text><text x="711.2" y="550.737" fill="#1F2933" font-size="12" textLength="82.055" font-family="'Segoe UI'">取消+孤儿回收</text></g><!--entity outs--><g class="entity" data-qualified-name="hgfs.outs" id="ent0011" data-source-line="39"><rect x="838.23" y="515.629" width="80" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="848.23" y="536.768" fill="#1F2933" font-size="12" textLength="49.875" font-family="'Segoe UI'">outputs/</text><text x="848.23" y="550.737" fill="#1F2933" font-size="12" textLength="60" font-family="'Segoe UI'">大输出分包</text></g><!--entity hb--><g class="entity" data-qualified-name="hgfs.hb" id="ent0012" data-source-line="40"><rect x="558.54" y="515.629" width="107.387" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="568.54" y="536.768" fill="#1F2933" font-size="12" textLength="87.387" font-family="'Segoe UI'">heartbeat.json</text><text x="568.54" y="550.737" fill="#1F2933" font-size="12" textLength="71.221" font-family="'Segoe UI'">Worker 心跳</text></g><!--entity pol--><g class="entity" data-qualified-name="hgfs.pol" id="ent0013" data-source-line="41"><rect x="953.23" y="515.629" width="68" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="963.23" y="536.768" fill="#1F2933" font-size="12" textLength="39.369" font-family="'Segoe UI'">policy/</text><text x="963.23" y="550.737" fill="#1F2933" font-size="12" textLength="48" font-family="'Segoe UI'">命令策略</text></g><!--entity worker--><g class="entity" data-qualified-name="host.worker" id="ent0015" data-source-line="46"><rect x="1093.26" y="316.759" width="111.939" height="75.875" fill="#B4C9E8" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="1103.26" y="337.898" fill="#1F2933" font-size="12" textLength="91.939" font-family="'Segoe UI'">Node.js Worker</text><text x="1103.26" y="351.867" fill="#1F2933" font-size="12" textLength="73.6" font-family="'Segoe UI'">(TypeScript)</text><text x="1103.26" y="365.836" fill="#1F2933" font-size="12" textLength="58.758" font-family="'Segoe UI'">独立进程②</text><text x="1103.26" y="379.804" fill="#1F2933" font-size="12" textLength="88.471" font-family="'Segoe UI'">常驻后台 / 纯 IO</text></g><!--entity w2--><g class="entity" data-qualified-name="host.w2" id="ent0016" data-source-line="47"><rect x="1093.23" y="515.629" width="92.001" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="1103.23" y="536.768" fill="#1F2933" font-size="12" textLength="48" font-family="'Segoe UI'">安全策略</text><text x="1103.23" y="550.737" fill="#1F2933" font-size="12" textLength="72.001" font-family="'Segoe UI'">白黑名单校验</text></g><!--entity w3--><g class="entity" data-qualified-name="host.w3" id="ent0017" data-source-line="48"><rect x="1220.19" y="515.629" width="72.072" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="1230.19" y="536.768" fill="#1F2933" font-size="12" textLength="52.072" font-family="'Segoe UI'">SSH 执行</text><text x="1230.19" y="550.737" fill="#1F2933" font-size="12" textLength="48" font-family="'Segoe UI'">超时控制</text></g><!--entity outlog--><g class="entity" data-qualified-name="host.outlog" id="ent0018" data-source-line="49"><rect x="1326.85" y="515.629" width="86.756" height="47.938" fill="#FFF" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="1336.85" y="536.768" fill="#1F2933" font-size="12" textLength="48" font-family="'Segoe UI'">审计日志</text><text x="1336.85" y="550.737" fill="#1F2933" font-size="12" textLength="66.756" font-family="'Segoe UI'">滚动 / 30 天</text></g><!--entity deviceA--><g class="entity" data-qualified-name="deviceA" id="ent0019" data-source-line="53"><rect x="1200.29" y="655.569" width="111.887" height="47.938" fill="#FFF3D6" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="1210.29" y="676.708" fill="#1F2933" font-size="12" textLength="60.024" font-family="'Segoe UI'">外部设备 A</text><text x="1210.29" y="690.677" fill="#1F2933" font-size="12" textLength="91.887" font-family="'Segoe UI'">仅外网 SSH 接入</text></g><!--entity shared--><g class="entity" data-qualified-name="shared" id="ent0020" data-source-line="56"><rect x="567.23" y="132.889" width="104.001" height="75.875" fill="#F0E8FA" style="stroke:#7A93BE;stroke-width:1;" rx="4" ry="4"/><text x="577.23" y="154.028" fill="#1F2933" font-size="12" textLength="45.188" font-family="'Segoe UI'">shared/</text><text x="577.23" y="167.997" fill="#1F2933" font-size="12" textLength="84.001" font-family="'Segoe UI'">任务结构体类型</text><text x="577.23" y="181.966" fill="#1F2933" font-size="12" textLength="60" font-family="'Segoe UI'">错误码枚举</text><text x="577.23" y="195.934" fill="#1F2933" font-size="12" textLength="48" font-family="'Segoe UI'">路径常量</text></g><g class="entity" data-qualified-name="GMN37" id="ent0038" data-source-line="84"><path d="M893.55,152.359 L893.55,189.281 A4,4 0 0 0 897.55,193.281 L1118.9,193.281 A4,4 0 0 0 1122.9,189.281 L1122.9,158.359 L1112.9,148.359 L897.55,148.359 A4,4 0 0 0 893.55,152.359" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M1112.9,148.359 L1112.9,156.359 A2,2 0 0 0 1114.9,158.359 L1122.9,158.359 L1112.9,148.359" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="899.55" y="162.642" fill="#5C4A00" font-size="10" textLength="196.826" font-family="'Segoe UI'">进程①由 Claude Code 通过 MCP 配置拉起</text><text x="899.55" y="174.282" fill="#5C4A00" font-size="10" textLength="208.35" font-family="'Segoe UI'">提交后阻塞轮询 completed/failed/cancelled</text><text x="899.55" y="185.923" fill="#5C4A00" font-size="10" textLength="189.331" font-family="'Segoe UI'">超时则写 cancelled/&lt;task_id> 取消标记</text></g><g class="entity" data-qualified-name="GMN40" id="ent0041" data-source-line="90"><path d="M1472.81,336.239 L1472.81,373.161 A4,4 0 0 0 1476.81,377.161 L1663.658,377.161 A4,4 0 0 0 1667.658,373.161 L1667.658,342.239 L1657.658,332.239 L1476.81,332.239 A4,4 0 0 0 1472.81,336.239" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M1657.658,332.239 L1657.658,340.239 A2,2 0 0 0 1659.658,342.239 L1667.658,342.239 L1657.658,332.239" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="1478.81" y="346.522" fill="#5C4A00" font-size="10" textLength="118.965" font-family="'Segoe UI'">进程②常驻后台，开机自启</text><text x="1478.81" y="358.162" fill="#5C4A00" font-size="10" textLength="122.036" font-family="'Segoe UI'">now - last_beat > 15s 时</text><text x="1478.81" y="369.803" fill="#5C4A00" font-size="10" textLength="173.848" font-family="'Segoe UI'">内网提交前读心跳返回 worker_offline</text></g><g class="entity" data-qualified-name="GMN43" id="ent0044" data-source-line="96"><path d="M706.23,152.359 L706.23,166.819 L671.44,170.819 L706.23,174.819 L706.23,189.281 A4,4 0 0 0 710.23,193.281 L854.236,193.281 A4,4 0 0 0 858.236,189.281 L858.236,158.359 L848.236,148.359 L710.23,148.359 A4,4 0 0 0 706.23,152.359" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M848.236,148.359 L848.236,156.359 A2,2 0 0 0 850.236,158.359 L858.236,158.359 L848.236,148.359" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="712.23" y="162.642" fill="#5C4A00" font-size="10" textLength="100" font-family="'Segoe UI'">内外网虽在不同网络域</text><text x="712.23" y="174.282" fill="#5C4A00" font-size="10" textLength="100" font-family="'Segoe UI'">但共享同一份类型定义</text><text x="712.23" y="185.923" fill="#5C4A00" font-size="10" textLength="131.006" font-family="'Segoe UI'">保证任务 JSON 读写契约一致</text></g><!--link mcp to pending--><g class="link" data-entity-1="ent0003" data-entity-2="ent0006" id="lnk21" data-source-line="59" data-link-type="dependency"><path d="M201.45,392.729 C186.15,405.859 171.54,422.059 163.23,440.629 C158.33,451.589 159.1,456.369 163.23,467.629 C169.88,485.819 179.953,499.005 192.533,511.645" style="stroke:#2B5797;stroke-width:2;" fill="none" id="mcp-to-pending"/><polygon points="196.06,515.189,192.546,505.989,192.533,511.645,186.876,511.632,196.06,515.189" fill="#2B5797" style="stroke:#2B5797;stroke-width:2;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="212.057" y="451.84" fill="#2B5797" font-size="11" textLength="46.358" font-family="'Segoe UI'">① 写任务</text><text x="164.23" y="464.645" fill="#333" font-size="11" textLength="142.012" font-family="'Segoe UI'">(.tmp → rename)&lt;/color></text></g><!--link worker to pending--><g class="link" data-entity-1="ent0015" data-entity-2="ent0006" id="lnk22" data-source-line="60" data-link-type="dependency"><path d="M1092.76,355.579 C996.01,357.429 794.3,370.259 642.23,440.629 C625.34,448.449 627.63,461.029 610.23,467.629 C576.04,480.599 314.54,460.549 281.23,475.629 C262.95,483.919 250.73,496.903 240.51,511.183" style="stroke:#E65100;stroke-width:2;" fill="none" id="worker-to-pending"/><polygon points="237.6,515.249,246.091,510.259,240.51,511.183,239.585,505.603,237.6,515.249" fill="#E65100" style="stroke:#E65100;stroke-width:2;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="661.819" y="451.84" fill="#E65100" font-size="11" textLength="83.569" font-family="'Segoe UI'">② 轮询 pending</text><text x="643.23" y="464.645" fill="#333" font-size="11" textLength="120.747" font-family="'Segoe UI'">(500ms 退避)&lt;/color></text></g><!--link worker to proc--><g class="link" data-entity-1="ent0015" data-entity-2="ent0007" id="lnk23" data-source-line="61" data-link-type="dependency"><path d="M1093.02,361.539 C1022.37,370.629 898.91,392.409 804.23,440.629 C787.65,449.079 789.64,461.059 772.23,467.629 C734.08,482.049 442.68,459.469 405.23,475.629 C386.21,483.839 373.071,496.946 362.001,511.246" style="stroke:#2E7D32;stroke-width:2;" fill="none" id="worker-to-proc"/><polygon points="358.94,515.199,367.612,510.531,362.001,511.246,361.286,505.634,358.94,515.199" fill="#2E7D32" style="stroke:#2E7D32;stroke-width:2;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="805.23" y="458.34" fill="#2E7D32" font-size="11" textLength="90.051" font-family="'Segoe UI'">③ 创建 .lock 抢占</text></g><!--link w3 to deviceA--><g class="link" data-entity-1="ent0017" data-entity-2="ent0019" id="lnk24" data-source-line="62" data-link-type="dependency"><path d="M1256.23,563.999 C1256.23,589.519 1256.23,625.109 1256.23,650.489" style="stroke:#6A1B9B;stroke-width:2;" fill="none" id="w3-to-deviceA"/><polygon points="1256.23,655.489,1260.23,646.489,1256.23,650.489,1252.23,646.489,1256.23,655.489" fill="#6A1B9B" style="stroke:#6A1B9B;stroke-width:2;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="1257.23" y="622.78" fill="#6A1B9B" font-size="11" textLength="61.091" font-family="'Segoe UI'">④ SSH 执行</text></g><!--link worker to done--><g class="link" data-entity-1="ent0015" data-entity-2="ent0008" id="lnk25" data-source-line="63" data-link-type="dependency"><path d="M1092.79,362.499 C926.86,382.519 452.08,439.829 450.23,440.629 C433.17,448.069 435.6,460.969 418.23,467.629 C391.97,477.709 190.95,464.259 165.23,475.629 C146.44,483.949 133.528,497.021 122.668,511.291" style="stroke:#C62828;stroke-width:2;" fill="none" id="worker-to-done"/><polygon points="119.64,515.269,128.274,510.53,122.668,511.291,121.907,505.685,119.64,515.269" fill="#C62828" style="stroke:#C62828;stroke-width:2;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="497.728" y="451.84" fill="#C62828" font-size="11" textLength="57.358" font-family="'Segoe UI'">⑤ 回写结果</text><text x="451.23" y="464.645" fill="#333" font-size="11" textLength="150.353" font-family="'Segoe UI'">(completed/failed)&lt;/color></text></g><!--link mcp to done--><g class="link" data-entity-1="ent0003" data-entity-2="ent0008" id="lnk26" data-source-line="64" data-link-type="dependency"><path d="M177.29,362.779 C125.66,371.969 62.4,392.949 29.23,440.629 C11,466.839 35.356,492.778 62.276,512.358" style="stroke:#00838F;stroke-width:2;" fill="none" id="mcp-to-done"/><polygon points="66.32,515.299,61.394,506.771,62.276,512.358,56.689,513.24,66.32,515.299" fill="#00838F" style="stroke:#00838F;stroke-width:2;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="61.925" y="451.84" fill="#00838F" font-size="11" textLength="57.358" font-family="'Segoe UI'">⑥ 轮询结果</text><text x="30.23" y="464.645" fill="#333" font-size="11" textLength="120.747" font-family="'Segoe UI'">(500ms 退避)&lt;/color></text></g><!--link cc to mcp--><g class="link" data-entity-1="ent0002" data-entity-2="ent0003" id="lnk27" data-source-line="67" data-link-type="dependency"><path d="M254.07,202.259 C254.93,233.709 256.142,277.831 257.072,311.551" style="stroke:#CCC;stroke-width:1;" fill="none" id="cc-to-mcp"/><polygon points="257.21,316.549,260.96,307.443,257.072,311.551,252.963,307.663,257.21,316.549" fill="#CCC" style="stroke:#CCC;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="256.23" y="249.97" fill="#999" font-size="11" textLength="106.696" font-family="'Segoe UI'">MCP 工具调用(stdio)</text></g><!--link worker to w2--><g class="link" data-entity-1="ent0015" data-entity-2="ent0016" id="lnk28" data-source-line="68" data-link-type="dependency"><path d="M1174.14,393.079 C1185.5,414.749 1194.9,442.619 1187.23,467.629 C1181.87,485.129 1173.68,498.267 1163.39,511.287" style="stroke:#CCC;stroke-width:1;" fill="none" id="worker-to-w2"/><polygon points="1160.29,515.209,1169.009,510.629,1163.39,511.287,1162.732,505.668,1160.29,515.209" fill="#CCC" style="stroke:#CCC;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="1190.23" y="458.34" fill="#999" font-size="11" textLength="22" font-family="'Segoe UI'">校验</text></g><!--link worker to w3--><g class="link" data-entity-1="ent0015" data-entity-2="ent0017" id="lnk29" data-source-line="69" data-link-type="dependency"><path d="M1175.06,393.079 C1185,406.259 1196.93,420.739 1209.23,432.629 C1213.57,436.839 1216.59,435.809 1220.23,440.629 C1237.16,463.039 1245.647,489.362 1250.607,510.482" style="stroke:#CCC;stroke-width:1;" fill="none" id="worker-to-w3"/><polygon points="1251.75,515.349,1253.586,505.673,1250.607,510.482,1245.798,507.502,1251.75,515.349" fill="#CCC" style="stroke:#CCC;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="1235.23" y="458.34" fill="#999" font-size="11" textLength="22" font-family="'Segoe UI'">执行</text></g><!--link worker to outlog--><g class="link" data-entity-1="ent0015" data-entity-2="ent0018" id="lnk30" data-source-line="70" data-link-type="dependency"><path d="M1169.78,393.109 C1179.76,407.769 1193.11,423.289 1209.23,432.629 C1230.98,445.239 1242.09,430.809 1265.23,440.629 C1302.64,456.519 1331.89,487.959 1350.45,511.569" style="stroke:#CCC;stroke-width:1;" fill="none" id="worker-to-outlog"/><polygon points="1353.54,515.499,1351.123,505.952,1350.45,511.569,1344.833,510.896,1353.54,515.499" fill="#CCC" style="stroke:#CCC;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="1305.23" y="458.34" fill="#999" font-size="11" textLength="22" font-family="'Segoe UI'">记录</text></g><!--link worker to hb--><g class="link" data-entity-1="ent0015" data-entity-2="ent0012" id="lnk31" data-source-line="73" data-link-type="dependency"><path d="M1093.11,372.559 C1048.77,387.159 986.25,410.639 936.23,440.629 C920.27,450.199 921.59,460.929 904.23,467.629 C858.39,485.339 728.85,457.369 683.23,475.629 C662.58,483.899 647.335,497.261 634.345,511.541" style="stroke:#AAA;stroke-width:1;" fill="none" id="worker-to-hb"/><polygon points="630.98,515.239,639.995,511.273,634.345,511.541,634.077,505.89,630.98,515.239" fill="#AAA" style="stroke:#AAA;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="937.23" y="458.34" fill="#888" font-size="11" textLength="49.226" font-family="'Segoe UI'">5s 写心跳</text></g><!--link mcp to hb--><g class="link" data-entity-1="ent0003" data-entity-2="ent0012" id="lnk32" data-source-line="74" data-link-type="dependency"><path d="M276.76,393.019 C291.85,418.969 315.8,451.659 347.23,467.629 C385.7,487.179 501.21,459.499 541.23,475.629 C561.86,483.949 577.104,497.312 590.094,511.582" style="stroke:#AAA;stroke-width:1;" fill="none" id="mcp-to-hb"/><polygon points="593.46,515.279,590.36,505.931,590.094,511.582,584.444,511.317,593.46,515.279" fill="#AAA" style="stroke:#AAA;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="348.23" y="458.34" fill="#888" font-size="11" textLength="66" font-family="'Segoe UI'">提交前读心跳</text></g><!--link worker to canc--><g class="link" data-entity-1="ent0015" data-entity-2="ent0010" id="lnk33" data-source-line="75" data-link-type="dependency"><path d="M1093.18,393.109 C1072.19,407.539 1048.32,424.449 1027.23,440.629 C1012.47,451.959 1012.56,460.849 995.23,467.629 C958.98,481.829 856.14,460.609 820.23,475.629 C800.19,484.019 785.658,497.294 773.288,511.544" style="stroke:#AAA;stroke-width:1;" fill="none" id="worker-to-canc"/><polygon points="770.01,515.319,778.93,511.145,773.288,511.544,772.889,505.901,770.01,515.319" fill="#AAA" style="stroke:#AAA;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="1028.23" y="458.34" fill="#888" font-size="11" textLength="66" font-family="'Segoe UI'">检查取消标记</text></g><!--link worker to outs--><g class="link" data-entity-1="ent0015" data-entity-2="ent0011" id="lnk34" data-source-line="76" data-link-type="dependency"><path d="M1143.98,393.129 C1138.28,418.599 1126.49,450.659 1102.23,467.629 C1087.01,478.289 952.02,467.699 935.23,475.629 C917.23,484.139 905.243,497.104 895.213,511.314" style="stroke:#AAA;stroke-width:1;" fill="none" id="worker-to-outs"/><polygon points="892.33,515.399,900.788,510.353,895.213,511.314,894.252,505.74,892.33,515.399" fill="#AAA" style="stroke:#AAA;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="1126.23" y="458.34" fill="#888" font-size="11" textLength="44" font-family="'Segoe UI'">落大输出</text></g><!--link shared to mcp--><g class="link" data-entity-1="ent0020" data-entity-2="ent0003" id="lnk35" data-source-line="79" data-link-type="dependency"><path d="M566.93,199.149 C560.64,202.399 554.29,205.669 548.23,208.759 C475.65,245.769 396.909,285.048 338.289,314.118" style="stroke:#7B1FA2;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="shared-to-mcp"/><polygon points="333.81,316.339,343.65,315.924,338.289,314.118,340.096,308.757,333.81,316.339" fill="#7B1FA2" style="stroke:#7B1FA2;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="485.23" y="249.97" fill="#7B1FA2" font-size="11" textLength="44" font-family="'Segoe UI'">引用类型</text></g><!--link shared to worker--><g class="link" data-entity-1="ent0020" data-entity-2="ent0015" id="lnk36" data-source-line="80" data-link-type="dependency"><path d="M671.48,201.089 C677.06,203.829 682.72,206.439 688.23,208.759 C829.95,268.349 1000.149,315.648 1088.199,338.418" style="stroke:#7B1FA2;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="shared-to-worker"/><polygon points="1093.04,339.669,1085.328,333.543,1088.199,338.418,1083.325,341.289,1093.04,339.669" fill="#7B1FA2" style="stroke:#7B1FA2;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="800.23" y="249.97" fill="#7B1FA2" font-size="11" textLength="44" font-family="'Segoe UI'">引用类型</text></g><!--link intranet to GMN37--><g class="link" data-entity-1="ent0001" data-entity-2="ent0038" id="lnk39" data-source-line="84" data-link-type="association"><path d="M539.025,99.406 C539.088,99.241 539.152,99.076 539.216,98.912 C539.345,98.582 539.475,98.254 539.608,97.927 C540.667,95.313 541.853,92.78 543.18,90.361 C548.486,80.683 556.04,72.824 566.73,68.869 C597.16,57.609 827.73,59.299 858.73,68.869 C908.86,84.339 957.21,123.009 984.76,148.029" style="stroke:#5A5A5A;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="intranet-GMN37"/></g><!--link host to GMN40--><g class="link" data-entity-1="ent0014" data-entity-2="ent0041" id="lnk42" data-source-line="90" data-link-type="association"><path d="M1445.256,354.699 C1445.345,354.699 1445.435,354.699 1445.524,354.699 C1445.882,354.699 1446.24,354.699 1446.598,354.699 C1449.46,354.699 1452.323,354.699 1455.185,354.699 C1460.91,354.699 1466.635,354.699 1472.36,354.699" style="stroke:#5A5A5A;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="host-GMN40"/></g><g class="legend" data-source-line="101"><rect x="1307.124" y="716.507" width="363.534" height="176.969" fill="none" style="stroke:#000;stroke-width:1;" rx="4" ry="4"/><text x="1316.998" y="736.502" fill="#000" font-size="14" textLength="28" font-weight="700" font-family="'Segoe UI'">颜色</text><text x="1371.576" y="736.502" fill="#000" font-size="14" textLength="28" font-weight="700" font-family="'Segoe UI'">含义</text><text x="1312.124" y="752.799" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="752.799" fill="#2B5797" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="752.799" fill="#000" font-size="14" font-family="'Segoe UI'">蓝</text><text x="1371.152" y="752.799" fill="#000" font-size="14" textLength="194.838" font-family="'Segoe UI'">① 写任务（MCP → pending）</text><text x="1312.124" y="769.096" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="769.096" fill="#E65100" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="769.096" fill="#000" font-size="14" font-family="'Segoe UI'">橙</text><text x="1371.152" y="769.096" fill="#000" font-size="14" textLength="217.451" font-family="'Segoe UI'">② 轮询 pending（Worker 消费）</text><text x="1312.124" y="785.393" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="785.393" fill="#2E7D32" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="785.393" fill="#000" font-size="14" font-family="'Segoe UI'">绿</text><text x="1371.152" y="785.393" fill="#000" font-size="14" textLength="114.611" font-family="'Segoe UI'">③ 创建 .lock 抢占</text><text x="1312.124" y="801.689" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="801.689" fill="#6A1B9B" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="801.689" fill="#000" font-size="14" font-family="'Segoe UI'">紫</text><text x="1371.152" y="801.689" fill="#000" font-size="14" textLength="119.779" font-family="'Segoe UI'">④ SSH 执行设备 A</text><text x="1312.124" y="817.986" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="817.986" fill="#C62828" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="817.986" fill="#000" font-size="14" font-family="'Segoe UI'">红</text><text x="1371.152" y="817.986" fill="#000" font-size="14" textLength="290.055" font-family="'Segoe UI'">⑤ 回写结果（Worker → completed/failed）</text><text x="1312.124" y="834.283" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="834.283" fill="#00838F" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="834.283" fill="#000" font-size="14" font-family="'Segoe UI'">青</text><text x="1371.152" y="834.283" fill="#000" font-size="14" textLength="191.747" font-family="'Segoe UI'">⑥ 轮询结果（MCP 读取返回）</text><text x="1312.124" y="850.58" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="850.58" fill="#AAA" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="850.58" fill="#000" font-size="14" font-family="'Segoe UI'">灰</text><text x="1371.152" y="850.58" fill="#000" font-size="14" textLength="191.433" font-family="'Segoe UI'">辅助操作（心跳/取消/大输出）</text><text x="1312.124" y="866.877" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="866.877" fill="#7B1FA2" font-size="14" font-family="'Segoe UI'">┄</text><text x="1329.453" y="866.877" fill="#000" font-size="14" textLength="28" font-family="'Segoe UI'">紫虚</text><text x="1371.152" y="866.877" fill="#000" font-size="14" textLength="136.452" font-family="'Segoe UI'">shared 类型契约引用</text><text x="1312.124" y="883.174" fill="#000" font-size="14" font-family="'Segoe UI'"> </text><text x="1316.574" y="883.174" fill="#CCC" font-size="14" font-family="'Segoe UI'">■</text><text x="1334.252" y="883.174" fill="#000" font-size="14" textLength="28" font-family="'Segoe UI'">浅灰</text><text x="1371.152" y="883.174" fill="#000" font-size="14" textLength="84" font-family="'Segoe UI'">进程内部调用</text><line x1="1312.124" y1="723.507" x2="1665.658" y2="723.507" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="739.804" x2="1665.658" y2="739.804" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="756.101" x2="1665.658" y2="756.101" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="772.397" x2="1665.658" y2="772.397" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="788.694" x2="1665.658" y2="788.694" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="804.991" x2="1665.658" y2="804.991" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="821.288" x2="1665.658" y2="821.288" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="837.585" x2="1665.658" y2="837.585" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="853.882" x2="1665.658" y2="853.882" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="870.179" x2="1665.658" y2="870.179" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="886.476" x2="1665.658" y2="886.476" style="stroke:#000;stroke-width:1;"/><line x1="1312.124" y1="723.507" x2="1312.124" y2="886.476" style="stroke:#000;stroke-width:1;"/><line x1="1366.702" y1="723.507" x2="1366.702" y2="886.476" style="stroke:#000;stroke-width:1;"/><line x1="1665.658" y1="723.507" x2="1665.658" y2="886.476" style="stroke:#000;stroke-width:1;"/></g><?plantuml-src ZLVVKzjM5dxtNt4tUMWxQOAn0vXEmenDxBOxatHdw6uVbav6iGLuCH8ZYJBfjZkmmM1-69jW8102c40WeR6X8K0iZFyNnbUId_8lzDnxPLksH5hnOgxE-SwvvtptErT_KmRu8HuDnxYeu987ey8m9t53w14N7koNn14XqYt6H0bT3z77OY4FS15nD2hqepuk9lEMDwQR9F0IybdM8tmVDn9JGgAWFE0WvhKUlb_aqJ-_lMOnyakIE6h6RFEJl-QNnDyqyDB7oQ0d-ZEFMbkjMV5XXHFwOppwhmkXW6r_7Q7EK3Tv8qeHNZ9NE_oTta2mjlhzG3GyAF2oZ5fXpP98QyZJ2OcmDHRRu_hL4bqGbQi2XqA1O7jpuA0xSDljRWpIrdtRNrjZGTmGnAL45TZLVRa_n4lIOuHJSqRfkRu_YvEfSd5TspZHDYO-dg_XoRXUN43tk_-1jFKadicY6mZlB9Er1sA4Hp-8qY1qx0RwvkjG3zAMfyhgIUNP9awik5oVeRlaGUMp6Npq_ngOiRgcpMvgwmNssbMlyRKcWu_dYN_T7-Ka7fbBsRdAY-sFvzENOna4XhgwZdDpEBvVMSlehzIFvtFQoXRBxXhYP1GL58aJU0LTltSlv0tUfhMqXEkESIEmXsxOIA-0C_dosPYsMZ2U5Cl5nLx1s9l0YQUe1U74fBQHXXzwPbDBa1_6tajOeJ72OK3l3dQ60etOf68zlFGJB_KAdt__U9Zl2KlHOUMBNa6V_Kq_c6NLlbpOwXNaaKT3KGLWmvmGvcFmOu3dOie0nHyA3wFhWTlTdK5VOm1MAosLBXTsj9LTN5hf5HHE7dmOZG22jd9IMJacEQkBsiQwMOwOs5yxbBzQ6_IMDOWsaRKFQiygOfpkuytDiZfh7Ez3wUrDCrj4VN7yg5muO3J0EnyGQPGLfZAsLYvbgs1pvREayVuGje6JMI2UaSjfMmcQwq1_dqnI3Vg2lkQs3VD212Ia1Nfs4TUczupiN5bLWPlKqtnRssUZgoI6uIGoxnleLamC3o9jPXidjvWpl7Vs38j3mp5UuIFW22J0CvkMoaP4WNTsw-EYCUg3TuwCuzqMuoGEhMdHPbzfYJVKbrXS4PBImNHFBMidYHluxGwUAE7d6rhcXD4FR9oznH5bU4IHQUWzus8HJnM0o7WkJltWhUpi1zoJb4SyfzpwZomAlO9vmd7fYN7wZlNcqHN55MFHy6CISA5OLdVqjylwqYuhgnXpvjqiuzqFKG76WenmhbG-KnsbmMP221h_ZN0dbJSkBe2QB3bHllAy4yM2NPcYzUbpcOLjd9rLNgiuFOzJX-Ga5VBes-zea55M4-TpcPi6HMAR1z3LOaLTmEaaJYvfMzdAcpa6u74kOK_FDuWn6lI7KaMRtyC9rkjHhxCJpcMDNBQg0PgwXcVs8L-l6vJwTRNRLnnzKClAatqZTu5tfXpqsFhMtokKrRWf_ZJH-LqSPmsEy3z5mxoVHl3UQxVWKq7GZrIyCOjt5_J2AtiKk1H8bEJi5DDpDG4IpBnwXKfcrSZdzQrnRMEjV7O1bJdDuui9qfwf50tF422wE-WB-UlHjQL3BPdJte_Zz89-lenJfo2u_xjSs0NoQFcKzdON50YdvohRwyRqxtXcI_zzfQvnH7fl_lkw9z3MqTdnfL8TutSzFzxigidCL-XEc4pQhqoxBeY0yEGgsmjmx9OoD8mk9vz2nmIum7nnfuNQTxbC4a64O7jRgzlzvn6O7KJ88gEOC_BRLHi8q-Ps3yceCZPM6IyvnV04E-vvFROOHEyiMw16460RXjvph1OQ5BAEwYM8xVxMG6UW6R7AX3eeimFGbwXERuSCkzizFe_FXaUajGx6Z01i1u4AGfsP2aC1wWBDDBTU1BEFRhVFwmlz2Jup0lnTiyGrVES2rwXctfucu-J073xHC_k4O-_Z-lWX33fyVeJZx_HtQfrTS74WcwQF9QbMaXJ9k9vJ9tswo8q2dyAHEsNudyjA92ewzTeP53J7XiaawQz3U1qWhkod8uGfHJOO8tU8YqlskfhZnxY8uvdNq6zG72WiL1KEB1IMhMkBIRYqrcjRJy9F7n8OfbOzg8y-NMqoEQfij3NJvTEUxDw5fvD6NctoTmfEnxGTvEMOjhdBHhksDGKb-2G8dTas42DTh0ruU_bCPMGoNALWGZy-WFB1fLelbA28Ldck5z5qXHGw0gqXl-VB22SFy14xFzdhBdo-1AnaMBL4FW5YRl6luTGsHB-9ZFonzcpUp9EkID7-0GM9VRKxFup8sXLRpnmXorqV3l6QKPgY7pMLU58lvhJPQUFzARYORKtFLvwfEBjXgcopjBJKRcOa2XtJEB4AJ4BrAziTyoxUXQpzTO5Uqosucj8crnPBobdhtOFgnnXSUOofDpYT1pD174KtKOoJbOVafeQwK2jG6TA0TzRl0Yi_ZL865DEi-aEnhoyM5VWhys5zOt1iv1khHRo-p-Qb-UsrkGa6vUAaoQuqtEV7ochHf5DkhVnXcXYKNXZvSJOFqTzxldk0I4vmx2ZVoAV1rB4bZnZVJ_wXcO3tBtSHcyxa5quV02RwXQpRvkvoRK0XO_4563HCOc0zwJSPnERG94nlHAhELmkIzdgL8ZLFN80pbGbwQnn_i8DLPwa5J5TB5CnnkZQvLwUcrVtuWBfRvsZrRjRaNHsJLk_2DlLk79prVP3AD1FTlglgVBG0LruyfS2D4zEiDsbrQfbnpux6jAqnpV53C6YKzGHZS0ixIIqrkRC3cX9ocPcmLWs43cnCARAA7PEQvjhHfv45T8wJl6nJ7fo14OoqVm00?></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: layered_architecture Pages: 1 -->
+<svg width="1316pt" height="678pt"
+ viewBox="0.00 0.00 1315.60 677.60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 648.8)">
+<title>layered_architecture</title>
+<polygon fill="white" stroke="transparent" points="-28.8,28.8 -28.8,-648.8 1286.8,-648.8 1286.8,28.8 -28.8,28.8"/>
+<text text-anchor="middle" x="629" y="-601.6" font-family="Noto Sans CJK SC" font-size="18.00">MsgFerry 双进程协作架构：内网 MCP 服务 + 外网 Node Worker + HGFS 文件队列</text>
+<g id="clust1" class="cluster">
+<title>cluster_intranet</title>
+<path fill="#ddf3e4" stroke="#7a93be" d="M136,-430C136,-430 767,-430 767,-430 773,-430 779,-436 779,-442 779,-442 779,-512 779,-512 779,-518 773,-524 767,-524 767,-524 136,-524 136,-524 130,-524 124,-518 124,-512 124,-512 124,-442 124,-442 124,-436 130,-430 136,-430"/>
+<text text-anchor="middle" x="451.5" y="-510.4" font-family="Noto Sans CJK SC" font-size="12.00" fill="#1f2933">内网虚拟机（VMware 虚拟桌面）— 网络完全隔离，无外网</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_hgfs</title>
+<path fill="#ffe8e8" stroke="#7a93be" d="M333,-309C333,-309 1212,-309 1212,-309 1218,-309 1224,-315 1224,-321 1224,-321 1224,-391 1224,-391 1224,-397 1218,-403 1212,-403 1212,-403 333,-403 333,-403 327,-403 321,-397 321,-391 321,-391 321,-321 321,-321 321,-315 327,-309 333,-309"/>
+<text text-anchor="middle" x="772.5" y="-389.4" font-family="Noto Sans CJK SC" font-size="12.00" fill="#1f2933">VMware HGFS 共享文件夹 — 唯一跨域通信介质，不走网卡协议栈</text>
+</g>
+<g id="clust5" class="cluster">
+<title>cluster_host</title>
+<path fill="#ddf3e4" stroke="#7a93be" d="M204,-188C204,-188 683,-188 683,-188 689,-188 695,-194 695,-200 695,-200 695,-270 695,-270 695,-276 689,-282 683,-282 683,-282 204,-282 204,-282 198,-282 192,-276 192,-270 192,-270 192,-200 192,-200 192,-194 198,-188 204,-188"/>
+<text text-anchor="middle" x="443.5" y="-268.4" font-family="Noto Sans CJK SC" font-size="12.00" fill="#1f2933">Windows 宿主机（公网可达）</text>
+</g>
+<g id="clust7" class="cluster">
+<title>cluster_legend</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M20,-8C20,-8 678,-8 678,-8 684,-8 690,-14 690,-20 690,-20 690,-86 690,-86 690,-92 684,-98 678,-98 678,-98 20,-98 20,-98 14,-98 8,-92 8,-86 8,-86 8,-20 8,-20 8,-14 14,-8 20,-8"/>
+<text text-anchor="middle" x="349" y="-86" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">图例</text>
+</g>
+<!-- cc -->
+<g id="node1" class="node">
+<title>cc</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M759,-474C759,-474 591,-474 591,-474 585,-474 579,-468 579,-462 579,-462 579,-450 579,-450 579,-444 585,-438 591,-438 591,-438 759,-438 759,-438 765,-438 771,-444 771,-450 771,-450 771,-462 771,-462 771,-468 765,-474 759,-474"/>
+<text text-anchor="middle" x="675" y="-459.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">Claude Code</text>
+<text text-anchor="middle" x="675" y="-447.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">唯一智能体 · 规划/分析/生成/解析</text>
+</g>
+<!-- mcp -->
+<g id="node2" class="node">
+<title>mcp</title>
+<path fill="#b4c9e8" stroke="#7a93be" d="M453.5,-474C453.5,-474 278.5,-474 278.5,-474 272.5,-474 266.5,-468 266.5,-462 266.5,-462 266.5,-450 266.5,-450 266.5,-444 272.5,-438 278.5,-438 278.5,-438 453.5,-438 453.5,-438 459.5,-438 465.5,-444 465.5,-450 465.5,-450 465.5,-462 465.5,-462 465.5,-468 459.5,-474 453.5,-474"/>
+<text text-anchor="middle" x="366" y="-459.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">MCP Server (TypeScript)</text>
+<text text-anchor="middle" x="366" y="-447.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">独立进程① · submit/cancel/health</text>
+</g>
+<!-- cc&#45;&gt;mcp -->
+<g id="edge19" class="edge">
+<title>cc&#45;&gt;mcp</title>
+<path fill="none" stroke="#cccccc" d="M578.87,-456C542.97,-456 502.13,-456 465.9,-456"/>
+<text text-anchor="middle" x="522.25" y="-462" font-family="Noto Sans CJK SC" font-size="10.00" fill="#999999">MCP 工具调用 (stdio)</text>
+</g>
+<!-- pending -->
+<g id="node4" class="node">
+<title>pending</title>
+<path fill="#ffffff" stroke="#7a93be" d="M390.5,-353C390.5,-353 341.5,-353 341.5,-353 335.5,-353 329.5,-347 329.5,-341 329.5,-341 329.5,-329 329.5,-329 329.5,-323 335.5,-317 341.5,-317 341.5,-317 390.5,-317 390.5,-317 396.5,-317 402.5,-323 402.5,-329 402.5,-329 402.5,-341 402.5,-341 402.5,-347 396.5,-353 390.5,-353"/>
+<text text-anchor="middle" x="366" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">pending/</text>
+<text text-anchor="middle" x="366" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">待执行任务</text>
+</g>
+<!-- mcp&#45;&gt;pending -->
+<!-- mcp&#45;&gt;pending -->
+<g id="edge13" class="edge">
+<title>mcp&#45;&gt;pending</title>
+<path fill="none" stroke="#2b5797" stroke-width="2" d="M374.76,-437.95C376.91,-432.94 378.91,-427.37 380,-422 384.82,-398.28 378.15,-370.62 372.46,-353.2"/>
+<text text-anchor="middle" x="443.5" y="-414" font-family="Noto Sans CJK SC" font-size="10.00" fill="#2b5797">① 写任务 (.tmp → rename)</text>
+</g>
+<!-- done -->
+<g id="node6" class="node">
+<title>done</title>
+<path fill="#ffffff" stroke="#7a93be" d="M615,-353C615,-353 563,-353 563,-353 557,-353 551,-347 551,-341 551,-341 551,-329 551,-329 551,-323 557,-317 563,-317 563,-317 615,-317 615,-317 621,-317 627,-323 627,-329 627,-329 627,-341 627,-341 627,-347 621,-353 615,-353"/>
+<text text-anchor="middle" x="589" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">completed/</text>
+<text text-anchor="middle" x="589" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">成功结果</text>
+</g>
+<!-- mcp&#45;&gt;done -->
+<g id="edge18" class="edge">
+<title>mcp&#45;&gt;done</title>
+<path fill="none" stroke="#00838f" stroke-width="2" d="M465.84,-440.04C480.88,-435.53 495.77,-429.65 509,-422 538.84,-404.75 564.14,-372.8 577.9,-353.07"/>
+<text text-anchor="middle" x="581" y="-414" font-family="Noto Sans CJK SC" font-size="10.00" fill="#00838f">⑥ 轮询结果 (500ms 退避)</text>
+</g>
+<!-- hb -->
+<g id="node10" class="node">
+<title>hb</title>
+<path fill="#ffffff" stroke="#7a93be" d="M1106.5,-353C1106.5,-353 1037.5,-353 1037.5,-353 1031.5,-353 1025.5,-347 1025.5,-341 1025.5,-341 1025.5,-329 1025.5,-329 1025.5,-323 1031.5,-317 1037.5,-317 1037.5,-317 1106.5,-317 1106.5,-317 1112.5,-317 1118.5,-323 1118.5,-329 1118.5,-329 1118.5,-341 1118.5,-341 1118.5,-347 1112.5,-353 1106.5,-353"/>
+<text text-anchor="middle" x="1072" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">heartbeat.json</text>
+<text text-anchor="middle" x="1072" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">Worker 心跳</text>
+</g>
+<!-- mcp&#45;&gt;hb -->
+<g id="edge24" class="edge">
+<title>mcp&#45;&gt;hb</title>
+<path fill="none" stroke="#aaaaaa" d="M465.59,-442.6C498.79,-438.52 535.98,-434 570,-430 601.54,-426.29 609.51,-426.11 641,-422 673.97,-417.69 681.88,-413.92 715,-411 746.45,-408.23 969.75,-414.87 999,-403 1024.35,-392.72 1046.37,-369.36 1059.42,-353.14"/>
+<text text-anchor="middle" x="744.5" y="-414" font-family="Noto Sans CJK SC" font-size="10.00" fill="#888888">提交前读心跳</text>
+</g>
+<!-- inlog -->
+<g id="node3" class="node">
+<title>inlog</title>
+<path fill="#ffffff" stroke="#7a93be" d="M236,-474C236,-474 144,-474 144,-474 138,-474 132,-468 132,-462 132,-462 132,-450 132,-450 132,-444 138,-438 144,-438 144,-438 236,-438 236,-438 242,-438 248,-444 248,-450 248,-450 248,-462 248,-462 248,-468 242,-474 236,-474"/>
+<text text-anchor="middle" x="190" y="-459.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">内网提交日志</text>
+<text text-anchor="middle" x="190" y="-447.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">task_id / 时间 / 结果</text>
+</g>
+<!-- proc -->
+<g id="node5" class="node">
+<title>proc</title>
+<path fill="#ffffff" stroke="#7a93be" d="M503.5,-353C503.5,-353 450.5,-353 450.5,-353 444.5,-353 438.5,-347 438.5,-341 438.5,-341 438.5,-329 438.5,-329 438.5,-323 444.5,-317 450.5,-317 450.5,-317 503.5,-317 503.5,-317 509.5,-317 515.5,-323 515.5,-329 515.5,-329 515.5,-341 515.5,-341 515.5,-347 509.5,-353 503.5,-353"/>
+<text text-anchor="middle" x="477" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">processing/</text>
+<text text-anchor="middle" x="477" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">+ .lock 抢占</text>
+</g>
+<!-- pending&#45;&gt;proc -->
+<!-- worker -->
+<g id="node12" class="node">
+<title>worker</title>
+<path fill="#b4c9e8" stroke="#7a93be" d="M573.5,-232C573.5,-232 430.5,-232 430.5,-232 424.5,-232 418.5,-226 418.5,-220 418.5,-220 418.5,-208 418.5,-208 418.5,-202 424.5,-196 430.5,-196 430.5,-196 573.5,-196 573.5,-196 579.5,-196 585.5,-202 585.5,-208 585.5,-208 585.5,-220 585.5,-220 585.5,-226 579.5,-232 573.5,-232"/>
+<text text-anchor="middle" x="502" y="-217.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">Node.js Worker (TypeScript)</text>
+<text text-anchor="middle" x="502" y="-205.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">独立进程② · 常驻后台 / 纯 IO</text>
+</g>
+<!-- pending&#45;&gt;worker -->
+<!-- proc&#45;&gt;done -->
+<!-- fail -->
+<g id="node7" class="node">
+<title>fail</title>
+<path fill="#ffffff" stroke="#7a93be" d="M743.5,-353C743.5,-353 674.5,-353 674.5,-353 668.5,-353 662.5,-347 662.5,-341 662.5,-341 662.5,-329 662.5,-329 662.5,-323 668.5,-317 674.5,-317 674.5,-317 743.5,-317 743.5,-317 749.5,-317 755.5,-323 755.5,-329 755.5,-329 755.5,-341 755.5,-341 755.5,-347 749.5,-353 743.5,-353"/>
+<text text-anchor="middle" x="709" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">failed/</text>
+<text text-anchor="middle" x="709" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">失败/超时/拦截</text>
+</g>
+<!-- done&#45;&gt;fail -->
+<!-- canc -->
+<g id="node8" class="node">
+<title>canc</title>
+<path fill="#ffffff" stroke="#7a93be" d="M869,-353C869,-353 803,-353 803,-353 797,-353 791,-347 791,-341 791,-341 791,-329 791,-329 791,-323 797,-317 803,-317 803,-317 869,-317 869,-317 875,-317 881,-323 881,-329 881,-329 881,-341 881,-341 881,-347 875,-353 869,-353"/>
+<text text-anchor="middle" x="836" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">cancelled/</text>
+<text text-anchor="middle" x="836" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">取消+孤儿回收</text>
+</g>
+<!-- fail&#45;&gt;canc -->
+<!-- outs -->
+<g id="node9" class="node">
+<title>outs</title>
+<path fill="#ffffff" stroke="#7a93be" d="M977.5,-353C977.5,-353 928.5,-353 928.5,-353 922.5,-353 916.5,-347 916.5,-341 916.5,-341 916.5,-329 916.5,-329 916.5,-323 922.5,-317 928.5,-317 928.5,-317 977.5,-317 977.5,-317 983.5,-317 989.5,-323 989.5,-329 989.5,-329 989.5,-341 989.5,-341 989.5,-347 983.5,-353 977.5,-353"/>
+<text text-anchor="middle" x="953" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">outputs/</text>
+<text text-anchor="middle" x="953" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">大输出分包</text>
+</g>
+<!-- canc&#45;&gt;outs -->
+<!-- outs&#45;&gt;hb -->
+<!-- pol -->
+<g id="node11" class="node">
+<title>pol</title>
+<path fill="#ffffff" stroke="#7a93be" d="M1204,-353C1204,-353 1166,-353 1166,-353 1160,-353 1154,-347 1154,-341 1154,-341 1154,-329 1154,-329 1154,-323 1160,-317 1166,-317 1166,-317 1204,-317 1204,-317 1210,-317 1216,-323 1216,-329 1216,-329 1216,-341 1216,-341 1216,-347 1210,-353 1204,-353"/>
+<text text-anchor="middle" x="1185" y="-338.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">policy/</text>
+<text text-anchor="middle" x="1185" y="-326.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">命令策略</text>
+</g>
+<!-- hb&#45;&gt;pol -->
+<!-- worker&#45;&gt;pending -->
+<g id="edge14" class="edge">
+<title>worker&#45;&gt;pending</title>
+<path fill="none" stroke="#e65100" stroke-width="2" d="M482.79,-232.26C463.3,-249.72 432.22,-277.42 405,-301 398.97,-306.23 392.35,-311.86 386.32,-316.96"/>
+<text text-anchor="middle" x="482.5" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#e65100">② 轮询 pending (500ms 退避)</text>
+</g>
+<!-- worker&#45;&gt;proc -->
+<g id="edge15" class="edge">
+<title>worker&#45;&gt;proc</title>
+<path fill="none" stroke="#2e7d32" stroke-width="2" d="M539.91,-232.09C571.92,-248.86 609.41,-275.55 588,-301 581.32,-308.94 552,-306.24 542,-309 533.38,-311.38 524.31,-314.48 515.77,-317.67"/>
+<text text-anchor="middle" x="633.5" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#2e7d32">③ 创建 .lock 抢占</text>
+</g>
+<!-- worker&#45;&gt;done -->
+<g id="edge17" class="edge">
+<title>worker&#45;&gt;done</title>
+<path fill="none" stroke="#c62828" stroke-width="2" d="M524.21,-232.1C545.87,-247.81 580.38,-270.38 614,-282 627.34,-286.61 667.67,-279.41 677,-290 680.23,-293.67 679.83,-297.02 677,-301 670.73,-309.82 664.16,-305.28 654,-309 645.26,-312.2 635.89,-315.74 627.07,-319.12"/>
+<text text-anchor="middle" x="749" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#c62828">⑤ 回写结果 (completed/failed)</text>
+</g>
+<!-- worker&#45;&gt;canc -->
+<g id="edge25" class="edge">
+<title>worker&#45;&gt;canc</title>
+<path fill="none" stroke="#aaaaaa" d="M523.18,-232.15C544.62,-248.38 579.46,-271.74 614,-282 636.28,-288.62 804.65,-275.74 823,-290 831.05,-296.26 834.3,-307.26 835.54,-316.69"/>
+<text text-anchor="middle" x="860.5" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#888888">检查取消标记</text>
+</g>
+<!-- worker&#45;&gt;outs -->
+<g id="edge26" class="edge">
+<title>worker&#45;&gt;outs</title>
+<path fill="none" stroke="#aaaaaa" d="M523.16,-232.22C544.59,-248.51 579.42,-271.91 614,-282 673.76,-299.43 835.21,-269.55 894,-290 909.93,-295.54 925.12,-307.07 936.1,-316.93"/>
+<text text-anchor="middle" x="935" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#888888">落大输出</text>
+</g>
+<!-- worker&#45;&gt;hb -->
+<g id="edge23" class="edge">
+<title>worker&#45;&gt;hb</title>
+<path fill="none" stroke="#aaaaaa" d="M523.15,-232.26C544.57,-248.58 579.39,-272 614,-282 650.84,-292.64 921.4,-282.49 959,-290 986.25,-295.45 1015.44,-306.97 1037.33,-316.86"/>
+<text text-anchor="middle" x="1018" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#888888">5s 写心跳</text>
+</g>
+<!-- w2 -->
+<g id="node13" class="node">
+<title>w2</title>
+<path fill="#ffffff" stroke="#7a93be" d="M369.5,-232C369.5,-232 304.5,-232 304.5,-232 298.5,-232 292.5,-226 292.5,-220 292.5,-220 292.5,-208 292.5,-208 292.5,-202 298.5,-196 304.5,-196 304.5,-196 369.5,-196 369.5,-196 375.5,-196 381.5,-202 381.5,-208 381.5,-208 381.5,-220 381.5,-220 381.5,-226 375.5,-232 369.5,-232"/>
+<text text-anchor="middle" x="337" y="-217.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">安全策略</text>
+<text text-anchor="middle" x="337" y="-205.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">白/黑名单校验</text>
+</g>
+<!-- worker&#45;&gt;w2 -->
+<g id="edge20" class="edge">
+<title>worker&#45;&gt;w2</title>
+<path fill="none" stroke="#cccccc" d="M418.21,-214C405.59,-214 393.01,-214 381.65,-214"/>
+<text text-anchor="middle" x="400" y="-220" font-family="Noto Sans CJK SC" font-size="10.00" fill="#999999">校验</text>
+</g>
+<!-- w3 -->
+<g id="node14" class="node">
+<title>w3</title>
+<path fill="#ffffff" stroke="#7a93be" d="M674.5,-232C674.5,-232 635.5,-232 635.5,-232 629.5,-232 623.5,-226 623.5,-220 623.5,-220 623.5,-208 623.5,-208 623.5,-202 629.5,-196 635.5,-196 635.5,-196 674.5,-196 674.5,-196 680.5,-196 686.5,-202 686.5,-208 686.5,-208 686.5,-220 686.5,-220 686.5,-226 680.5,-232 674.5,-232"/>
+<text text-anchor="middle" x="655" y="-217.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">SSH 执行</text>
+<text text-anchor="middle" x="655" y="-205.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">超时控制</text>
+</g>
+<!-- worker&#45;&gt;w3 -->
+<!-- worker&#45;&gt;w3 -->
+<g id="edge21" class="edge">
+<title>worker&#45;&gt;w3</title>
+<path fill="none" stroke="#cccccc" d="M585.66,-214C599.06,-214 612.16,-214 623.3,-214"/>
+<text text-anchor="middle" x="604.5" y="-220" font-family="Noto Sans CJK SC" font-size="10.00" fill="#999999">执行</text>
+</g>
+<!-- outlog -->
+<g id="node15" class="node">
+<title>outlog</title>
+<path fill="#ffffff" stroke="#7a93be" d="M262,-232C262,-232 212,-232 212,-232 206,-232 200,-226 200,-220 200,-220 200,-208 200,-208 200,-202 206,-196 212,-196 212,-196 262,-196 262,-196 268,-196 274,-202 274,-208 274,-208 274,-220 274,-220 274,-226 268,-232 262,-232"/>
+<text text-anchor="middle" x="237" y="-217.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">审计日志</text>
+<text text-anchor="middle" x="237" y="-205.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">滚动 / 30 天</text>
+</g>
+<!-- worker&#45;&gt;outlog -->
+<g id="edge22" class="edge">
+<title>worker&#45;&gt;outlog</title>
+<path fill="none" stroke="#cccccc" d="M480.09,-232.06C458.64,-248.47 424.29,-271.53 390,-281 344.16,-293.66 325.08,-303.15 283,-281 263.65,-270.81 250.87,-248.4 243.79,-232.3"/>
+<text text-anchor="middle" x="391" y="-293" font-family="Noto Sans CJK SC" font-size="10.00" fill="#999999">记录</text>
+</g>
+<!-- deviceA -->
+<g id="node16" class="node">
+<title>deviceA</title>
+<path fill="#fff3d6" stroke="#7a93be" d="M692.5,-156C692.5,-156 617.5,-156 617.5,-156 611.5,-156 605.5,-150 605.5,-144 605.5,-144 605.5,-132 605.5,-132 605.5,-126 611.5,-120 617.5,-120 617.5,-120 692.5,-120 692.5,-120 698.5,-120 704.5,-126 704.5,-132 704.5,-132 704.5,-144 704.5,-144 704.5,-150 698.5,-156 692.5,-156"/>
+<text text-anchor="middle" x="655" y="-141.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">外部设备 A</text>
+<text text-anchor="middle" x="655" y="-129.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">仅外网 SSH 接入</text>
+</g>
+<!-- w3&#45;&gt;deviceA -->
+<!-- w3&#45;&gt;deviceA -->
+<g id="edge16" class="edge">
+<title>w3&#45;&gt;deviceA</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="2" d="M662.7,-195.98C665.49,-187.87 667.6,-177.99 666,-169 665.24,-164.74 663.93,-160.29 662.46,-156.16"/>
+<text text-anchor="middle" x="694" y="-172" font-family="Noto Sans CJK SC" font-size="10.00" fill="#6a1b9b">④ SSH 执行</text>
+</g>
+<!-- l1 -->
+<g id="node18" class="node">
+<title>l1</title>
+<polygon fill="#2b5797" stroke="#2b5797" points="682,-52 628,-52 628,-16 682,-16 682,-52"/>
+<text text-anchor="middle" x="655" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">① 写任务</text>
+</g>
+<!-- deviceA&#45;&gt;l1 -->
+<!-- shared -->
+<g id="node17" class="node">
+<title>shared</title>
+<path fill="#f0e8fa" stroke="#7a93be" d="M468,-592C468,-592 264,-592 264,-592 258,-592 252,-586 252,-580 252,-580 252,-568 252,-568 252,-562 258,-556 264,-556 264,-556 468,-556 468,-556 474,-556 480,-562 480,-568 480,-568 480,-580 480,-580 480,-586 474,-592 468,-592"/>
+<text text-anchor="middle" x="366" y="-577.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">shared/</text>
+<text text-anchor="middle" x="366" y="-565.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">任务结构体类型 · 错误码枚举 · 路径常量</text>
+</g>
+<!-- shared&#45;&gt;mcp -->
+<!-- shared&#45;&gt;mcp -->
+<g id="edge27" class="edge">
+<title>shared&#45;&gt;mcp</title>
+<path fill="none" stroke="#7b1fa2" stroke-width="1.2" stroke-dasharray="5,2" d="M375.63,-555.69C377.44,-551.64 379.05,-547.26 380,-543 385.24,-519.37 378.46,-491.68 372.64,-474.24"/>
+<text text-anchor="middle" x="402" y="-535" font-family="Noto Sans CJK SC" font-size="10.00" fill="#7b1fa2">引用类型</text>
+</g>
+<!-- shared&#45;&gt;worker -->
+<g id="edge28" class="edge">
+<title>shared&#45;&gt;worker</title>
+<path fill="none" stroke="#7b1fa2" stroke-width="1.2" stroke-dasharray="5,2" d="M480.26,-568.45C693.49,-557.23 1138.55,-520.02 1228,-403 1253.37,-369.81 1255.99,-340.01 1228,-309 1182.25,-258.31 679.65,-300.8 614,-282 579.37,-272.08 544.55,-248.64 523.14,-232.3"/>
+<text text-anchor="middle" x="1238" y="-414" font-family="Noto Sans CJK SC" font-size="10.00" fill="#7b1fa2">引用类型</text>
+</g>
+<!-- l2 -->
+<g id="node19" class="node">
+<title>l2</title>
+<polygon fill="#e65100" stroke="#e65100" points="609.5,-52 540.5,-52 540.5,-16 609.5,-16 609.5,-52"/>
+<text text-anchor="middle" x="575" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">② 轮询 pending</text>
+</g>
+<!-- l3 -->
+<g id="node20" class="node">
+<title>l3</title>
+<polygon fill="#2e7d32" stroke="#2e7d32" points="522,-52 468,-52 468,-16 522,-16 522,-52"/>
+<text text-anchor="middle" x="495" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">③ 抢占锁</text>
+</g>
+<!-- l4 -->
+<g id="node21" class="node">
+<title>l4</title>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" points="450,-52 396,-52 396,-16 450,-16 450,-52"/>
+<text text-anchor="middle" x="423" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">④ SSH 执行</text>
+</g>
+<!-- l5 -->
+<g id="node22" class="node">
+<title>l5</title>
+<polygon fill="#c62828" stroke="#c62828" points="378,-52 324,-52 324,-16 378,-16 378,-52"/>
+<text text-anchor="middle" x="351" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">⑤ 回写结果</text>
+</g>
+<!-- l6 -->
+<g id="node23" class="node">
+<title>l6</title>
+<polygon fill="#00838f" stroke="#00838f" points="306,-52 252,-52 252,-16 306,-16 306,-52"/>
+<text text-anchor="middle" x="279" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">⑥ 轮询结果</text>
+</g>
+<!-- l7 -->
+<g id="node24" class="node">
+<title>l7</title>
+<polygon fill="#aaaaaa" stroke="#aaaaaa" points="234,-52 180,-52 180,-16 234,-16 234,-52"/>
+<text text-anchor="middle" x="207" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="white">辅助操作</text>
+</g>
+<!-- l8 -->
+<g id="node25" class="node">
+<title>l8</title>
+<polygon fill="#f0e8fa" stroke="#7b1fa2" points="161.5,-52 92.5,-52 92.5,-16 161.5,-16 161.5,-52"/>
+<text text-anchor="middle" x="127" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="#7b1fa2">shared 类型契约</text>
+</g>
+<!-- l9 -->
+<g id="node26" class="node">
+<title>l9</title>
+<polygon fill="#cccccc" stroke="#cccccc" points="74,-52 16,-52 16,-16 74,-16 74,-52"/>
+<text text-anchor="middle" x="45" y="-32.1" font-family="Noto Sans CJK SC" font-size="8.00" fill="#666666">进程内部调用</text>
+</g>
+</g>
+</svg>

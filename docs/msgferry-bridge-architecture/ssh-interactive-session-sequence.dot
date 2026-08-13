@@ -1,0 +1,263 @@
+digraph G {
+  graph [bgcolor="white", fontname="Noto Sans CJK SC", fontsize=18,
+         label="SSH 交互式会话：长生命周期 stdin/stdout 文件摆渡", labelloc="t", pad="0.4", ranksep=0.1, nodesep=0.4, rankdir=TB];
+  node [fontname="Noto Sans CJK SC", fontsize=10];
+  edge [fontname="Noto Sans CJK SC", fontsize=10];
+
+  PH [shape=plaintext, label="", group="PH", width=0.1];
+  node [shape=box, style="rounded,filled", fillcolor="#DCE9FB", color="#7A93BE", fontcolor="#1F2933"];
+  AI [group="AI", label="内网 MCP\n/ Claude Code"];
+  HGFS [group="HGFS", label="HGFS 共享目录\nsessions"];
+  W [group="W", label="SessionManager\n(Worker 外网)"];
+  F [group="F", label="SshSessionFactory\nshell + pty"];
+  A [group="A", label="设备 A\n(SSH daemon)"];
+  { rank=same; PH; AI; HGFS; W; F; A; }
+
+  node [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE"];
+  node [shape=note, fillcolor="#FFFBE6", color="#E0B400", fontcolor="#5C4A00"];
+  ph_0 [shape=plaintext, label="阶段一：打开会话 —— 建连 + shell channel + pty", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_10 [shape=note, label="订阅 onStdout/onStderr/onClose\n注入初始命令（session.cmd）"];
+  AI_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_11 [shape=plaintext, label="阶段二：stdin 注入 —— 内网写、Worker 轮询注入", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_17 [shape=note, label="更新 lastActive（供空闲超时判定）"];
+  AI_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_18 [shape=plaintext, label="阶段三：stdout 回写 —— shell 输出落盘供内网读取", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_21 [shape=note, label="写 stdout 目录下 seq.output（原子写）"];
+  AI_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_23 [shape=note, label="返回输出文本（AI 读取到命令结果）"];
+  AI_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_24 [shape=plaintext, label="阶段四：关闭 —— 三种触发方式", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_26 [shape=note, label="或 空闲超时(idle_timeout)\n或 远端关闭(remote_closed)"];
+  AI_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_30 [shape=note, label="Worker 优雅退出时 closeAll() 全量关闭"];
+  AI_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  HGFS_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="HGFS"];
+  W_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  F_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="F"];
+  A_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+
+  // lifelines
+  edge [style=invis, arrowhead=none];
+  PH -> AI -> HGFS -> W -> F -> A;  // header order
+  PH -> ph_0 -> ph_11 -> ph_18 -> ph_24;
+  edge [style=solid, arrowhead=none, color="#8CA3C7", penwidth=1.2];
+  AI -> AI_0 -> AI_1 -> AI_2 -> AI_3 -> AI_4 -> AI_5 -> AI_6 -> AI_7 -> AI_8 -> AI_9 -> AI_10 -> AI_11 -> AI_12 -> AI_13 -> AI_14 -> AI_15 -> AI_16 -> AI_17 -> AI_18 -> AI_19 -> AI_20 -> AI_21 -> AI_22 -> AI_23 -> AI_24 -> AI_25 -> AI_26 -> AI_27 -> AI_28 -> AI_29 -> AI_30;
+  HGFS -> HGFS_0 -> HGFS_1 -> HGFS_2 -> HGFS_3 -> HGFS_4 -> HGFS_5 -> HGFS_6 -> HGFS_7 -> HGFS_8 -> HGFS_9 -> HGFS_10 -> HGFS_11 -> HGFS_12 -> HGFS_13 -> HGFS_14 -> HGFS_15 -> HGFS_16 -> HGFS_17 -> HGFS_18 -> HGFS_19 -> HGFS_20 -> HGFS_21 -> HGFS_22 -> HGFS_23 -> HGFS_24 -> HGFS_25 -> HGFS_26 -> HGFS_27 -> HGFS_28 -> HGFS_29 -> HGFS_30;
+  W -> W_0 -> W_1 -> W_2 -> W_3 -> W_4 -> W_5 -> W_6 -> W_7 -> W_8 -> W_9 -> W_10 -> W_11 -> W_12 -> W_13 -> W_14 -> W_15 -> W_16 -> W_17 -> W_18 -> W_19 -> W_20 -> W_21 -> W_22 -> W_23 -> W_24 -> W_25 -> W_26 -> W_27 -> W_28 -> W_29 -> W_30;
+  F -> F_0 -> F_1 -> F_2 -> F_3 -> F_4 -> F_5 -> F_6 -> F_7 -> F_8 -> F_9 -> F_10 -> F_11 -> F_12 -> F_13 -> F_14 -> F_15 -> F_16 -> F_17 -> F_18 -> F_19 -> F_20 -> F_21 -> F_22 -> F_23 -> F_24 -> F_25 -> F_26 -> F_27 -> F_28 -> F_29 -> F_30;
+  A -> A_0 -> A_1 -> A_2 -> A_3 -> A_4 -> A_5 -> A_6 -> A_7 -> A_8 -> A_9 -> A_10 -> A_11 -> A_12 -> A_13 -> A_14 -> A_15 -> A_16 -> A_17 -> A_18 -> A_19 -> A_20 -> A_21 -> A_22 -> A_23 -> A_24 -> A_25 -> A_26 -> A_27 -> A_28 -> A_29 -> A_30;
+
+  // row alignment
+  { rank=same; AI_0; HGFS_0; W_0; F_0; A_0; ph_0; }
+  { rank=same; AI_1; HGFS_1; W_1; F_1; A_1; }
+  { rank=same; AI_2; HGFS_2; W_2; F_2; A_2; }
+  { rank=same; AI_3; HGFS_3; W_3; F_3; A_3; }
+  { rank=same; AI_4; HGFS_4; W_4; F_4; A_4; }
+  { rank=same; AI_5; HGFS_5; W_5; F_5; A_5; }
+  { rank=same; AI_6; HGFS_6; W_6; F_6; A_6; }
+  { rank=same; AI_7; HGFS_7; W_7; F_7; A_7; }
+  { rank=same; AI_8; HGFS_8; W_8; F_8; A_8; }
+  { rank=same; AI_9; HGFS_9; W_9; F_9; A_9; }
+  { rank=same; AI_10; HGFS_10; W_10; F_10; A_10; note_10; }
+  { rank=same; AI_11; HGFS_11; W_11; F_11; A_11; ph_11; }
+  { rank=same; AI_12; HGFS_12; W_12; F_12; A_12; }
+  { rank=same; AI_13; HGFS_13; W_13; F_13; A_13; }
+  { rank=same; AI_14; HGFS_14; W_14; F_14; A_14; }
+  { rank=same; AI_15; HGFS_15; W_15; F_15; A_15; }
+  { rank=same; AI_16; HGFS_16; W_16; F_16; A_16; }
+  { rank=same; AI_17; HGFS_17; W_17; F_17; A_17; note_17; }
+  { rank=same; AI_18; HGFS_18; W_18; F_18; A_18; ph_18; }
+  { rank=same; AI_19; HGFS_19; W_19; F_19; A_19; }
+  { rank=same; AI_20; HGFS_20; W_20; F_20; A_20; }
+  { rank=same; AI_21; HGFS_21; W_21; F_21; A_21; note_21; }
+  { rank=same; AI_22; HGFS_22; W_22; F_22; A_22; }
+  { rank=same; AI_23; HGFS_23; W_23; F_23; A_23; note_23; }
+  { rank=same; AI_24; HGFS_24; W_24; F_24; A_24; ph_24; }
+  { rank=same; AI_25; HGFS_25; W_25; F_25; A_25; }
+  { rank=same; AI_26; HGFS_26; W_26; F_26; A_26; note_26; }
+  { rank=same; AI_27; HGFS_27; W_27; F_27; A_27; }
+  { rank=same; AI_28; HGFS_28; W_28; F_28; A_28; }
+  { rank=same; AI_29; HGFS_29; W_29; F_29; A_29; }
+  { rank=same; AI_30; HGFS_30; W_30; F_30; A_30; note_30; }
+
+  // phase dividers
+  edge [style=dashed, arrowhead=none, color="#B0B8C4", penwidth=1.4];
+  AI_0 -> A_0 [constraint=false];
+  AI_11 -> A_11 [constraint=false];
+  AI_18 -> A_18 [constraint=false];
+  AI_24 -> A_24 [constraint=false];
+  // messages
+  edge [style=solid, arrowhead=normal, penwidth=1.1];
+  AI_1 -> HGFS_1 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="提交 session 任务：写 session.json(status=running) + 初始命令"];
+  HGFS_2 -> W_2 [color="#2B5797", style="dashed", penwidth=1.1, constraint=false, xlabel="轮询发现 running 会话，open(session)"];
+  W_3 -> F_3 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="factory.open(device)"];
+  F_4 -> A_4 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="TCP 握手 → SSH 密钥交换 → 认证"];
+  A_5 -> F_5 [color="#2B5797", style="dashed", penwidth=1.1, constraint=false, xlabel="ready（握手完成）"];
+  F_6 -> A_6 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="client.shell() 打开 shell channel + pty"];
+  A_7 -> F_7 [color="#2B5797", style="dashed", penwidth=1.1, constraint=false, xlabel="交互式 shell 就绪（不回显结束）"];
+  F_8 -> W_8 [color="#2B5797", style="dashed", penwidth=1.1, constraint=false, xlabel="返回 ShellSession（sessionId=ssh_1）"];
+  W_9 -> A_9 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="shell.write(cmd + newline)"];
+  W_10 -> note_10 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  AI_12 -> HGFS_12 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="写 stdin 目录下 seq.input 文件"];
+  HGFS_13 -> W_13 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="tick 轮询 listStdinInputs()"];
+  W_14 -> HGFS_14 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="[seq=1, 2, ...] 待注入序号"];
+  HGFS_15 -> W_15 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="读取并删除 1.input"];
+  W_16 -> A_16 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="shell.write(content) 注入 shell"];
+  W_17 -> note_17 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  A_19 -> W_19 [color="#6A1B9B", style="dashed", penwidth=1.1, constraint=false, xlabel="shell 输出 chunk（stdout）"];
+  W_20 -> HGFS_20 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="onStdout 回调 → appendStdout"];
+  HGFS_21 -> note_21 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  HGFS_22 -> AI_22 [color="#6A1B9B", style="dashed", penwidth=1.1, constraint=false, xlabel="轮询读取 seq.output"];
+  AI_23 -> note_23 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  AI_25 -> HGFS_25 [color="#C62828", style="solid", penwidth=1.1, constraint=false, xlabel="写 close.marker（主动关闭）"];
+  W_26 -> note_26 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_27 -> F_27 [color="#C62828", style="solid", penwidth=1.1, constraint=false, xlabel="finalize(session, 终态) → 回写 session.json"];
+  F_28 -> W_28 [color="#C62828", style="solid", penwidth=1.1, constraint=false, xlabel="shell.close() 关闭 channel + 释放连接"];
+  W_29 -> F_29 [color="#C62828", style="dashed", penwidth=1.1, constraint=false, xlabel="会话已关闭，从缓存移除"];
+  W_30 -> note_30 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+}

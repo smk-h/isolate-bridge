@@ -1,0 +1,244 @@
+digraph G {
+  graph [bgcolor="white", fontname="Noto Sans CJK SC", fontsize=18,
+         label="SSH 传输连接握手与复用：复用的是「门」，不是「屋子里的人」", labelloc="t", pad="0.4", ranksep=0.1, nodesep=0.4, rankdir=TB];
+  node [fontname="Noto Sans CJK SC", fontsize=10];
+  edge [fontname="Noto Sans CJK SC", fontsize=10];
+
+  PH [shape=plaintext, label="", group="PH", width=0.1];
+  node [shape=box, style="rounded,filled", fillcolor="#DCE9FB", color="#7A93BE", fontcolor="#1F2933"];
+  AI [group="AI", label="Claude Code\n(内网编排层)"];
+  W [group="W", label="SshExecExecutor\n(Worker 外网)"];
+  M [group="M", label="sessions: Map\ndevice → Client"];
+  A [group="A", label="设备 A\n(SSH daemon)"];
+  { rank=same; PH; AI; W; M; A; }
+
+  node [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE"];
+  node [shape=note, fillcolor="#FFFBE6", color="#E0B400", fontcolor="#5C4A00"];
+  ph_0 [shape=plaintext, label="阶段一：首次连接设备 A —— 完整握手", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_7 [shape=note, label="生成会话 id：ssh_1"];
+  AI_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_8 [shape=plaintext, label="阶段二：命令 1 —— 复用连接，开新 channel", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_10 [shape=note, label="远端 sh -c cmd1（全新子进程）"];
+  AI_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_13 [shape=note, label="channel 随命令销毁、进程销毁、环境变量不保留\n传输连接不动"];
+  AI_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_14 [shape=plaintext, label="阶段三：命令 2 —— 零握手复用", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_19 [shape=note, label="远端 sh -c cmd2（全新子进程）"];
+  AI_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_22 [shape=note, label="省掉 TCP 握手 + KEX + 认证的固定开销"];
+  AI_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_23 [shape=plaintext, label="阶段四：接入设备 B —— 独立连接缓存", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_27 [shape=note, label="生成会话 id：ssh_2（与 ssh_1 并存）"];
+  AI_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_29 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  AI_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_30 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  ph_31 [shape=plaintext, label="连接生命周期管理", fontsize=11, fontcolor="#1F2933", group="PH"];
+  AI_31 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_31 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_31 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_31 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+  note_32 [shape=note, label="连接超时(10s) / keepalive(15s) / close() 统一由 ExecSession 管理\nWorker 退出时全量关闭"];
+  AI_32 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="AI"];
+  W_32 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  M_32 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="M"];
+  A_32 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="A"];
+
+  // lifelines
+  edge [style=invis, arrowhead=none];
+  PH -> AI -> W -> M -> A;  // header order
+  PH -> ph_0 -> ph_8 -> ph_14 -> ph_23 -> ph_31;
+  edge [style=solid, arrowhead=none, color="#8CA3C7", penwidth=1.2];
+  AI -> AI_0 -> AI_1 -> AI_2 -> AI_3 -> AI_4 -> AI_5 -> AI_6 -> AI_7 -> AI_8 -> AI_9 -> AI_10 -> AI_11 -> AI_12 -> AI_13 -> AI_14 -> AI_15 -> AI_16 -> AI_17 -> AI_18 -> AI_19 -> AI_20 -> AI_21 -> AI_22 -> AI_23 -> AI_24 -> AI_25 -> AI_26 -> AI_27 -> AI_28 -> AI_29 -> AI_30 -> AI_31 -> AI_32;
+  W -> W_0 -> W_1 -> W_2 -> W_3 -> W_4 -> W_5 -> W_6 -> W_7 -> W_8 -> W_9 -> W_10 -> W_11 -> W_12 -> W_13 -> W_14 -> W_15 -> W_16 -> W_17 -> W_18 -> W_19 -> W_20 -> W_21 -> W_22 -> W_23 -> W_24 -> W_25 -> W_26 -> W_27 -> W_28 -> W_29 -> W_30 -> W_31 -> W_32;
+  M -> M_0 -> M_1 -> M_2 -> M_3 -> M_4 -> M_5 -> M_6 -> M_7 -> M_8 -> M_9 -> M_10 -> M_11 -> M_12 -> M_13 -> M_14 -> M_15 -> M_16 -> M_17 -> M_18 -> M_19 -> M_20 -> M_21 -> M_22 -> M_23 -> M_24 -> M_25 -> M_26 -> M_27 -> M_28 -> M_29 -> M_30 -> M_31 -> M_32;
+  A -> A_0 -> A_1 -> A_2 -> A_3 -> A_4 -> A_5 -> A_6 -> A_7 -> A_8 -> A_9 -> A_10 -> A_11 -> A_12 -> A_13 -> A_14 -> A_15 -> A_16 -> A_17 -> A_18 -> A_19 -> A_20 -> A_21 -> A_22 -> A_23 -> A_24 -> A_25 -> A_26 -> A_27 -> A_28 -> A_29 -> A_30 -> A_31 -> A_32;
+
+  // row alignment
+  { rank=same; AI_0; W_0; M_0; A_0; ph_0; }
+  { rank=same; AI_1; W_1; M_1; A_1; }
+  { rank=same; AI_2; W_2; M_2; A_2; }
+  { rank=same; AI_3; W_3; M_3; A_3; }
+  { rank=same; AI_4; W_4; M_4; A_4; }
+  { rank=same; AI_5; W_5; M_5; A_5; }
+  { rank=same; AI_6; W_6; M_6; A_6; }
+  { rank=same; AI_7; W_7; M_7; A_7; note_7; }
+  { rank=same; AI_8; W_8; M_8; A_8; ph_8; }
+  { rank=same; AI_9; W_9; M_9; A_9; }
+  { rank=same; AI_10; W_10; M_10; A_10; note_10; }
+  { rank=same; AI_11; W_11; M_11; A_11; }
+  { rank=same; AI_12; W_12; M_12; A_12; }
+  { rank=same; AI_13; W_13; M_13; A_13; note_13; }
+  { rank=same; AI_14; W_14; M_14; A_14; ph_14; }
+  { rank=same; AI_15; W_15; M_15; A_15; }
+  { rank=same; AI_16; W_16; M_16; A_16; }
+  { rank=same; AI_17; W_17; M_17; A_17; }
+  { rank=same; AI_18; W_18; M_18; A_18; }
+  { rank=same; AI_19; W_19; M_19; A_19; note_19; }
+  { rank=same; AI_20; W_20; M_20; A_20; }
+  { rank=same; AI_21; W_21; M_21; A_21; }
+  { rank=same; AI_22; W_22; M_22; A_22; note_22; }
+  { rank=same; AI_23; W_23; M_23; A_23; ph_23; }
+  { rank=same; AI_24; W_24; M_24; A_24; }
+  { rank=same; AI_25; W_25; M_25; A_25; }
+  { rank=same; AI_26; W_26; M_26; A_26; }
+  { rank=same; AI_27; W_27; M_27; A_27; note_27; }
+  { rank=same; AI_28; W_28; M_28; A_28; }
+  { rank=same; AI_29; W_29; M_29; A_29; }
+  { rank=same; AI_30; W_30; M_30; A_30; }
+  { rank=same; AI_31; W_31; M_31; A_31; ph_31; }
+  { rank=same; AI_32; W_32; M_32; A_32; note_32; }
+
+  // phase dividers
+  edge [style=dashed, arrowhead=none, color="#B0B8C4", penwidth=1.4];
+  AI_0 -> A_0 [constraint=false];
+  AI_8 -> A_8 [constraint=false];
+  AI_14 -> A_14 [constraint=false];
+  AI_23 -> A_23 [constraint=false];
+  AI_31 -> A_31 [constraint=false];
+  // messages
+  edge [style=solid, arrowhead=normal, penwidth=1.1];
+  AI_1 -> W_1 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="submit_ssh_task(cmd1, device=A)"];
+  W_2 -> M_2 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="getOrCreateSession(\"A\") → sessions 未命中"];
+  M_3 -> W_3 [color="#2B5797", style="dashed", penwidth=1.1, constraint=false, xlabel="查 map：无 \"A\" 的 Client → undefined"];
+  W_4 -> A_4 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="new ssh2 Client() + 读私钥/密码 → TCP 三次握手"];
+  A_5 -> W_5 [color="#2B5797", style="dashed", penwidth=1.1, constraint=false, xlabel="SSH 版本协商 → 密钥交换(KEX) → 认证签名 → ready"];
+  W_6 -> M_6 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="缓存 Client → sessions.set(\"A\", client)"];
+  W_7 -> note_7 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_9 -> A_9 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="client.exec(cmd1) 在已握手连接上开 exec channel"];
+  A_10 -> note_10 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  A_11 -> W_11 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="channel stdout/stderr/exit"];
+  W_12 -> AI_12 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="返回 cmd1 结果（连接仍保留）"];
+  W_13 -> note_13 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  AI_15 -> W_15 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="submit_ssh_task(cmd2, device=A)"];
+  W_16 -> M_16 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="查 map：命中 \"A\" → 直接返回 Client"];
+  M_17 -> W_17 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="ssh_1 Client（无握手）"];
+  W_18 -> A_18 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="client.exec(cmd2) 新 channel，新进程"];
+  A_19 -> note_19 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  A_20 -> W_20 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="channel stdout/stderr/exit"];
+  W_21 -> AI_21 [color="#2E7D32", style="dashed", penwidth=1.1, constraint=false, xlabel="返回 cmd2 结果"];
+  W_22 -> note_22 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  AI_24 -> W_24 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="submit_ssh_task(cmd, device=B)"];
+  W_25 -> M_25 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="查 map：无 \"B\" → 重新完整握手"];
+  W_26 -> M_26 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="缓存 Client → sessions.set(\"B\", client)"];
+  W_27 -> note_27 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_28 -> A_28 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="client.exec(cmd) 在 B 的连接上执行"];
+  A_29 -> W_29 [color="#6A1B9B", style="dashed", penwidth=1.1, constraint=false, xlabel="结果"];
+  W_30 -> AI_30 [color="#6A1B9B", style="dashed", penwidth=1.1, constraint=false, xlabel="返回结果（A/B 连接互不干扰、各自复用）"];
+  W_32 -> note_32 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+}

@@ -1,0 +1,148 @@
+@startuml 总体架构图（exchange 模式）
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #7A93BE
+  BorderThickness 1
+  FontColor #1F2933
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #E0B400
+  FontColor #5C4A00
+  FontSize 10
+}
+
+title MsgFerry exchange 模式：内网 MCP + 交换服务器单向信箱 + 外网 Worker
+
+' ===== 三个主层竖向堆叠（together 聚簇 + hidden 约束方向） =====
+together {
+  ' ===== 上层：内网虚拟机 =====
+  rectangle "内网虚拟机（VMware 虚拟桌面）\n网络完全隔离，无外网" as intranet #DDF3E4 {
+    together {
+      rectangle "Claude Code\n唯一智能体" as cc #DCE9FB
+      rectangle "MCP Server\n进程①\nsync.ts + queue.ts" as mcp #B4C9E8
+      rectangle "内网本地镜像\n$HOME/.msgferry/vm_share\noutbound(只写)\ninbound(只读镜像)" as localmirror #FFFFFF
+      cc -[hidden]right-> mcp
+      mcp -[hidden]right-> localmirror
+    }
+  }
+
+  ' ===== 中层：文件交换服务器（单向信箱） =====
+  rectangle "文件交换服务器 — 单向信箱\n内网与 Worker 的唯一共同介质" as mailbox #FFE8E8 {
+    rectangle "outbound/\ntask_<id>.json\ncancel_<id>.marker\nsent/(留痕，同步范围外)" as out #FFFFFF
+    rectangle "inbound/\nresult_<id>.json\n<id>.stdout\nheartbeat.json" as inbound #FFFFFF
+    rectangle "processing/\n.lock 抢占\n(Worker 本地中间态)" as proc #FFFFFF
+    out -[hidden]right-> inbound
+    inbound -[hidden]right-> proc
+  }
+
+  ' ===== 下层：Windows 宿主机 =====
+  rectangle "Windows 宿主机（公网可达）\n挂载文件交换服务器 vm_shared" as host #DDF3E4 {
+    rectangle "Node.js Worker\n进程②\nqueue_mode=exchange" as worker #B4C9E8
+    rectangle "安全策略\n白黑名单校验" as w2 #FFFFFF
+    rectangle "SSH 执行器\nexec / shell / session" as w3 #FFFFFF
+    rectangle "审计日志\n滚动 / 30 天" as outlog #FFFFFF
+  }
+}
+
+' ===== 外部设备 =====
+rectangle "外部设备 A\n仅外网 SSH 接入" as deviceA #FFF3D6
+
+' ===== shared 类型契约 =====
+rectangle "shared/\n任务结构体类型\n错误码枚举\n路径常量" as shared #F0E8FA
+
+' ===== 强制竖向布局（隐藏，不显示连线） =====
+intranet -[hidden]down-> mailbox
+mailbox -[hidden]down-> host
+intranet -[hidden]down-> host
+
+' ===== exchange 模式数据流向 =====
+' ① 内网写任务到本地镜像 outbound
+mcp -[#2B5797,thickness=2]-> localmirror : <color:#2B5797>① 原子写本地 outbound/<id>.json\n(.tmp → rename)</color>
+' ② 单文件 push 上行到服务器 outbound
+localmirror -[#E65100,thickness=2]down-> out : <color:#E65100>② syncPush 单文件 -pd\n({src}=outbound/<id>, {dst}=outbound/)</color>
+' ③ Worker 扫服务器 outbound 领任务
+out -[#6A1B9B,thickness=2]down-> worker : <color:#6A1B9B>③ Worker 扫 outbound/\n领任务（服务器天然同步可见）</color>
+' ④ 抢锁 + SSH 执行
+worker -[#2E7D32,thickness=2]-> proc : <color:#2E7D32>④ acquireLock\n(processing/ 去重)</color>
+w3 -[#6A1B9B,thickness=2]-> deviceA : <color:#6A1B9B>SSH 执行设备 A</color>
+' ⑤ Worker 回写结果到服务器 inbound
+worker -[#C62828,thickness=2]up-> inbound : <color:#C62828>⑤ 回写结果\ninbound/result_<id>.json\n大输出 <id>.stdout\n心跳 heartbeat.json</color>
+' ⑥ 整目录拉回本地 inbound 镜像
+inbound -[#00838F,thickness=2]up-> localmirror : <color:#00838F>⑥ syncPull 整目录 -g\n(服务器 inbound → 本地 inbound/)</color>
+' ⑦ MCP 轮询本地 inbound 发现结果
+localmirror -[#00838F,thickness=2]-> mcp : <color:#00838F>⑦ MCP 轮询本地 inbound/\n发现结果返回 Claude</color>
+
+' ===== 进程内部调用（浅灰，弱关系） =====
+cc -[#CCCCCC,thickness=1]-> mcp : <color:#999999>MCP 工具调用(stdio)</color>
+worker -[#CCCCCC,thickness=1]-> w2 : <color:#999999>校验</color>
+worker -[#CCCCCC,thickness=1]-> w3 : <color:#999999>执行</color>
+worker -[#CCCCCC,thickness=1]-> outlog : <color:#999999>记录</color>
+
+' ===== 取消 / 留痕（灰色，辅助操作） =====
+' 超时写取消标记 → push 到服务器 outbound
+mcp -[#AAAAAA,thickness=1]-> out : <color:#888888>超时写 cancel_<id>.marker\n经 syncPush 上行</color>
+' push 成功后本地移入 sent/ 留痕（在本地镜像内，同步范围之外）
+localmirror -[#AAAAAA,thickness=1]-> localmirror : <color:#888888>push 成功 → 移入 sent/ 留痕\n(避免二次上行)</color>
+
+' ===== shared 共享关系（紫色虚线，类型契约） =====
+shared -[#7B1FA2,dashed]-> mcp : <color:#7B1FA2>引用类型</color>
+shared -[#7B1FA2,dashed]-> worker : <color:#7B1FA2>引用类型</color>
+
+' ===== note 说明 =====
+note right of intranet
+  进程①由 Claude Code 通过 MCP 配置拉起
+  exchange: MCP 不直接读写共享目录，
+  只读写本地镜像 outbound/ / inbound/，
+  由 syncPush / syncPull 与服务器摆渡
+  本地 inbound/ 为只读镜像，禁写（-g 整目录覆盖）
+end note
+
+note right of mailbox
+  单向信箱语义：
+  outbound/  内网只写 → Worker 只读（上传方向）
+  inbound/   Worker 只写 → 内网只读（拉取方向）
+  processing/ 锁文件为 Worker 本地中间态，
+  内网永不拉取
+  同步命令 file_transfer / file_rsync 由用户自定义
+end note
+
+note right of host
+  进程②常驻后台，开机自启
+  queue_mode=exchange
+  直接挂载/读写文件交换服务器：
+  扫 outbound/ 领任务
+  结果回写 inbound/
+  心跳写 inbound/heartbeat.json
+  15s 过期判离线
+end note
+
+note right of shared
+  内外网虽在不同网络域
+  但共享同一份类型定义
+  保证任务 JSON 读写契约一致
+end note
+
+legend right
+  |= 颜色 |= 含义 |
+  | <color:#2B5797>■</color> 深蓝 | ① 内网写本地 outbound |
+  | <color:#E65100>■</color> 橙 | ② syncPush 单文件上行 |
+  | <color:#6A1B9B>■</color> 紫 | ③ Worker 领任务 / SSH 执行 |
+  | <color:#2E7D32>■</color> 绿 | ④ acquireLock 抢锁 |
+  | <color:#C62828>■</color> 红 | ⑤ Worker 回写 inbound |
+  | <color:#00838F>■</color> 青 | ⑥ syncPull 拉回 / ⑦ 轮询 |
+  | <color:#AAAAAA>■</color> 灰 | 辅助（取消/留痕/心跳） |
+  | <color:#7B1FA2>┄</color> 紫虚 | shared 类型契约引用 |
+  | <color:#CCCCCC>■</color> 浅灰 | 进程内部调用 |
+endlegend
+
+@enduml

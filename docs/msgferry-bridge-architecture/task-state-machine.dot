@@ -1,0 +1,85 @@
+digraph task_state_machine {
+  graph [
+    bgcolor="white", fontname="Noto Sans CJK SC", fontsize=18,
+    label="任务状态机：严格单向流转，禁止逆向",
+    labelloc="t", pad="0.4", ranksep=0.45, nodesep=0.4, rankdir=TB
+  ];
+  node [
+    fontname="Noto Sans CJK SC", fontsize=11, shape=box, style="rounded,filled",
+    fillcolor="#F7F9FC", color="#7A93BE", fontcolor="#1F2933"
+  ];
+  edge [fontname="Noto Sans CJK SC", fontsize=10, color="#5A5A5A", fontcolor="#333333"];
+
+  start [shape=circle, style=filled, fillcolor="#2E7D32", color="#2E7D32", width=0.35, label=""];
+  stop  [shape=doublecircle, style=filled, fillcolor="#C62828", color="#C62828", width=0.45, label="", peripheries=2];
+
+  s1  [label="生成 task_id + 任务 JSON"];
+  s2  [label="写 .tmp → rename 至 pending"];
+  s3  [label="外网 Worker 抢占任务"];
+  n1  [shape=note, fillcolor="#FFFBE6", color="#E0B400", label="创建 processing/<task_id>.lock\nO_CREAT|O_EXCL 原子抢占\n锁文件带 PID + 时间戳"];
+  s4  [label="移至 processing（状态流转）"];
+
+  d1  [shape=diamond, style=filled, fillcolor="#FFF3D6", color="#E0B400", label="命令白/黑名单\n校验?"];
+  d2  [shape=diamond, style=filled, fillcolor="#FFF3D6", color="#E0B400", label="内网是否\n已取消?"];
+  s5  [label="SSH 执行设备指令"];
+  d3  [shape=diamond, style=filled, fillcolor="#FFF3D6", color="#E0B400", label="执行结果?"];
+  s6  [label="回填 stdout/stderr/exit_code"];
+  d4  [shape=diamond, style=filled, fillcolor="#FFF3D6", color="#E0B400", label="输出超过\n64KB?"];
+  s7  [label="大输出落 outputs/\n结构体只保留摘要 + 指针"];
+  s8  [label="内联写入结构体"];
+  s9  [label="移至 completed"];
+  s10 [label="回填 error_msg + exit_code\n强制销毁 SSH 子进程"];
+  s11 [label="移至 failed"];
+  s12 [label="写 cancelled/<task_id>.result"];
+  n2  [shape=note, fillcolor="#FFFBE6", color="#E0B400", label="仅审计用，不污染 completed"];
+  s13 [label="移至 cancelled"];
+  s14 [label="error_msg = blocked_by_policy"];
+  s15 [label="内网读取结果继续迭代"];
+  s16 [label="结果文件保留 10 分钟后清理"];
+
+  start -> s1 -> s2 -> s3 -> s4;
+  s3 -> n1 [style=dashed, dir=none, color="#B9A00B"];
+
+  s4 -> d1;
+  d1 -> d2 [label="通过"];
+  d1 -> s14 [label="未通过"];
+  s14 -> s11;
+
+  d2 -> s5 [label="否"];
+  d2 -> s12 [label="已取消"];
+  s12 -> n2 [style=dashed, dir=none, color="#B9A00B"];
+  s12 -> s13;
+
+  s5 -> d3;
+  d3 -> s6 [label="成功"];
+  d3 -> s10 [label="失败/超时"];
+  s6 -> d4;
+  d4 -> s7 [label="是"];
+  d4 -> s8 [label="否"];
+  s7 -> s9;
+  s8 -> s9;
+  s10 -> s11;
+
+  s9  -> s15;
+  s11 -> s15;
+  s13 -> s15;
+  s15 -> s16 -> stop;
+
+  /* 状态图例 */
+  subgraph cluster_legend {
+    label="状态图例";
+    fontname="Noto Sans CJK SC"; fontsize=11; fontcolor="#1F2933";
+    style="rounded,filled"; fillcolor="#F7F9FC"; color="#7A93BE";
+    node [shape=box, style=filled, fontsize=10, fillcolor="#F7F9FC", color="#7A93BE"];
+    lg1 [label="pending    待执行（内网写入）"];
+    lg2 [label="processing  Worker 抢占执行中"];
+    lg3 [label="completed  执行成功"];
+    lg4 [label="failed     失败 / 超时 / 策略拦截"];
+    lg5 [label="cancelled  内网取消 + 孤儿结果回收"];
+    lg6 [shape=note, fillcolor="#FFFBE6", color="#E0B400", label="状态机严格单向流转\npending → processing → completed/failed/cancelled\n禁止逆向流转"];
+    lg1 -> lg2 -> lg3 [style=invis, arrowhead=none];
+    lg2 -> lg4 [style=invis, arrowhead=none];
+    lg2 -> lg5 [style=invis, arrowhead=none];
+    lg4 -> lg6 [style=invis, arrowhead=none];
+  }
+}

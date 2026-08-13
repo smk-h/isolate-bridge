@@ -8,3 +8,6 @@ dist/
 test/temp
 test/temp_server
 .pnpm-store/
+
+# 本地渲染脚本（拉取自 my-skills，勿提交）
+scripts/render-puml.mjs
