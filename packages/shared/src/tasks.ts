@@ -23,9 +23,9 @@ export interface CommandTask {
   cmd: string;                     // 待执行 SSH 命令
   device?: string;                  // 目标设备名（未指定走默认设备），由 submit 侧填写
   timeout_sec: number;              // 超时上限（秒）
-  submit_time: number;              // 提交时间戳（ms epoch）
-  start_time: number;               // 开始执行时间戳，未开始为 0
-  end_time: number;                 // 结束时间戳，未结束为 0
+  submit_time: string;              // 任务产生时间（北京时间 YYYY-MM-DD HH:mm:ss.SSS）
+  start_time: string;               // 开始执行时间（北京时间，未开始为空串）
+  end_time: string;                 // 结束时间（北京时间，未结束为空串）
   stdout: string;                   // 内联 stdout（截断至 max_inline_bytes）
   stderr: string;                   // 内联 stderr（截断）
   stdout_size: number;              // stdout 实际字节数
@@ -56,9 +56,9 @@ export interface SessionTask {
   cmd: string;                      // 初始命令（会话启动后首条注入的命令，可为空串）
   device?: string;                  // 目标设备名（未指定走默认设备）
   timeout_sec: number;              // 会话超时上限（从最后活跃起算的空闲超时）
-  submit_time: number;
-  start_time: number;
-  end_time: number;
+  submit_time: string;              // 任务产生时间（北京时间 YYYY-MM-DD HH:mm:ss.SSS）
+  start_time: string;               // 开始执行时间（北京时间，未开始为空串）
+  end_time: string;                 // 结束时间（北京时间，未结束为空串）
   status: SessionStatus;            // 会话状态
   session_dir: string;              // 会话摆渡根目录（<root>/sessions/<session_id>）
   stdin_dir: string;                // stdin 摆渡目录（相对 session_dir）
