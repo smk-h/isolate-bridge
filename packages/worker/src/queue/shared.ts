@@ -25,6 +25,10 @@ import {
 import {
   QUEUE_DIRS,
   HEARTBEAT_FILE,
+  taskFileName,
+  taskFileBaseName,
+  parseTaskIdFromFileName,
+  formatBeijingTimestamp,
 } from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
@@ -60,16 +64,78 @@ export async function initQueueDirs(root: string): Promise<void> {
 }
 
 /**
- * 列出 pending/ 目录下的待执行任务 ID（过滤 .tmp 文件）
+ * 在指定目录中按完整 task_id 匹配任务文件名
+ * 由于任务文件名只保留 task_id 前 8 位，读取时需扫描目录并校验内容中的完整 task_id。
  * @param root - HGFS 共享根目录
- * @returns task_id 列表（不含 .json 后缀）
+ * @param dir - 队列目录名
+ * @param taskId - 完整任务唯一标识
+ * @param suffix - 文件后缀（如 .json / .result）
+ * @returns 匹配的文件完整路径，未找到返回 null
+ */
+async function findTaskFileByTaskId(
+  root: string,
+  dir: string,
+  taskId: string,
+  suffix: string = JSON_SUFFIX,
+): Promise<string | null> {
+  const fullDir = join(root, dir);
+  let entries: string[];
+  try {
+    entries = await readdir(fullDir);
+  } catch {
+    return null;
+  }
+  const shortId = taskId.slice(0, 8).toUpperCase();
+  for (const name of entries) {
+    if (!name.endsWith(suffix) || name.endsWith(TMP_SUFFIX)) {
+      continue;
+    }
+    // 文件名时间段后的 uuid 前 8 位必须匹配，再读内容校验完整 task_id
+    if (parseTaskIdFromFileName(name).toUpperCase() !== shortId) {
+      continue;
+    }
+    try {
+      const content = await readFile(join(fullDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as { task_id?: string };
+      if (parsed.task_id === taskId) {
+        return join(fullDir, name);
+      }
+    } catch {
+      // 单个文件解析失败跳过，继续下一个
+    }
+  }
+  return null;
+}
+
+/**
+ * 列出 pending/ 目录下的待执行任务（返回完整 task_id，过滤 .tmp 文件）
+ * @param root - HGFS 共享根目录
+ * @returns task_id 列表（完整 UUID）
  */
 export async function listPending(root: string): Promise<string[]> {
   const pendingDir = join(root, QUEUE_DIRS.pending);
-  const entries = await readdir(pendingDir);
-  return entries
-    .filter((name) => name.endsWith(JSON_SUFFIX))
-    .map((name) => name.slice(0, -JSON_SUFFIX.length));
+  let entries: string[];
+  try {
+    entries = await readdir(pendingDir);
+  } catch {
+    return [];
+  }
+  const ids: string[] = [];
+  for (const name of entries) {
+    if (!name.endsWith(JSON_SUFFIX) || name.endsWith(TMP_SUFFIX)) {
+      continue;
+    }
+    try {
+      const content = await readFile(join(pendingDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as { task_id?: string };
+      if (parsed.task_id) {
+        ids.push(parsed.task_id);
+      }
+    } catch {
+      // 单个文件解析失败跳过，继续下一个
+    }
+  }
+  return ids;
 }
 
 /**
@@ -79,7 +145,10 @@ export async function listPending(root: string): Promise<string[]> {
  * @returns 任务结构体
  */
 export async function readTask(root: string, taskId: string): Promise<CommandTask> {
-  const filePath = join(root, QUEUE_DIRS.pending, `${taskId}${JSON_SUFFIX}`);
+  const filePath = await findTaskFileByTaskId(root, QUEUE_DIRS.pending, taskId);
+  if (filePath === null) {
+    throw new Error(`task not found in pending: ${taskId}`);
+  }
   const content = await readFile(filePath, 'utf-8');
   return JSON.parse(content) as CommandTask;
 }
@@ -127,16 +196,16 @@ export async function transitionToProcessing(
 ): Promise<void> {
   task.status = 'processing';
   task.worker_pid = pid;
-  task.start_time = Date.now();
+  task.start_time = formatBeijingTimestamp(Date.now());
 
-  const processingPath = join(root, QUEUE_DIRS.processing, `${task.task_id}${JSON_SUFFIX}`);
+  const processingPath = join(root, QUEUE_DIRS.processing, taskFileName(task.submit_time, task.task_id));
   const tmpPath = `${processingPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, processingPath);
 
   // 删除源任务文件：shared 从 pending/，exchange 从 outbound/
   const sourceDirName = sourceDir === 'outbound' ? 'outbound' : QUEUE_DIRS.pending;
-  const sourcePath = join(root, sourceDirName, `${task.task_id}${JSON_SUFFIX}`);
+  const sourcePath = join(root, sourceDirName, taskFileName(task.submit_time, task.task_id));
   await unlink(sourcePath).catch(() => {
     // 删除失败忽略：可能已被其他流程清理
   });
@@ -152,24 +221,23 @@ export async function transitionToProcessing(
  */
 export async function writeOverflowOutput(
   root: string,
-  taskId: string,
-  stdout: string,
-  stderr: string,
+  task: CommandTask,
 ): Promise<{ stdoutPath: string; stderrPath: string }> {
   // 相对路径统一用 posix 分隔符，确保 Windows 写入的路径可被 Linux 侧读取
-  const stdoutPath = `${QUEUE_DIRS.outputs}/${taskId}.stdout`;
-  const stderrPath = `${QUEUE_DIRS.outputs}/${taskId}.stderr`;
+  const base = taskFileBaseName(task.submit_time, task.task_id);
+  const stdoutPath = `${QUEUE_DIRS.outputs}/${base}.stdout`;
+  const stderrPath = `${QUEUE_DIRS.outputs}/${base}.stderr`;
   const stdoutFull = join(root, stdoutPath);
   const stderrFull = join(root, stderrPath);
 
   // stdout 分包：先写临时文件再 rename，保证原子性（读者不会读到半成品）
   const stdoutTmp = `${stdoutFull}${TMP_SUFFIX}`;
-  await writeFile(stdoutTmp, stdout, 'utf-8');
+  await writeFile(stdoutTmp, task.stdout, 'utf-8');
   await rename(stdoutTmp, stdoutFull);
 
   // stderr 分包：同样原子写入
   const stderrTmp = `${stderrFull}${TMP_SUFFIX}`;
-  await writeFile(stderrTmp, stderr, 'utf-8');
+  await writeFile(stderrTmp, task.stderr, 'utf-8');
   await rename(stderrTmp, stderrFull);
 
   return { stdoutPath, stderrPath };
@@ -189,9 +257,7 @@ export async function writeResult(
   if (task.stdout_size > maxInline) {
     const { stdoutPath, stderrPath } = await writeOverflowOutput(
       root,
-      task.task_id,
-      task.stdout,
-      task.stderr,
+      task,
     );
     task.truncated = true;
     task.stdout_overflow_path = stdoutPath;
@@ -201,7 +267,7 @@ export async function writeResult(
   }
 
   const targetDir = task.status === 'completed' ? QUEUE_DIRS.completed : QUEUE_DIRS.failed;
-  const targetPath = join(root, targetDir, `${task.task_id}${JSON_SUFFIX}`);
+  const targetPath = join(root, targetDir, taskFileName(task.submit_time, task.task_id));
   const tmpPath = `${targetPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, targetPath);
@@ -224,7 +290,7 @@ export async function checkCancelled(root: string, taskId: string): Promise<bool
 }
 
 /**
- * 回写取消结果到 cancelled/<taskId>.result
+ * 回写取消结果到 cancelled/ 下（文件名带任务时间戳，后缀 .result）
  * @param root - HGFS 共享根目录
  * @param task - 任务结构体
  */
@@ -232,7 +298,7 @@ export async function writeCancelledResult(
   root: string,
   task: CommandTask,
 ): Promise<void> {
-  const resultPath = join(root, QUEUE_DIRS.cancelled, `${task.task_id}${CANCELLED_RESULT_SUFFIX}`);
+  const resultPath = join(root, QUEUE_DIRS.cancelled, `${taskFileBaseName(task.submit_time, task.task_id)}${CANCELLED_RESULT_SUFFIX}`);
   const tmpPath = `${resultPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, resultPath);
@@ -274,9 +340,11 @@ export async function readHeartbeat(root: string): Promise<Heartbeat | null> {
  */
 export async function releaseProcessing(root: string, taskId: string): Promise<void> {
   const lockPath = join(root, QUEUE_DIRS.processing, `${taskId}${LOCK_SUFFIX}`);
-  const jsonPath = join(root, QUEUE_DIRS.processing, `${taskId}${JSON_SUFFIX}`);
+  const jsonPath = await findTaskFileByTaskId(root, QUEUE_DIRS.processing, taskId);
   await unlink(lockPath).catch(() => {});
-  await unlink(jsonPath).catch(() => {});
+  if (jsonPath) {
+    await unlink(jsonPath).catch(() => {});
+  }
 }
 
 /**
@@ -308,10 +376,13 @@ export async function gcProcessing(root: string, ttlSec: number): Promise<number
       if (now - fileStat.mtimeMs <= ttlMs) {
         continue;
       }
-      // 超龄锁：连同同 id 的处理记录一并删除
+      // 超龄锁：连同同 id 的处理记录一并删除（lock 用完整 task_id 命名，json 用带时间戳命名需扫描匹配）
       const taskId = name.slice(0, -LOCK_SUFFIX.length);
+      const jsonPath = await findTaskFileByTaskId(root, QUEUE_DIRS.processing, taskId);
       await unlink(lockPath);
-      await unlink(join(processingDir, `${taskId}${JSON_SUFFIX}`)).catch(() => {});
+      if (jsonPath) {
+        await unlink(jsonPath).catch(() => {});
+      }
       cleaned++;
     } catch {
       // 单文件清理失败忽略，继续下一个

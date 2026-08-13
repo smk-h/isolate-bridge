@@ -31,6 +31,7 @@ import { AuditLogger } from '../src/log/index.js';
 import type { WorkerConfig } from '../src/config/index.js';
 import { processTask } from '../src/task-runner.js';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
+import { formatBeijingTimestamp, taskFileName } from '@smai-kit/msgferry-shared';
 
 /** 总是抛错的执行器，模拟设备离线/建连失败 */
 class ThrowingExecutor implements CmdExecutor {
@@ -41,9 +42,9 @@ class ThrowingExecutor implements CmdExecutor {
 
 function makeTask(overrides: Partial<CommandTask> = {}): CommandTask {
   return {
-    kind: 'command', task_id: 'tr-test', batch_id: null, depends_on: [],
-    cmd: 'docker ps', timeout_sec: 30, submit_time: Date.now(),
-    start_time: 0, end_time: 0, stdout: '', stderr: '', stdout_size: 0,
+    kind: 'command', task_id: 'tr-test-0001', batch_id: null, depends_on: [],
+    cmd: 'docker ps', timeout_sec: 30, submit_time: formatBeijingTimestamp(Date.now()),
+    start_time: '', end_time: '', stdout: '', stderr: '', stdout_size: 0,
     stderr_size: 0, truncated: false, stdout_overflow_path: null,
     stderr_overflow_path: null, max_inline_bytes: 65536, exit_code: null,
     error_msg: null, status: 'pending', worker_pid: null, policy_blocked: false,
@@ -89,20 +90,20 @@ function makeConfig(queueMode: 'shared' | 'exchange'): WorkerConfig {
 
 describe('task-runner 执行异常回写', () => {
   it('shared 模式：执行器抛错应回写 failed/ 并记审计', async () => {
-    const task = makeTask({ task_id: 'sh-err-1' });
-    writeFileSync(join(root, 'pending', 'sh-err-1.json'), JSON.stringify(task));
-    assert.equal(await acquireLock(root, 'sh-err-1', 100), true);
-    const readed = await readTask(root, 'sh-err-1');
+    const task = makeTask({ task_id: 'sh-err-0001' });
+    writeFileSync(join(root, 'pending', taskFileName(task.submit_time, task.task_id)), JSON.stringify(task));
+    assert.equal(await acquireLock(root, task.task_id, 100), true);
+    const readed = await readTask(root, task.task_id);
     await processTask(makeConfig('shared'), root, readed, 100, policyRule, new ThrowingExecutor(), auditLogger, strategy);
 
-    assert.ok(existsSync(join(root, 'failed', 'sh-err-1.json')));
-    const result = JSON.parse(readFileSync(join(root, 'failed', 'sh-err-1.json'), 'utf-8'));
+    assert.ok(existsSync(join(root, 'failed', taskFileName(task.submit_time, task.task_id))));
+    const result = JSON.parse(readFileSync(join(root, 'failed', taskFileName(task.submit_time, task.task_id)), 'utf-8'));
     assert.equal(result.status, 'failed');
     assert.equal(result.error_msg, 'connect timeout after 10000ms');
     assert.equal(result.exit_code, null);
     assert.ok(result.stderr.includes('connect timeout'));
     // 审计应有该失败任务的记录
-    const audit = await auditLogger.searchByTaskId('sh-err-1');
+    const audit = await auditLogger.searchByTaskId(task.task_id);
     assert.equal(audit.length, 1);
     assert.equal(audit[0].exit_code, null);
   });
@@ -110,17 +111,17 @@ describe('task-runner 执行异常回写', () => {
   it('exchange 模式：执行器抛错应回写 inbound/result_<id>.json', async () => {
     await initExchangeDirs(root);
     strategy = createQueueStrategy('exchange');
-    const task = makeTask({ task_id: 'ex-err-1' });
-    writeFileSync(join(root, 'outbound', 'ex-err-1.json'), JSON.stringify(task));
-    assert.equal(await acquireLock(root, 'ex-err-1', 200), true);
-    const readed = await readOutboundTask(root, 'ex-err-1');
+    const task = makeTask({ task_id: 'ex-err-0001' });
+    writeFileSync(join(root, 'outbound', taskFileName(task.submit_time, task.task_id)), JSON.stringify(task));
+    assert.equal(await acquireLock(root, task.task_id, 200), true);
+    const readed = await readOutboundTask(root, task.task_id);
     await processTask(makeConfig('exchange'), root, readed, 200, policyRule, new ThrowingExecutor(), auditLogger, strategy);
 
-    assert.ok(existsSync(join(root, 'inbound', 'result_ex-err-1.json')));
-    const result = JSON.parse(readFileSync(join(root, 'inbound', 'result_ex-err-1.json'), 'utf-8'));
+    assert.ok(existsSync(join(root, 'inbound', `result_${taskFileName(task.submit_time, task.task_id)}`)));
+    const result = JSON.parse(readFileSync(join(root, 'inbound', `result_${taskFileName(task.submit_time, task.task_id)}`), 'utf-8'));
     assert.equal(result.status, 'failed');
     assert.equal(result.error_msg, 'connect timeout after 10000ms');
     // outbound 源任务已被领取消费
-    assert.ok(!existsSync(join(root, 'outbound', 'ex-err-1.json')));
+    assert.ok(!existsSync(join(root, 'outbound', taskFileName(task.submit_time, task.task_id))));
   });
 });

@@ -24,6 +24,9 @@ import {
 import {
   EXCHANGE_DIRS,
   HEARTBEAT_FILE,
+  taskFileName,
+  taskFileBaseName,
+  parseTaskIdFromFileName,
 } from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
@@ -45,9 +48,51 @@ export async function initExchangeDirs(root: string): Promise<void> {
 }
 
 /**
- * 列出 outbound/ 目录下的待执行任务 ID（仅 .json，过滤 .tmp 半成品与取消标记）
+ * 在指定目录中按完整 task_id 匹配任务文件名
  * @param root - HGFS 共享根目录
- * @returns task_id 列表（不含 .json 后缀）
+ * @param dir - 队列目录名
+ * @param taskId - 完整任务唯一标识
+ * @param suffix - 文件后缀
+ * @returns 匹配的文件完整路径，未找到返回 null
+ */
+async function findTaskFileByTaskId(
+  root: string,
+  dir: string,
+  taskId: string,
+  suffix: string = JSON_SUFFIX,
+): Promise<string | null> {
+  const fullDir = join(root, dir);
+  let entries: string[];
+  try {
+    entries = await readdir(fullDir);
+  } catch {
+    return null;
+  }
+  const shortId = taskId.slice(0, 8).toUpperCase();
+  for (const name of entries) {
+    if (!name.endsWith(suffix) || name.endsWith(TMP_SUFFIX)) {
+      continue;
+    }
+    if (parseTaskIdFromFileName(name).toUpperCase() !== shortId) {
+      continue;
+    }
+    try {
+      const content = await readFile(join(fullDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as { task_id?: string };
+      if (parsed.task_id === taskId) {
+        return join(fullDir, name);
+      }
+    } catch {
+      // 单个文件解析失败跳过
+    }
+  }
+  return null;
+}
+
+/**
+ * 列出 outbound/ 目录下的待执行任务（返回完整 task_id，仅 .json，过滤 .tmp 半成品与取消标记）
+ * @param root - HGFS 共享根目录
+ * @returns task_id 列表（完整 UUID）
  */
 export async function listOutbound(root: string): Promise<string[]> {
   const outboundDir = join(root, EXCHANGE_DIRS.outbound);
@@ -57,9 +102,22 @@ export async function listOutbound(root: string): Promise<string[]> {
   } catch {
     return [];
   }
-  return entries
-    .filter((name) => name.endsWith(JSON_SUFFIX))
-    .map((name) => name.slice(0, -JSON_SUFFIX.length));
+  const ids: string[] = [];
+  for (const name of entries) {
+    if (!name.endsWith(JSON_SUFFIX) || name.endsWith(TMP_SUFFIX)) {
+      continue;
+    }
+    try {
+      const content = await readFile(join(outboundDir, name), 'utf-8');
+      const parsed = JSON.parse(content) as { task_id?: string };
+      if (parsed.task_id) {
+        ids.push(parsed.task_id);
+      }
+    } catch {
+      // 单个文件解析失败跳过
+    }
+  }
+  return ids;
 }
 
 /**
@@ -69,7 +127,10 @@ export async function listOutbound(root: string): Promise<string[]> {
  * @returns 任务结构体
  */
 export async function readOutboundTask(root: string, taskId: string): Promise<CommandTask> {
-  const filePath = join(root, EXCHANGE_DIRS.outbound, `${taskId}${JSON_SUFFIX}`);
+  const filePath = await findTaskFileByTaskId(root, EXCHANGE_DIRS.outbound, taskId);
+  if (filePath === null) {
+    throw new Error(`task not found in outbound: ${taskId}`);
+  }
   const content = await readFile(filePath, 'utf-8');
   return JSON.parse(content) as CommandTask;
 }
@@ -87,15 +148,15 @@ export async function writeResultExchange(
   maxInline: number,
 ): Promise<void> {
   if (task.stdout_size > maxInline) {
-    await writeInboundOverflow(root, task.task_id, task.stdout, task.stderr);
+    await writeInboundOverflow(root, task);
     task.truncated = true;
-    task.stdout_overflow_path = `${EXCHANGE_DIRS.inbound}/${task.task_id}.stdout`;
-    task.stderr_overflow_path = `${EXCHANGE_DIRS.inbound}/${task.task_id}.stderr`;
+    task.stdout_overflow_path = `${EXCHANGE_DIRS.inbound}/${taskFileBaseName(task.submit_time, task.task_id)}.stdout`;
+    task.stderr_overflow_path = `${EXCHANGE_DIRS.inbound}/${taskFileBaseName(task.submit_time, task.task_id)}.stderr`;
     task.stdout = task.stdout.slice(0, maxInline);
     task.stderr = task.stderr.slice(0, maxInline);
   }
 
-  const targetPath = join(root, EXCHANGE_DIRS.inbound, `${EXCHANGE_RESULT_PREFIX}${task.task_id}${JSON_SUFFIX}`);
+  const targetPath = join(root, EXCHANGE_DIRS.inbound, `${EXCHANGE_RESULT_PREFIX}${taskFileName(task.submit_time, task.task_id)}`);
   const tmpPath = `${targetPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, targetPath);
@@ -110,24 +171,23 @@ export async function writeResultExchange(
  */
 async function writeInboundOverflow(
   root: string,
-  taskId: string,
-  stdout: string,
-  stderr: string,
+  task: CommandTask,
 ): Promise<void> {
-  const stdoutFull = join(root, EXCHANGE_DIRS.inbound, `${taskId}.stdout`);
-  const stderrFull = join(root, EXCHANGE_DIRS.inbound, `${taskId}.stderr`);
+  const base = taskFileBaseName(task.submit_time, task.task_id);
+  const stdoutFull = join(root, EXCHANGE_DIRS.inbound, `${base}.stdout`);
+  const stderrFull = join(root, EXCHANGE_DIRS.inbound, `${base}.stderr`);
 
   const stdoutTmp = `${stdoutFull}${TMP_SUFFIX}`;
-  await writeFile(stdoutTmp, stdout, 'utf-8');
+  await writeFile(stdoutTmp, task.stdout, 'utf-8');
   await rename(stdoutTmp, stdoutFull);
 
   const stderrTmp = `${stderrFull}${TMP_SUFFIX}`;
-  await writeFile(stderrTmp, stderr, 'utf-8');
+  await writeFile(stderrTmp, task.stderr, 'utf-8');
   await rename(stderrTmp, stderrFull);
 }
 
 /**
- * 回写取消结果到 inbound/result_<id>.result
+ * 回写取消结果到 inbound/result_<带时间戳基名>.result
  * @param root - HGFS 共享根目录
  * @param task - 任务结构体
  */
@@ -135,7 +195,7 @@ export async function writeCancelledResultExchange(
   root: string,
   task: CommandTask,
 ): Promise<void> {
-  const resultPath = join(root, EXCHANGE_DIRS.inbound, `${EXCHANGE_RESULT_PREFIX}${task.task_id}${CANCELLED_RESULT_SUFFIX}`);
+  const resultPath = join(root, EXCHANGE_DIRS.inbound, `${EXCHANGE_RESULT_PREFIX}${taskFileBaseName(task.submit_time, task.task_id)}${CANCELLED_RESULT_SUFFIX}`);
   const tmpPath = `${resultPath}${TMP_SUFFIX}`;
   await writeFile(tmpPath, JSON.stringify(task), 'utf-8');
   await rename(tmpPath, resultPath);

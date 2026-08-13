@@ -23,6 +23,7 @@ import { formatSystemTime } from './log/index.js';
 import type { AuditEntry } from './log/index.js';
 
 import { logger } from './log/index.js';
+import { formatBeijingTimestamp } from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 /**
@@ -58,7 +59,7 @@ export async function processTask(
     task.status = 'failed';
     task.policy_blocked = true;
     task.error_msg = 'blocked_by_policy';
-    task.end_time = Date.now();
+    task.end_time = formatBeijingTimestamp(Date.now());
     // 按队列模式回写：exchange 写 inbound/，shared 写 failed/
     await strategy.writeResult(root, task, config.max_inline_bytes);
     await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
@@ -81,7 +82,7 @@ export async function processTask(
     task.stderr = msg;
     task.stderr_size = Buffer.byteLength(msg, 'utf-8');
     task.error_msg = msg;
-    task.end_time = Date.now();
+    task.end_time = formatBeijingTimestamp(Date.now());
     await strategy.writeResult(root, task, config.max_inline_bytes);
     await auditLogger.log(makeAuditEntry(task, policyResult, null, startTime, false));
     return;
@@ -97,7 +98,7 @@ export async function processTask(
   task.stderr_size = Buffer.byteLength(cmdResult.stderr, 'utf-8');
   task.exit_code = cmdResult.exit_code;
   task.error_msg = cmdResult.stderr || (cmdResult.timed_out ? 'execution_timeout' : null);
-  task.end_time = Date.now();
+  task.end_time = formatBeijingTimestamp(Date.now());
 
   // 取消检查（exchange 查 outbound/cancel_<id>.marker，shared 查 cancelled/<id>）
   const cancelled = await strategy.checkCancelled(root, task.task_id);

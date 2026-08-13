@@ -39,18 +39,28 @@ import {
   removeCancelMarker,
   gcInboundResults,
 } from '../src/queue/index.js';
+import {
+  taskFileName,
+  taskFileBaseName,
+  formatBeijingTimestamp,
+} from '@smai-kit/msgferry-shared';
 import type { CommandTask } from '@smai-kit/msgferry-shared';
 
 function makeTask(overrides: Partial<CommandTask> = {}): CommandTask {
   return {
-    kind: 'command', task_id: 'test-1', batch_id: null, depends_on: [],
-    cmd: 'docker ps', timeout_sec: 30, submit_time: Date.now(),
-    start_time: 0, end_time: 0, stdout: '', stderr: '', stdout_size: 0,
+    kind: 'command', task_id: 'test-id-1234', batch_id: null, depends_on: [],
+    cmd: 'docker ps', timeout_sec: 30, submit_time: formatBeijingTimestamp(Date.now()),
+    start_time: '', end_time: '', stdout: '', stderr: '', stdout_size: 0,
     stderr_size: 0, truncated: false, stdout_overflow_path: null,
     stderr_overflow_path: null, max_inline_bytes: 65536, exit_code: null,
     error_msg: null, status: 'pending', worker_pid: null, policy_blocked: false,
     ...overrides,
   };
+}
+
+/** 生成任务文件的 pending/ 路径（手动写入时与实现保持一致） */
+function pendingPath(task: CommandTask): string {
+  return join(testRoot, 'pending', taskFileName(task.submit_time, task.task_id));
 }
 
 let testRoot: string;
@@ -73,21 +83,22 @@ describe('queue initQueueDirs', () => {
 });
 
 describe('queue listPending', () => {
-  it('应过滤 .tmp 文件', async () => {
+  it('应返回完整 task_id 并过滤 .tmp 文件', async () => {
     await initQueueDirs(testRoot);
-    writeFileSync(join(testRoot, 'pending', 't1.json'), '{}');
-    writeFileSync(join(testRoot, 'pending', 't2.tmp'), '{}');
-    assert.deepEqual(await listPending(testRoot), ['t1']);
+    const task = makeTask({ task_id: 'list-aa0001' });
+    writeFileSync(pendingPath(task), JSON.stringify(task));
+    writeFileSync(join(testRoot, 'pending', 'tmp.tmp'), '{}');
+    assert.deepEqual(await listPending(testRoot), ['list-aa0001']);
   });
 });
 
 describe('queue readTask', () => {
   it('应正确读取任务 JSON', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'r1' });
-    writeFileSync(join(testRoot, 'pending', 'r1.json'), JSON.stringify(task));
-    const result = await readTask(testRoot, 'r1');
-    assert.equal(result.task_id, 'r1');
+    const task = makeTask({ task_id: 'read-aa0001' });
+    writeFileSync(pendingPath(task), JSON.stringify(task));
+    const result = await readTask(testRoot, 'read-aa0001');
+    assert.equal(result.task_id, 'read-aa0001');
     assert.equal(result.cmd, 'docker ps');
   });
 });
@@ -95,25 +106,25 @@ describe('queue readTask', () => {
 describe('queue acquireLock', () => {
   it('首次创建应成功', async () => {
     await initQueueDirs(testRoot);
-    assert.equal(await acquireLock(testRoot, 'l1', 123), true);
-    assert.ok(existsSync(join(testRoot, 'processing', 'l1.lock')));
+    assert.equal(await acquireLock(testRoot, 'lock-aa0001', 123), true);
+    assert.ok(existsSync(join(testRoot, 'processing', 'lock-aa0001.lock')));
   });
 
   it('重复创建应返回 false', async () => {
     await initQueueDirs(testRoot);
-    await acquireLock(testRoot, 'l2', 111);
-    assert.equal(await acquireLock(testRoot, 'l2', 222), false);
+    await acquireLock(testRoot, 'lock-aa0002', 111);
+    assert.equal(await acquireLock(testRoot, 'lock-aa0002', 222), false);
   });
 });
 
 describe('queue transitionToProcessing', () => {
   it('应写 processing 并删 pending', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'tr1' });
-    writeFileSync(join(testRoot, 'pending', 'tr1.json'), JSON.stringify(task));
+    const task = makeTask({ task_id: 'trans-aa001' });
+    writeFileSync(pendingPath(task), JSON.stringify(task));
     await transitionToProcessing(testRoot, task, 999);
-    assert.ok(existsSync(join(testRoot, 'processing', 'tr1.json')));
-    assert.ok(!existsSync(join(testRoot, 'pending', 'tr1.json')));
+    assert.ok(existsSync(join(testRoot, 'processing', taskFileName(task.submit_time, task.task_id))));
+    assert.ok(!existsSync(pendingPath(task)));
     assert.equal(task.status, 'processing');
     assert.equal(task.worker_pid, 999);
   });
@@ -122,17 +133,17 @@ describe('queue transitionToProcessing', () => {
 describe('queue writeResult', () => {
   it('小输出应内联写入 completed', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'w1', status: 'completed', stdout: 'ok', stdout_size: 2 });
+    const task = makeTask({ task_id: 'write-aa001', status: 'completed', stdout: 'ok', stdout_size: 2 });
     await writeResult(testRoot, task, 65536);
-    assert.ok(existsSync(join(testRoot, 'completed', 'w1.json')));
+    assert.ok(existsSync(join(testRoot, 'completed', taskFileName(task.submit_time, task.task_id))));
   });
 
   it('大输出应分流到 outputs', async () => {
     await initQueueDirs(testRoot);
     const big = 'x'.repeat(70000);
-    const task = makeTask({ task_id: 'w2', status: 'completed', stdout: big, stdout_size: 70000 });
+    const task = makeTask({ task_id: 'write-aa002', status: 'completed', stdout: big, stdout_size: 70000 });
     await writeResult(testRoot, task, 65536);
-    assert.ok(existsSync(join(testRoot, 'outputs', 'w2.stdout')));
+    assert.ok(existsSync(join(testRoot, 'outputs', `${taskFileBaseName(task.submit_time, task.task_id)}.stdout`)));
     assert.equal(task.truncated, true);
     assert.ok(task.stdout_overflow_path !== null);
     assert.ok(task.stdout.length <= 65536);
@@ -140,31 +151,31 @@ describe('queue writeResult', () => {
 
   it('failed 状态应写入 failed 目录', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'w3', status: 'failed' });
+    const task = makeTask({ task_id: 'write-aa003', status: 'failed' });
     await writeResult(testRoot, task, 65536);
-    assert.ok(existsSync(join(testRoot, 'failed', 'w3.json')));
+    assert.ok(existsSync(join(testRoot, 'failed', taskFileName(task.submit_time, task.task_id))));
   });
 });
 
 describe('queue checkCancelled', () => {
   it('无标记返回 false', async () => {
     await initQueueDirs(testRoot);
-    assert.equal(await checkCancelled(testRoot, 'c1'), false);
+    assert.equal(await checkCancelled(testRoot, 'cancel-a1'), false);
   });
 
   it('有标记返回 true', async () => {
     await initQueueDirs(testRoot);
-    writeFileSync(join(testRoot, 'cancelled', 'c2'), '');
-    assert.equal(await checkCancelled(testRoot, 'c2'), true);
+    writeFileSync(join(testRoot, 'cancelled', 'cancel-a2'), '');
+    assert.equal(await checkCancelled(testRoot, 'cancel-a2'), true);
   });
 });
 
 describe('queue writeCancelledResult', () => {
-  it('应写入 cancelled/<id>.result', async () => {
+  it('应写入 cancelled/<带时间戳基名>.result', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'cc1', status: 'cancelled' });
+    const task = makeTask({ task_id: 'canc-aa0001', status: 'cancelled' });
     await writeCancelledResult(testRoot, task);
-    assert.ok(existsSync(join(testRoot, 'cancelled', 'cc1.result')));
+    assert.ok(existsSync(join(testRoot, 'cancelled', `${taskFileBaseName(task.submit_time, task.task_id)}.result`)));
   });
 });
 
@@ -187,18 +198,19 @@ describe('queue heartbeat', () => {
 describe('queue releaseProcessing', () => {
   it('应删除 processing 锁与任务记录', async () => {
     await initQueueDirs(testRoot);
-    await acquireLock(testRoot, 'rp1', 1);
-    await transitionToProcessing(testRoot, makeTask({ task_id: 'rp1' }), 1);
-    assert.ok(existsSync(join(testRoot, 'processing', 'rp1.lock')));
-    assert.ok(existsSync(join(testRoot, 'processing', 'rp1.json')));
-    await releaseProcessing(testRoot, 'rp1');
-    assert.ok(!existsSync(join(testRoot, 'processing', 'rp1.lock')));
-    assert.ok(!existsSync(join(testRoot, 'processing', 'rp1.json')));
+    const task = makeTask({ task_id: 'rele-aa0001' });
+    await acquireLock(testRoot, task.task_id, 1);
+    await transitionToProcessing(testRoot, task, 1);
+    assert.ok(existsSync(join(testRoot, 'processing', `${task.task_id}.lock`)));
+    assert.ok(existsSync(join(testRoot, 'processing', taskFileName(task.submit_time, task.task_id))));
+    await releaseProcessing(testRoot, task.task_id);
+    assert.ok(!existsSync(join(testRoot, 'processing', `${task.task_id}.lock`)));
+    assert.ok(!existsSync(join(testRoot, 'processing', taskFileName(task.submit_time, task.task_id))));
   });
 
   it('文件不存在时静默忽略（幂等）', async () => {
     await initQueueDirs(testRoot);
-    await releaseProcessing(testRoot, 'rp2');
+    await releaseProcessing(testRoot, 'rele-aa0002');
     assert.ok(true);
   });
 });
@@ -206,44 +218,46 @@ describe('queue releaseProcessing', () => {
 describe('queue gcProcessing', () => {
   it('应清理超龄孤儿锁及其任务记录', async () => {
     await initQueueDirs(testRoot);
-    await acquireLock(testRoot, 'gc-orphan', 1);
-    await transitionToProcessing(testRoot, makeTask({ task_id: 'gc-orphan' }), 1);
+    const task = makeTask({ task_id: 'gc-orphan-01' });
+    await acquireLock(testRoot, task.task_id, 1);
+    await transitionToProcessing(testRoot, task, 1);
     const oldTime = new Date(Date.now() - 3600 * 1000);
-    utimesSync(join(testRoot, 'processing', 'gc-orphan.lock'), oldTime, oldTime);
+    utimesSync(join(testRoot, 'processing', `${task.task_id}.lock`), oldTime, oldTime);
     const cleaned = await gcProcessing(testRoot, 600);
     assert.ok(cleaned >= 1);
-    assert.ok(!existsSync(join(testRoot, 'processing', 'gc-orphan.lock')));
-    assert.ok(!existsSync(join(testRoot, 'processing', 'gc-orphan.json')));
+    assert.ok(!existsSync(join(testRoot, 'processing', `${task.task_id}.lock`)));
+    assert.ok(!existsSync(join(testRoot, 'processing', taskFileName(task.submit_time, task.task_id))));
   });
 
   it('未超龄锁不应被清理', async () => {
     await initQueueDirs(testRoot);
-    await acquireLock(testRoot, 'gc-fresh', 1);
+    const taskId = 'gc-fresh-01';
+    await acquireLock(testRoot, taskId, 1);
     assert.equal(await gcProcessing(testRoot, 600), 0);
-    assert.ok(existsSync(join(testRoot, 'processing', 'gc-fresh.lock')));
+    assert.ok(existsSync(join(testRoot, 'processing', `${taskId}.lock`)));
   });
 });
 
 describe('queue gcResults', () => {
   it('应清理过期结果文件', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'g1', status: 'completed' });
+    const task = makeTask({ task_id: 'gc-res-0001', status: 'completed' });
     await writeResult(testRoot, task, 65536);
     // 将文件 mtime 设为 1 小时前，确保超过保留期
     const oldTime = new Date(Date.now() - 3600 * 1000);
-    utimesSync(join(testRoot, 'completed', 'g1.json'), oldTime, oldTime);
+    utimesSync(join(testRoot, 'completed', taskFileName(task.submit_time, task.task_id)), oldTime, oldTime);
     const cleaned = await gcResults(testRoot, 600);
     assert.ok(cleaned >= 1);
-    assert.ok(!existsSync(join(testRoot, 'completed', 'g1.json')));
+    assert.ok(!existsSync(join(testRoot, 'completed', taskFileName(task.submit_time, task.task_id))));
   });
 
   it('未过期文件不应被清理', async () => {
     await initQueueDirs(testRoot);
-    const task = makeTask({ task_id: 'g2', status: 'completed' });
+    const task = makeTask({ task_id: 'gc-res-0002', status: 'completed' });
     await writeResult(testRoot, task, 65536);
     const cleaned = await gcResults(testRoot, 600);
     assert.equal(cleaned, 0);
-    assert.ok(existsSync(join(testRoot, 'completed', 'g2.json')));
+    assert.ok(existsSync(join(testRoot, 'completed', taskFileName(task.submit_time, task.task_id))));
   });
 });
 
@@ -260,75 +274,78 @@ describe('exchange initExchangeDirs', () => {
 });
 
 describe('exchange listOutbound', () => {
-  it('应列出 .json 任务并过滤 .tmp 与取消标记', async () => {
+  it('应返回完整 task_id 并过滤 .tmp 与取消标记', async () => {
     await initExchangeDirs(testRoot);
-    writeFileSync(join(testRoot, 'outbound', 't1.json'), '{}');
-    writeFileSync(join(testRoot, 'outbound', 't2.tmp'), '{}');
+    const task = makeTask({ task_id: 'list-ob-0001' });
+    writeFileSync(join(testRoot, 'outbound', taskFileName(task.submit_time, task.task_id)), JSON.stringify(task));
+    writeFileSync(join(testRoot, 'outbound', 'tmp.tmp'), '{}');
     writeFileSync(join(testRoot, 'outbound', 'cancel_t3.marker'), '');
-    assert.deepEqual(await listOutbound(testRoot), ['t1']);
+    assert.deepEqual(await listOutbound(testRoot), ['list-ob-0001']);
   });
 });
 
 describe('exchange readOutboundTask', () => {
   it('应正确读取 outbound 任务 JSON', async () => {
     await initExchangeDirs(testRoot);
-    const task = makeTask({ task_id: 'e1' });
-    writeFileSync(join(testRoot, 'outbound', 'e1.json'), JSON.stringify(task));
-    const result = await readOutboundTask(testRoot, 'e1');
-    assert.equal(result.task_id, 'e1');
+    const task = makeTask({ task_id: 'read-ob-001' });
+    writeFileSync(join(testRoot, 'outbound', taskFileName(task.submit_time, task.task_id)), JSON.stringify(task));
+    const result = await readOutboundTask(testRoot, 'read-ob-001');
+    assert.equal(result.task_id, 'read-ob-001');
     assert.equal(result.cmd, 'docker ps');
   });
 });
 
 describe('exchange writeResultExchange', () => {
-  it('小输出应内联写入 inbound/result_<id>.json', async () => {
+  it('小输出应内联写入 inbound/result_<带时间戳名>.json', async () => {
     await initExchangeDirs(testRoot);
-    const task = makeTask({ task_id: 'ew1', status: 'completed', stdout: 'ok', stdout_size: 2 });
+    const task = makeTask({ task_id: 'ew-aa000001', status: 'completed', stdout: 'ok', stdout_size: 2 });
     await writeResultExchange(testRoot, task, 65536);
-    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ew1.json')));
-    const saved = JSON.parse(readFileSync(join(testRoot, 'inbound', 'result_ew1.json'), 'utf-8'));
+    const resultName = `result_${taskFileName(task.submit_time, task.task_id)}`;
+    assert.ok(existsSync(join(testRoot, 'inbound', resultName)));
+    const saved = JSON.parse(readFileSync(join(testRoot, 'inbound', resultName), 'utf-8'));
     assert.equal(saved.status, 'completed');
   });
 
   it('大输出应随结果批次同目录（不写 outputs/）', async () => {
     await initExchangeDirs(testRoot);
     const big = 'x'.repeat(70000);
-    const task = makeTask({ task_id: 'ew2', status: 'completed', stdout: big, stdout_size: 70000 });
+    const task = makeTask({ task_id: 'ew-aa000002', status: 'completed', stdout: big, stdout_size: 70000 });
     await writeResultExchange(testRoot, task, 65536);
-    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ew2.json')));
-    assert.ok(existsSync(join(testRoot, 'inbound', 'ew2.stdout')));
-    assert.ok(!existsSync(join(testRoot, 'outputs', 'ew2.stdout')));
+    const base = taskFileBaseName(task.submit_time, task.task_id);
+    assert.ok(existsSync(join(testRoot, 'inbound', `result_${base}.json`)));
+    assert.ok(existsSync(join(testRoot, 'inbound', `${base}.stdout`)));
+    assert.ok(!existsSync(join(testRoot, 'outputs', `${base}.stdout`)));
     assert.equal(task.truncated, true);
-    assert.ok(task.stdout_overflow_path?.includes('inbound/ew2.stdout'));
+    assert.ok(task.stdout_overflow_path?.includes(`inbound/${base}.stdout`));
   });
 
-  it('failed 状态也应写入 inbound/result_<id>.json', async () => {
+  it('failed 状态也应写入 inbound/result_<带时间戳名>.json', async () => {
     await initExchangeDirs(testRoot);
-    const task = makeTask({ task_id: 'ew3', status: 'failed' });
+    const task = makeTask({ task_id: 'ew-aa000003', status: 'failed' });
     await writeResultExchange(testRoot, task, 65536);
-    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ew3.json')));
+    assert.ok(existsSync(join(testRoot, 'inbound', `result_${taskFileName(task.submit_time, task.task_id)}`)));
   });
 });
 
 describe('exchange checkCancelledExchange', () => {
   it('无标记返回 false', async () => {
     await initExchangeDirs(testRoot);
-    assert.equal(await checkCancelledExchange(testRoot, 'ec1'), false);
+    assert.equal(await checkCancelledExchange(testRoot, 'ec-aa000001'), false);
   });
 
   it('有标记返回 true', async () => {
     await initExchangeDirs(testRoot);
-    writeFileSync(join(testRoot, 'outbound', 'cancel_ec2.marker'), '');
-    assert.equal(await checkCancelledExchange(testRoot, 'ec2'), true);
+    writeFileSync(join(testRoot, 'outbound', 'cancel_ec-aa0002.marker'), '');
+    assert.equal(await checkCancelledExchange(testRoot, 'ec-aa0002'), true);
   });
 });
 
 describe('exchange writeCancelledResultExchange', () => {
-  it('应写入 inbound/result_<id>.result', async () => {
+  it('应写入 inbound/result_<带时间戳基名>.result', async () => {
     await initExchangeDirs(testRoot);
-    const task = makeTask({ task_id: 'ecc1', status: 'cancelled' });
+    const task = makeTask({ task_id: 'ecc-aa00001', status: 'cancelled' });
     await writeCancelledResultExchange(testRoot, task);
-    assert.ok(existsSync(join(testRoot, 'inbound', 'result_ecc1.result')));
+    assert.ok(existsSync(join(testRoot, 'inbound', `result_${taskFileBaseName(task.submit_time, task.task_id)}.result`)));
   });
 });
 
@@ -362,15 +379,17 @@ describe('exchange removeCancelMarker', () => {
 describe('exchange gcInboundResults', () => {
   it('应清理过期结果文件并保留心跳', async () => {
     await initExchangeDirs(testRoot);
-    await writeResultExchange(testRoot, makeTask({ task_id: 'gx1', status: 'completed' }), 65536);
+    const task = makeTask({ task_id: 'gcx-aa00001', status: 'completed' });
+    await writeResultExchange(testRoot, task, 65536);
     await writeHeartbeatExchange(testRoot, {
       pid: 1, last_beat: Date.now(), processed_count: 0, queue_depth: 0, shutdown_at: null,
     });
+    const resultName = `result_${taskFileName(task.submit_time, task.task_id)}`;
     const oldTime = new Date(Date.now() - 3600 * 1000);
-    utimesSync(join(testRoot, 'inbound', 'result_gx1.json'), oldTime, oldTime);
+    utimesSync(join(testRoot, 'inbound', resultName), oldTime, oldTime);
     const cleaned = await gcInboundResults(testRoot, 600);
     assert.ok(cleaned >= 1);
-    assert.ok(!existsSync(join(testRoot, 'inbound', 'result_gx1.json')));
+    assert.ok(!existsSync(join(testRoot, 'inbound', resultName)));
     assert.ok(existsSync(join(testRoot, 'inbound', 'heartbeat.json')));
   });
 });

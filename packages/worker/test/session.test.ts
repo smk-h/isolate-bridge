@@ -15,7 +15,7 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, existsSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { SESSIONS_DIR, SESSION, SessionStatus } from '@smai-kit/msgferry-shared';
+import { SESSIONS_DIR, SESSION, SessionStatus, formatBeijingTimestamp } from '@smai-kit/msgferry-shared';
 import type { SessionTask } from '@smai-kit/msgferry-shared';
 
 import {
@@ -41,9 +41,9 @@ function makeSession(overrides: Partial<SessionTask> = {}): SessionTask {
     cmd: '',
     device: 'board-100',
     timeout_sec: 30,
-    submit_time: Date.now(),
-    start_time: Date.now(),
-    end_time: 0,
+    submit_time: formatBeijingTimestamp(Date.now()),
+    start_time: formatBeijingTimestamp(Date.now()),
+    end_time: '',
     status: SessionStatus.Running,
     session_dir: join(root, SESSIONS_DIR, 'sess-1'),
     stdin_dir: SESSION.stdin,
