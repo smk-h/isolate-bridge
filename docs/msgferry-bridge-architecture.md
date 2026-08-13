@@ -105,7 +105,7 @@ packages/
 | 核心职责 | 任务投递 + 结果回读 | 任务消费 + SSH 执行 + 结果回写 |
 | 面向对象 | Claude Code（MCP 客户端） | HGFS 文件队列（无客户端） |
 | 监听目录 | `completed/` / `failed/` 结果文件 | `pending/`（shared）或 `outbound/`（exchange） |
-| 写入内容 | `pending/<task_id>.json`、`cancelled/<task_id>`、`outbound/<id>.json` | `processing/<task_id>.lock`、`completed/`、`failed/`、`outputs/`、`heartbeat.json`、`inbound/` |
+| 写入内容 | `pending/<时间戳-uuid8>.json`、`cancelled/<task_id>`、`outbound/<时间戳-uuid8>.json` | `processing/<task_id>.lock`、`completed/`、`failed/`、`outputs/`、`heartbeat.json`、`inbound/` |
 | 启动方式 | 由 Claude Code 通过 MCP 配置拉起（stdio） | 常驻后台进程，开机自启 |
 | 是否阻塞 | 是（提交后阻塞等结果，超时返回） | 否（主循环轮询，单任务执行可并发） |
 
@@ -153,10 +153,10 @@ shared 模式的核心判据是 **MCP 侧不配置任何 `MSGFERRY_SYNC_*` 命�
 exchange 模式的核心判据是 **MCP 侧配置了 `MSGFERRY_SYNC_PUSH_CMD` 或 `MSGFERRY_SYNC_PULL_CMD`**。共享目录仅充当「单向信箱」，MCP 不再直接读写，而是通过交换服务器命令把 `outbound/` / `inbound/` 摆渡到共享目录。数据流：
 
 ```text
-push:  Ubuntu 本地 $HOME/.msgferry/vm_share/outbound/<id>.json
-   └─ sync 命令复制 → /mnt/hgfs/sharedir/vm_share/outbound/<id>.json
+push:  Ubuntu 本地 $HOME/.msgferry/vm_share/outbound/<时间戳-uuid8>.json
+   └─ sync 命令复制 → /mnt/hgfs/sharedir/vm_share/outbound/<时间戳-uuid8>.json
                         （Windows 侧 Worker 扫 outbound/ 领任务）
-pull:  Worker 写结果 → /mnt/hgfs/sharedir/vm_share/inbound/result_<id>.json
+pull:  Worker 写结果 → /mnt/hgfs/sharedir/vm_share/inbound/result_<时间戳-uuid8>.json
    └─ sync 命令整目录拉回 → Ubuntu 本地 $HOME/.msgferry/vm_share/inbound/
 ```
 
@@ -189,10 +189,17 @@ vm_share/
 ├─ completed/      # 执行成功结果
 ├─ failed/         # 执行失败/超时/策略拦截任务
 ├─ cancelled/      # 内网取消标记 + 取消后结果（审计）
-├─ outputs/        # 大输出分包文件（<task_id>.stdout 等）
+├─ outputs/        # 大输出分包文件（<任务时间戳-uuid8>.stdout 等）
 ├─ heartbeat.json  # 外网 Worker 心跳
 └─ policy/         # 外网本地维护的命令策略文件（不通过队列下发）
 ```
+
+> **任务文件命名规范**：所有任务内容文件（pending/processing/completed/failed/outbound/ 下的任务 JSON、结果文件与 outputs/ 大输出分包）统一采用
+> `yyyymmdd-hhmmssxxx-{task_id 前 8 位}` 命名（`xxx` 为毫秒），例如 `20260813-203845123-550e8400.json`。
+> 其中时间部分来自**任务产生时间**（即任务 JSON 中的 `submit_time`，北京时间，精确到毫秒），保证从文件名即可直接判断任务的产生时间点，且与任务内容中的时间完全一致。
+> `task_id` 仍为完整 UUID（36 位）用于业务检索，仅文件名取前 8 位以保持文件名简洁、可排序。
+> 锁文件（`<task_id>.lock`）与取消标记（`cancelled/<task_id>`、`outbound/cancel_<task_id>.marker`）等辅助文件仍以完整 `task_id` 命名。
+> 读取时因文件名只保留 task_id 前 8 位，会扫描对应目录并通过文件内容中的完整 `task_id` 精确匹配。
 
 #### 3.2 exchange 模式（额外单向信箱）
 
@@ -233,7 +240,7 @@ vm_share/sessions/<session_id>/
 | 维度 | 外网 Worker（消费任务） | 内网工具（等待结果） |
 | --- | --- | --- |
 | 监听目录 | `pending/`（shared）/ `outbound/`（exchange） | `completed/` / `failed/`（shared）/ 本地 `inbound/`（exchange） |
-| 发现条件 | 目录下出现新 `<task_id>.json` | 对应 task_id 的结果文件出现 |
+| 发现条件 | 目录下出现新 `<时间戳-uuid8>.json` | 对应 task_id 的结果文件出现 |
 | 轮询间隔 | 起步 500ms，退避上限 3s | 起步 500ms，指数退避 |
 | 命中后动作 | 创建 `.lock` 抢占 → SSH 执行 | 读取结果 → 返回 Claude Code |
 | 超时处理 | 强制销毁 SSH 子进程 → 写 failed | 写 cancelled 取消标记 → 返回 timeout |
@@ -263,9 +270,9 @@ vm_share/sessions/<session_id>/
   "cmd": "待执行 SSH 命令",
   "device": null,
   "timeout_sec": 30,
-  "submit_time": 0,
-  "start_time": 0,
-  "end_time": 0,
+  "submit_time": "2026-08-13 20:38:45.123",
+  "start_time": "2026-08-13 20:38:45.456",
+  "end_time": "2026-08-13 20:38:46.012",
   "stdout": "内联输出（截断至 max_inline_bytes）",
   "stderr": "内联错误输出（截断）",
   "stdout_size": 0,
