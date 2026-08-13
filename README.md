@@ -191,13 +191,15 @@ exchange 模式的核心判据是：**MCP 侧配置了 `MSGFERRY_SYNC_PUSH_CMD` 
 - `MSGFERRY_SYNC_MOCK_SERVER`：交换服务器根，即共享目录的 Ubuntu 路径 `/mnt/hgfs/sharedir/vm_share`（sync-mock 跑在 Ubuntu 侧，用它充当交换服务器）。
 - `MSGFERRY_MAX_WAIT_MS`：exchange 模式建议调到 **120000**，覆盖「上传 → worker 执行 → 拉回」一整轮。
 
-> Tips：不支持直接下载到指定目录怎么办？也就是说只能下载到当前目录，这个时候最简单的就是直接改模板，因为同步命令是**完全由用户定义的模板**，其实用户完全可以在 pull 命令里自己写：
+> Tips：有些同步工具（如 `file_transfer`）的拉取方向**不支持下载到指定路径**——`-g` 只能下载到当前工作目录，没有第二个「目标目录」参数。这时需要**先 `cd` 到目标目录，再执行下载**：
 >
 > ```bash
-> MSGFERRY_SYNC_PULL_CMD='cd {local_root}/inbound && file_transfer -g nfs/vm_share/inbound'
+> MSGFERRY_SYNC_PULL_CMD='cd {local_root}/inbound && file_transfer -g inbound'
 > ```
 >
-> `file_transfer -g` 的源带前缀指向服务器，本地目标不写，那下载自然落到当前目录，而当前目录已经被 `cd` 切到了 `{local_root}/inbound`。**这个方案零代码改动、最灵活，但要求用户了解自己的工具语义、自己会写 shell。**
+> 注意：命令里服务器侧只写相对 `inbound`，交给 `MSGFERRY_SYNC_MOCK_SERVER` 环境变量解析到服务器根，**不要**再硬编码 `nfs/vm_share/inbound` 前缀（否则环境变量一份、命令里又写死一份，改服务器根时会漏改导致不一致）。
+>
+> 如果你的同步工具支持目标目录参数（如 `sync-mock` 的 `-g <src-dir> <dst-dir>`），也可直接写成 `MSGFERRY_SYNC_PULL_CMD='node scripts/sync-mock.mjs -g inbound {local_root}/inbound'`，无需 `cd`。
 
 #### 2.2 sync-mock.mjs 工具
 

@@ -1,1 +1,386 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" data-diagram-type="ACTIVITY" style="width:1204px;height:1206px;background:#FFFFFF;" width="1204px" height="1206px" viewBox="0 0 1204 1206" zoomAndPan="magnify" preserveAspectRatio="none" contentStyleType="text/css"><?plantuml 1.2026.7beta11?><defs/><g font-family="sans-serif" lengthAdjust="spacing"><g class="title" data-source-line="18"><text x="414.449" y="35.421" fill="#000" font-size="22" textLength="374.001" font-weight="700" font-family="'Segoe UI'">任务状态机：严格单向流转，禁止逆向</text></g><ellipse cx="774.392" cy="66.609" rx="10" ry="10" fill="#FFF" style="stroke:#000;stroke-width:1;"/><rect x="691.841" y="96.609" width="165.102" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="701.841" y="117.748" fill="#1F2933" font-size="12" textLength="145.102" font-family="'Segoe UI'">生成 task_id + 任务 JSON</text><rect x="673.187" y="150.578" width="202.408" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="683.187" y="171.717" fill="#1F2933" font-size="12" textLength="123.487" font-family="'Segoe UI'">写 .tmp → rename 至</text><text x="810.488" y="171.717" fill="#1F2933" font-size="12" textLength="55.107" font-weight="700" font-family="'Segoe UI'">pending</text><path d="M865.909,194.547 L865.909,218.246 L845.909,222.246 L865.909,226.246 L865.909,249.945 A0,0 0 0 0 865.909,249.945 L1089.654,249.945 A0,0 0 0 0 1089.654,249.945 L1089.654,204.547 L1079.654,194.547 L865.909,194.547 A0,0 0 0 0 865.909,194.547" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M1079.654,194.547 L1079.654,204.547 L1089.654,204.547 L1079.654,194.547" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="871.909" y="211.614" fill="#5C4A00" font-size="13" textLength="202.744" font-family="'Segoe UI'">创建 processing/&lt;task_id>.lock</text><text x="871.909" y="226.747" fill="#5C4A00" font-size="13" textLength="170.574" font-family="'Segoe UI'">O_CREAT|O_EXCL 原子抢占</text><text x="871.909" y="241.879" fill="#5C4A00" font-size="13" textLength="135.973" font-family="'Segoe UI'">锁文件带 PID + 时间戳</text><rect x="702.874" y="205.262" width="143.036" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="712.874" y="226.4" fill="#1F2933" font-size="12" textLength="123.036" font-family="'Segoe UI'">外网 Worker 抢占任务</text><rect x="683.128" y="269.945" width="182.528" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="693.128" y="291.084" fill="#1F2933" font-size="12" textLength="24" font-family="'Segoe UI'">移至</text><text x="720.942" y="291.084" fill="#1F2933" font-size="12" textLength="73.535" font-weight="700" font-family="'Segoe UI'">processing</text><text x="798.292" y="291.084" fill="#1F2933" font-size="12" textLength="57.364" font-family="'Segoe UI'">(状态流转)</text><polygon points="725.62,323.914,823.164,323.914,835.164,335.914,823.164,347.914,725.62,347.914,713.62,335.914,725.62,323.914" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="725.62" y="339.722" fill="#1F2933" font-size="11" textLength="97.544" font-family="'Segoe UI'">命令白/黑名单校验?</text><text x="691.62" y="333.32" fill="#333" font-size="11" textLength="22" font-family="'Segoe UI'">通过</text><text x="835.164" y="333.32" fill="#333" font-size="11" textLength="33" font-family="'Segoe UI'">未通过</text><polygon points="421.292,357.914,504.129,357.914,516.129,369.914,504.129,381.914,421.292,381.914,409.292,369.914,421.292,357.914" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="421.292" y="373.722" fill="#1F2933" font-size="11" textLength="82.838" font-family="'Segoe UI'">内网是否已取消?</text><text x="398.292" y="367.32" fill="#333" font-size="11" font-family="'Segoe UI'">否</text><text x="516.129" y="367.32" fill="#333" font-size="11" textLength="33" font-family="'Segoe UI'">已取消</text><rect x="229.949" y="391.914" width="120.073" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="239.949" y="413.053" fill="#1F2933" font-size="12" textLength="100.073" font-family="'Segoe UI'">SSH 执行设备指令</text><polygon points="265.067,460.883,314.905,460.883,326.905,472.883,314.905,484.883,265.067,484.883,253.067,472.883,265.067,460.883" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="265.067" y="476.691" fill="#1F2933" font-size="11" textLength="49.838" font-family="'Segoe UI'">执行结果?</text><text x="231.067" y="470.289" fill="#333" font-size="11" textLength="22" font-family="'Segoe UI'">成功</text><text x="326.905" y="470.289" fill="#333" font-size="11" textLength="47.706" font-family="'Segoe UI'">失败/超时</text><rect x="71.556" y="494.883" width="187.414" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="81.556" y="516.021" fill="#1F2933" font-size="12" textLength="167.414" font-family="'Segoe UI'">回填 stdout/stderr/exit_code</text><polygon points="124.218,548.852,206.309,548.852,218.309,560.852,206.309,572.852,124.218,572.852,112.218,560.852,124.218,548.852" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text x="124.218" y="564.66" fill="#1F2933" font-size="11" textLength="82.091" font-family="'Segoe UI'">输出超过 64KB?</text><text x="101.218" y="558.257" fill="#333" font-size="11" font-family="'Segoe UI'">是</text><text x="218.309" y="558.257" fill="#333" font-size="11" font-family="'Segoe UI'">否</text><rect x="28.997" y="582.852" width="121.69" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="38.997" y="603.99" fill="#1F2933" font-size="12" textLength="101.69" font-family="'Segoe UI'">大输出落 outputs/</text><rect x="11" y="651.82" width="157.685" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="21" y="672.959" fill="#1F2933" font-size="12" textLength="137.685" font-family="'Segoe UI'">结构体只保留摘要 + 指针</text><rect x="188.685" y="582.852" width="104.001" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="198.685" y="603.99" fill="#1F2933" font-size="12" textLength="84.001" font-family="'Segoe UI'">内联写入结构体</text><polygon points="165.264,691.789,177.264,703.789,165.264,715.789,153.264,703.789,165.264,691.789" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><rect x="105.772" y="735.789" width="118.983" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="115.772" y="756.928" fill="#1F2933" font-size="12" textLength="24" font-family="'Segoe UI'">移至</text><text x="143.587" y="756.928" fill="#1F2933" font-size="12" textLength="71.168" font-weight="700" font-family="'Segoe UI'">completed</text><rect x="322.685" y="494.883" width="184.045" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="332.685" y="516.021" fill="#1F2933" font-size="12" textLength="164.045" font-family="'Segoe UI'">回填 error_msg + exit_code</text><rect x="346.764" y="548.852" width="135.887" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="356.764" y="569.99" fill="#1F2933" font-size="12" textLength="115.887" font-family="'Segoe UI'">强制销毁 SSH 子进程</text><rect x="371.664" y="617.82" width="86.088" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="381.664" y="638.959" fill="#1F2933" font-size="12" textLength="24" font-family="'Segoe UI'">移至</text><text x="409.478" y="638.959" fill="#1F2933" font-size="12" textLength="38.273" font-weight="700" font-family="'Segoe UI'">failed</text><polygon points="289.986,775.758,301.986,787.758,289.986,799.758,277.986,787.758,289.986,775.758" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><path d="M754.141,396.332 L754.141,404.898 L734.141,408.898 L754.141,412.898 L754.141,421.465 A0,0 0 0 0 754.141,421.465 L952.247,421.465 A0,0 0 0 0 952.247,421.465 L952.247,406.332 L942.247,396.332 L754.141,396.332 A0,0 0 0 0 754.141,396.332" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><path d="M942.247,396.332 L942.247,406.332 L952.247,406.332 L942.247,396.332" style="stroke:#E0B400;stroke-width:1;" fill="#FFFBE6"/><text x="760.141" y="413.399" fill="#5C4A00" font-size="13" textLength="177.106" font-family="'Segoe UI'">仅审计用，不污染 completed</text><rect x="536.73" y="391.914" width="197.41" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="546.73" y="413.053" fill="#1F2933" font-size="12" textLength="177.41" font-family="'Segoe UI'">写 cancelled/&lt;task_id>.result</text><rect x="579.548" y="460.883" width="111.776" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="589.548" y="482.021" fill="#1F2933" font-size="12" textLength="24" font-family="'Segoe UI'">移至</text><text x="617.362" y="482.021" fill="#1F2933" font-size="12" textLength="63.961" font-weight="700" font-family="'Segoe UI'">cancelled</text><polygon points="462.711,805.758,474.711,817.758,462.711,829.758,450.711,817.758,462.711,805.758" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><rect x="982.247" y="357.914" width="207.652" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="992.247" y="379.053" fill="#1F2933" font-size="12" textLength="187.652" font-family="'Segoe UI'">error_msg = blocked_by_policy</text><rect x="1043.029" y="426.883" width="86.088" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="1053.029" y="448.021" fill="#1F2933" font-size="12" textLength="24" font-family="'Segoe UI'">移至</text><text x="1080.843" y="448.021" fill="#1F2933" font-size="12" textLength="38.273" font-weight="700" font-family="'Segoe UI'">failed</text><polygon points="774.392,835.758,786.392,847.758,774.392,859.758,762.392,847.758,774.392,835.758" fill="#FFF3D6" style="stroke:#E0B400;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><rect x="704.391" y="879.758" width="140.001" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="714.391" y="900.896" fill="#1F2933" font-size="12" textLength="120.001" font-family="'Segoe UI'">内网读取结果继续迭代</text><rect x="686.942" y="933.727" width="174.899" height="33.969" fill="#F7F9FC" style="stroke:#7A93BE;stroke-width:1;" rx="5" ry="5"/><text x="696.942" y="954.865" fill="#1F2933" font-size="12" textLength="154.899" font-family="'Segoe UI'">结果文件保留 10 分钟后清理</text><ellipse cx="774.392" cy="998.695" rx="11" ry="11" fill="none" style="stroke:#000;stroke-width:1;"/><ellipse cx="774.392" cy="998.695" rx="6" ry="6" fill="#FFF" style="stroke:#000;stroke-width:1;"/><line x1="774.392" y1="76.609" x2="774.392" y2="96.609" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,86.609,774.392,96.609,778.392,86.609,774.392,90.609" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="130.578" x2="774.392" y2="150.578" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,140.578,774.392,150.578,778.392,140.578,774.392,144.578" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="184.547" x2="774.392" y2="205.262" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,195.262,774.392,205.262,778.392,195.262,774.392,199.262" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="239.23" x2="774.392" y2="269.945" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,259.945,774.392,269.945,778.392,259.945,774.392,263.945" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="89.842" y1="616.82" x2="89.842" y2="651.82" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="85.842,641.82,89.842,651.82,93.842,641.82,89.842,645.82" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="112.218" y1="560.852" x2="89.842" y2="560.852" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="89.842" y1="560.852" x2="89.842" y2="582.852" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="85.842,572.852,89.842,582.852,93.842,572.852,89.842,576.852" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="218.309" y1="560.852" x2="240.685" y2="560.852" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="240.685" y1="560.852" x2="240.685" y2="582.852" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="236.685,572.852,240.685,582.852,244.685,572.852,240.685,576.852" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="89.842" y1="685.789" x2="89.842" y2="703.789" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="89.842" y1="703.789" x2="153.264" y2="703.789" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="143.264,699.789,153.264,703.789,143.264,707.789,147.264,703.789" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="240.685" y1="616.82" x2="240.685" y2="703.789" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="240.685" y1="703.789" x2="177.264" y2="703.789" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="187.264,699.789,177.264,703.789,187.264,707.789,183.264,703.789" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="165.264" y1="528.852" x2="165.264" y2="548.852" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="161.264,538.852,165.264,548.852,169.264,538.852,165.264,542.852" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="165.264" y1="715.789" x2="165.264" y2="735.789" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="161.264,725.789,165.264,735.789,169.264,725.789,165.264,729.789" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="414.708" y1="528.852" x2="414.708" y2="548.852" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="410.708,538.852,414.708,548.852,418.708,538.852,414.708,542.852" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="414.708" y1="582.82" x2="414.708" y2="617.82" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="410.708,607.82,414.708,617.82,418.708,607.82,414.708,611.82" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="253.067" y1="472.883" x2="165.264" y2="472.883" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="165.264" y1="472.883" x2="165.264" y2="494.883" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="161.264,484.883,165.264,494.883,169.264,484.883,165.264,488.883" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="326.905" y1="472.883" x2="414.708" y2="472.883" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="414.708" y1="472.883" x2="414.708" y2="494.883" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="410.708,484.883,414.708,494.883,418.708,484.883,414.708,488.883" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="165.264" y1="769.758" x2="165.264" y2="787.758" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="165.264" y1="787.758" x2="277.986" y2="787.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="267.986,783.758,277.986,787.758,267.986,791.758,271.986,787.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="414.708" y1="651.789" x2="414.708" y2="787.758" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="414.708" y1="787.758" x2="301.986" y2="787.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="311.986,783.758,301.986,787.758,311.986,791.758,307.986,787.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="289.986" y1="425.883" x2="289.986" y2="460.883" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="285.986,450.883,289.986,460.883,293.986,450.883,289.986,454.883" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="635.435" y1="425.883" x2="635.435" y2="460.883" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="631.435,450.883,635.435,460.883,639.435,450.883,635.435,454.883" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="409.292" y1="369.914" x2="289.986" y2="369.914" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="289.986" y1="369.914" x2="289.986" y2="391.914" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="285.986,381.914,289.986,391.914,293.986,381.914,289.986,385.914" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="516.129" y1="369.914" x2="635.435" y2="369.914" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="635.435" y1="369.914" x2="635.435" y2="391.914" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="631.435,381.914,635.435,391.914,639.435,381.914,635.435,385.914" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="289.986" y1="799.758" x2="289.986" y2="817.758" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="289.986" y1="817.758" x2="450.711" y2="817.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="440.711,813.758,450.711,817.758,440.711,821.758,444.711,817.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="635.435" y1="494.852" x2="635.435" y2="817.758" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="635.435" y1="817.758" x2="474.711" y2="817.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="484.711,813.758,474.711,817.758,484.711,821.758,480.711,817.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="1086.073" y1="391.883" x2="1086.073" y2="426.883" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="1082.073,416.883,1086.073,426.883,1090.073,416.883,1086.073,420.883" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="713.62" y1="335.914" x2="462.711" y2="335.914" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="462.711" y1="335.914" x2="462.711" y2="357.914" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="458.711,347.914,462.711,357.914,466.711,347.914,462.711,351.914" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="835.164" y1="335.914" x2="1086.073" y2="335.914" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="1086.073" y1="335.914" x2="1086.073" y2="357.914" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="1082.073,347.914,1086.073,357.914,1090.073,347.914,1086.073,351.914" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="462.711" y1="829.758" x2="462.711" y2="847.758" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="462.711" y1="847.758" x2="762.392" y2="847.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="752.392,843.758,762.392,847.758,752.392,851.758,756.392,847.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="1086.073" y1="460.852" x2="1086.073" y2="847.758" style="stroke:#5A5A5A;stroke-width:1;"/><line x1="1086.073" y1="847.758" x2="786.392" y2="847.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="796.392,843.758,786.392,847.758,796.392,851.758,792.392,847.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="303.914" x2="774.392" y2="323.914" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,313.914,774.392,323.914,778.392,313.914,774.392,317.914" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="859.758" x2="774.392" y2="879.758" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,869.758,774.392,879.758,778.392,869.758,774.392,873.758" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="913.727" x2="774.392" y2="933.727" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,923.727,774.392,933.727,778.392,923.727,774.392,927.727" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><line x1="774.392" y1="967.695" x2="774.392" y2="987.695" style="stroke:#5A5A5A;stroke-width:1;"/><polygon points="770.392,977.695,774.392,987.695,778.392,977.695,774.392,981.695" fill="#5A5A5A" style="stroke:#5A5A5A;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><g class="legend" data-source-line="66"><rect x="819.733" y="1023.695" width="373.166" height="170.672" fill="none" style="stroke:#000;stroke-width:1;" rx="5" ry="5"/><text x="829.607" y="1043.69" fill="#000" font-size="14" textLength="28" font-weight="700" font-family="'Segoe UI'">状态</text><text x="914.263" y="1043.69" fill="#000" font-size="14" textLength="28" font-weight="700" font-family="'Segoe UI'">含义</text><text x="829.183" y="1059.987" fill="#000" font-size="14" textLength="56.909" font-family="'Segoe UI'">pending</text><text x="913.839" y="1059.987" fill="#000" font-size="14" textLength="125.999" font-family="'Segoe UI'">待执行（内网写入）</text><text x="829.183" y="1076.284" fill="#000" font-size="14" textLength="75.756" font-family="'Segoe UI'">processing</text><text x="913.839" y="1076.284" fill="#000" font-size="14" textLength="125.091" font-family="'Segoe UI'">Worker 抢占执行中</text><text x="829.183" y="1092.581" fill="#000" font-size="14" textLength="74.279" font-family="'Segoe UI'">completed</text><text x="913.839" y="1092.581" fill="#000" font-size="14" textLength="56" font-family="'Segoe UI'">执行成功</text><text x="829.183" y="1108.878" fill="#000" font-size="14" textLength="38.787" font-family="'Segoe UI'">failed</text><text x="913.839" y="1108.878" fill="#000" font-size="14" textLength="139.234" font-family="'Segoe UI'">失败 / 超时 / 策略拦截</text><text x="829.183" y="1125.175" fill="#000" font-size="14" textLength="66.739" font-family="'Segoe UI'">cancelled</text><text x="913.839" y="1125.175" fill="#000" font-size="14" textLength="160.63" font-family="'Segoe UI'">内网取消 + 孤儿结果回收</text><line x1="824.733" y1="1030.695" x2="1078.92" y2="1030.695" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1046.992" x2="1078.92" y2="1046.992" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1063.289" x2="1078.92" y2="1063.289" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1079.586" x2="1078.92" y2="1079.586" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1095.883" x2="1078.92" y2="1095.883" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1112.18" x2="1078.92" y2="1112.18" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1128.477" x2="1078.92" y2="1128.477" style="stroke:#000;stroke-width:1;"/><line x1="824.733" y1="1030.695" x2="824.733" y2="1128.477" style="stroke:#000;stroke-width:1;"/><line x1="909.389" y1="1030.695" x2="909.389" y2="1128.477" style="stroke:#000;stroke-width:1;"/><line x1="1078.92" y1="1030.695" x2="1078.92" y2="1128.477" style="stroke:#000;stroke-width:1;"/><line x1="819.733" y1="1135.477" x2="1192.899" y2="1135.477" style="stroke:#000;stroke-width:1;"/><line x1="819.733" y1="1137.477" x2="1192.899" y2="1137.477" style="stroke:#000;stroke-width:1;"/><text x="824.733" y="1153.472" fill="#000" font-size="14" textLength="125.999" font-family="'Segoe UI'">状态机严格单向流转</text><text x="824.733" y="1169.769" fill="#000" font-size="14" textLength="363.166" font-family="'Segoe UI'">pending → processing → completed/failed/cancelled</text><text x="824.733" y="1186.065" fill="#000" font-size="14" textLength="84" font-family="'Segoe UI'">禁止逆向流转</text></g><?plantuml-src XLNVJzjM57xtNt7NlK0cDJ0e5MHi8a2qRXDCOzFs5fdu4YmIExBDEYOUYDJyA8KsGA1GM25TW8ekeAvTnd02_ylaU-qyyI_it5p768XMyu3n-SvtldFkTouV6TCuYL4g8SgAeC_8IahKn2IQ56CpSKsTLQHXDQ5gwED8y_4Xz6bHKX_AIXnDYGaT-o9kcgPW3NLt-G8IdX9d4qP4LOmn4OhUcS1n5QCV7jpnWOOqJNte5hqtn7vk1bc-2-XfFkq04_Al67Lt-qCnG_vPDkR2jrgx7-cF3BT3gfg4DHTrVwY_9ppQ1kMJqntvjF-w71Sp8ej9LP72RQRQCzBtFmb-1QDTuTuk_pp7L0EtemoFzjr4VP37ryMzuTuXY0k6R2GmiaoJB9RinIfTIDETiylQ2-jqd-xLoF8wAQpGlz9E_O_Bsf9zaAQLLus5B7mK1DqGDKCOi8kxD5z0XgZFH6K9VUAIeQycniT2mW39Rg6xHZA5_isk8Wqhp1DExXqA159OaS1QWK1805Xvmwwle1zLRGOSHHTVaUKzJXGI592ED3a-RGW8aVmsCSzGIbDZMDSXF_YPM_hpkmarDWEGyUZmTwD3ty-FHqT_6lu6aQUxf5BWb11j5DDq8sUPLN9wWBvzC0AAwVDgu_bxcdydW2J4oe4Y-z1qTNgb0W7KuGwfEP9EK2vFeGwoKhVCihrL3pRC5L9OXh7HlLBZQEcBJWIhfw2Eni8BvoBN2UMR-6m6cgMR9wHmGFx-appReDMyXuMF38ZGmCJ4buW-FdHAIyxnEIddw1BeBeUQGSR3OxQvHb_kUEbm66HnbpC01zb-IKfla6v8wgmHX5zOquBu5zc8nbG9XrmOOtFErqZkpAbcG2dgw_qwV4MvUTBYOupbGnTQg2CWJSqQUZ1q5M_gUMJLryYp8-lYDtjzYwviEWTfDkYbN6Crty9Yk59yxNBoRCP95y4q9BFl4Na9O9YfLcFU-SJKP2g13Imn9_buos-Tz_j1w0UEz-OuO0Yg5atgSH1rQnW3f7P6yjL6SO6Uf14x1F2FSx5jltuIkbLzIfGJljAkGbT2wspTysIx41EL64v0Yi-t6jRXokGCrypE7ilCaEEISrooYwzX1wtJPVgsH7VNaDTtgp9txetXjCfnXLmVLqTtZgviEN0raK4qoHO9Iz79kMXAJSYnEPRQhcLEnvQS6TevCQ5TRaVRFBJDYdDHiSpVuHRW7_dUSK_0VmtOvMnZTPSKdjBJZ5t8Xk1AKLE2aC1nrarh2FE3Y2yTUoE5DzO_Zz4y-uxS6mJUo7c6ByDbBS_5S0jTrZoijyNmnxLhXYTQfnKNwSqLtdcChvGRvjspcas3eI3Y5eCNkx9Xh-_J9mSqVzGYQysV9N1XJKU0xqYbJ1vTyCc0BMcnsimP_C034E-YldrBGxGr5NRX-hfcVtgj1NaNGKyUO_NTxYuPCF73-0y0?></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: task_state_machine Pages: 1 -->
+<svg width="919pt" height="1334pt"
+ viewBox="0.00 0.00 919.10 1333.60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 1304.8)">
+<title>task_state_machine</title>
+<polygon fill="white" stroke="transparent" points="-28.8,28.8 -28.8,-1304.8 890.3,-1304.8 890.3,28.8 -28.8,28.8"/>
+<text text-anchor="middle" x="430.75" y="-1257.6" font-family="Noto Sans CJK SC" font-size="18.00">任务状态机：严格单向流转，禁止逆向</text>
+<g id="clust1" class="cluster">
+<title>cluster_legend</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M359.5,-956C359.5,-956 841.5,-956 841.5,-956 847.5,-956 853.5,-962 853.5,-968 853.5,-968 853.5,-1228 853.5,-1228 853.5,-1234 847.5,-1240 841.5,-1240 841.5,-1240 359.5,-1240 359.5,-1240 353.5,-1240 347.5,-1234 347.5,-1228 347.5,-1228 347.5,-968 347.5,-968 347.5,-962 353.5,-956 359.5,-956"/>
+<text text-anchor="middle" x="600.5" y="-1227.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">状态图例</text>
+</g>
+<!-- start -->
+<g id="node1" class="node">
+<title>start</title>
+<ellipse fill="#2e7d32" stroke="#2e7d32" cx="242.5" cy="-1194" rx="12.5" ry="12.5"/>
+</g>
+<!-- s1 -->
+<g id="node3" class="node">
+<title>s1</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M302,-1143C302,-1143 183,-1143 183,-1143 177,-1143 171,-1137 171,-1131 171,-1131 171,-1119 171,-1119 171,-1113 177,-1107 183,-1107 183,-1107 302,-1107 302,-1107 308,-1107 314,-1113 314,-1119 314,-1119 314,-1131 314,-1131 314,-1137 308,-1143 302,-1143"/>
+<text text-anchor="middle" x="242.5" y="-1122.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">生成 task_id + 任务 JSON</text>
+</g>
+<!-- start&#45;&gt;s1 -->
+<g id="edge1" class="edge">
+<title>start&#45;&gt;s1</title>
+<path fill="none" stroke="#5a5a5a" d="M242.5,-1181.33C242.5,-1173.57 242.5,-1163.03 242.5,-1153.24"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="246,-1153.06 242.5,-1143.06 239,-1153.06 246,-1153.06"/>
+</g>
+<!-- stop -->
+<g id="node2" class="node">
+<title>stop</title>
+<ellipse fill="#c62828" stroke="#c62828" cx="217.5" cy="-20" rx="16" ry="16"/>
+<ellipse fill="none" stroke="#c62828" cx="217.5" cy="-20" rx="20" ry="20"/>
+</g>
+<!-- s2 -->
+<g id="node4" class="node">
+<title>s2</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M314.5,-1074C314.5,-1074 170.5,-1074 170.5,-1074 164.5,-1074 158.5,-1068 158.5,-1062 158.5,-1062 158.5,-1050 158.5,-1050 158.5,-1044 164.5,-1038 170.5,-1038 170.5,-1038 314.5,-1038 314.5,-1038 320.5,-1038 326.5,-1044 326.5,-1050 326.5,-1050 326.5,-1062 326.5,-1062 326.5,-1068 320.5,-1074 314.5,-1074"/>
+<text text-anchor="middle" x="242.5" y="-1053.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">写 .tmp → rename 至 pending</text>
+</g>
+<!-- s1&#45;&gt;s2 -->
+<g id="edge2" class="edge">
+<title>s1&#45;&gt;s2</title>
+<path fill="none" stroke="#5a5a5a" d="M242.5,-1106.75C242.5,-1100 242.5,-1092.09 242.5,-1084.59"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="246,-1084.43 242.5,-1074.43 239,-1084.43 246,-1084.43"/>
+</g>
+<!-- s3 -->
+<g id="node5" class="node">
+<title>s3</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M293.5,-1002.5C293.5,-1002.5 191.5,-1002.5 191.5,-1002.5 185.5,-1002.5 179.5,-996.5 179.5,-990.5 179.5,-990.5 179.5,-978.5 179.5,-978.5 179.5,-972.5 185.5,-966.5 191.5,-966.5 191.5,-966.5 293.5,-966.5 293.5,-966.5 299.5,-966.5 305.5,-972.5 305.5,-978.5 305.5,-978.5 305.5,-990.5 305.5,-990.5 305.5,-996.5 299.5,-1002.5 293.5,-1002.5"/>
+<text text-anchor="middle" x="242.5" y="-981.7" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">外网 Worker 抢占任务</text>
+</g>
+<!-- s2&#45;&gt;s3 -->
+<g id="edge3" class="edge">
+<title>s2&#45;&gt;s3</title>
+<path fill="none" stroke="#5a5a5a" d="M242.5,-1037.82C242.5,-1030.36 242.5,-1021.43 242.5,-1013.08"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="246,-1012.96 242.5,-1002.96 239,-1012.96 246,-1012.96"/>
+</g>
+<!-- n1 -->
+<g id="node6" class="node">
+<title>n1</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="307,-931 138,-931 138,-887 313,-887 313,-925 307,-931"/>
+<polyline fill="none" stroke="#e0b400" points="307,-931 307,-925 "/>
+<polyline fill="none" stroke="#e0b400" points="313,-925 307,-925 "/>
+<text text-anchor="middle" x="225.5" y="-918.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">创建 processing/&lt;task_id&gt;.lock</text>
+<text text-anchor="middle" x="225.5" y="-906.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">O_CREAT|O_EXCL 原子抢占</text>
+<text text-anchor="middle" x="225.5" y="-894.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">锁文件带 PID + 时间戳</text>
+</g>
+<!-- s3&#45;&gt;n1 -->
+<g id="edge5" class="edge">
+<title>s3&#45;&gt;n1</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M238.56,-966.45C236.12,-955.94 232.99,-942.36 230.39,-931.16"/>
+</g>
+<!-- s4 -->
+<g id="node7" class="node">
+<title>s4</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M494.5,-927C494.5,-927 354.5,-927 354.5,-927 348.5,-927 342.5,-921 342.5,-915 342.5,-915 342.5,-903 342.5,-903 342.5,-897 348.5,-891 354.5,-891 354.5,-891 494.5,-891 494.5,-891 500.5,-891 506.5,-897 506.5,-903 506.5,-903 506.5,-915 506.5,-915 506.5,-921 500.5,-927 494.5,-927"/>
+<text text-anchor="middle" x="424.5" y="-906.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">移至 processing（状态流转）</text>
+</g>
+<!-- s3&#45;&gt;s4 -->
+<g id="edge4" class="edge">
+<title>s3&#45;&gt;s4</title>
+<path fill="none" stroke="#5a5a5a" d="M284.71,-966.45C310.92,-955.87 344.79,-942.19 372.63,-930.95"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="374.24,-934.07 382.2,-927.08 371.62,-927.58 374.24,-934.07"/>
+</g>
+<!-- d1 -->
+<g id="node8" class="node">
+<title>d1</title>
+<polygon fill="#fff3d6" stroke="#e0b400" points="424.5,-854 335.5,-822 424.5,-790 513.5,-822 424.5,-854"/>
+<text text-anchor="middle" x="424.5" y="-825.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">命令白/黑名单</text>
+<text text-anchor="middle" x="424.5" y="-813.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">校验?</text>
+</g>
+<!-- s4&#45;&gt;d1 -->
+<g id="edge6" class="edge">
+<title>s4&#45;&gt;d1</title>
+<path fill="none" stroke="#5a5a5a" d="M424.5,-890.8C424.5,-883.1 424.5,-873.67 424.5,-864.31"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="428,-864.27 424.5,-854.27 421,-864.27 428,-864.27"/>
+</g>
+<!-- d2 -->
+<g id="node9" class="node">
+<title>d2</title>
+<polygon fill="#fff3d6" stroke="#e0b400" points="334.5,-747 272.5,-715 334.5,-683 396.5,-715 334.5,-747"/>
+<text text-anchor="middle" x="334.5" y="-718.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">内网是否</text>
+<text text-anchor="middle" x="334.5" y="-706.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">已取消?</text>
+</g>
+<!-- d1&#45;&gt;d2 -->
+<g id="edge7" class="edge">
+<title>d1&#45;&gt;d2</title>
+<path fill="none" stroke="#5a5a5a" d="M404.08,-797.17C390.88,-781.78 373.63,-761.65 359.6,-745.28"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="362.17,-742.9 353,-737.59 356.86,-747.46 362.17,-742.9"/>
+<text text-anchor="middle" x="391.5" y="-766" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">通过</text>
+</g>
+<!-- s14 -->
+<g id="node22" class="node">
+<title>s14</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M591.5,-733C591.5,-733 437.5,-733 437.5,-733 431.5,-733 425.5,-727 425.5,-721 425.5,-721 425.5,-709 425.5,-709 425.5,-703 431.5,-697 437.5,-697 437.5,-697 591.5,-697 591.5,-697 597.5,-697 603.5,-703 603.5,-709 603.5,-709 603.5,-721 603.5,-721 603.5,-727 597.5,-733 591.5,-733"/>
+<text text-anchor="middle" x="514.5" y="-712.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">error_msg = blocked_by_policy</text>
+</g>
+<!-- d1&#45;&gt;s14 -->
+<g id="edge8" class="edge">
+<title>d1&#45;&gt;s14</title>
+<path fill="none" stroke="#5a5a5a" d="M444.92,-797.17C459.27,-780.43 478.44,-758.07 493.02,-741.06"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="495.92,-743.06 499.77,-733.19 490.6,-738.5 495.92,-743.06"/>
+<text text-anchor="middle" x="486.5" y="-766" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">未通过</text>
+</g>
+<!-- s5 -->
+<g id="node10" class="node">
+<title>s5</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M408.5,-640C408.5,-640 324.5,-640 324.5,-640 318.5,-640 312.5,-634 312.5,-628 312.5,-628 312.5,-616 312.5,-616 312.5,-610 318.5,-604 324.5,-604 324.5,-604 408.5,-604 408.5,-604 414.5,-604 420.5,-610 420.5,-616 420.5,-616 420.5,-628 420.5,-628 420.5,-634 414.5,-640 408.5,-640"/>
+<text text-anchor="middle" x="366.5" y="-619.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">SSH 执行设备指令</text>
+</g>
+<!-- d2&#45;&gt;s5 -->
+<g id="edge10" class="edge">
+<title>d2&#45;&gt;s5</title>
+<path fill="none" stroke="#5a5a5a" d="M343.76,-687.68C347.97,-675.7 352.94,-661.56 357.16,-649.56"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="360.48,-650.67 360.5,-640.07 353.88,-648.35 360.48,-650.67"/>
+<text text-anchor="middle" x="358.5" y="-659" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">否</text>
+</g>
+<!-- s12 -->
+<g id="node19" class="node">
+<title>s12</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M270.5,-640C270.5,-640 130.5,-640 130.5,-640 124.5,-640 118.5,-634 118.5,-628 118.5,-628 118.5,-616 118.5,-616 118.5,-610 124.5,-604 130.5,-604 130.5,-604 270.5,-604 270.5,-604 276.5,-604 282.5,-610 282.5,-616 282.5,-616 282.5,-628 282.5,-628 282.5,-634 276.5,-640 270.5,-640"/>
+<text text-anchor="middle" x="200.5" y="-619.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">写 cancelled/&lt;task_id&gt;.result</text>
+</g>
+<!-- d2&#45;&gt;s12 -->
+<g id="edge11" class="edge">
+<title>d2&#45;&gt;s12</title>
+<path fill="none" stroke="#5a5a5a" d="M308.35,-696.24C287.14,-681.84 257.1,-661.44 234.11,-645.83"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="235.92,-642.82 225.68,-640.1 231.99,-648.61 235.92,-642.82"/>
+<text text-anchor="middle" x="278.5" y="-659" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">已取消</text>
+</g>
+<!-- d3 -->
+<g id="node11" class="node">
+<title>d3</title>
+<polygon fill="#fff3d6" stroke="#e0b400" points="368.5,-571 311.54,-553 368.5,-535 425.46,-553 368.5,-571"/>
+<text text-anchor="middle" x="368.5" y="-550.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">执行结果?</text>
+</g>
+<!-- s5&#45;&gt;d3 -->
+<g id="edge14" class="edge">
+<title>s5&#45;&gt;d3</title>
+<path fill="none" stroke="#5a5a5a" d="M367.02,-603.75C367.22,-596.82 367.47,-588.66 367.69,-580.98"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="371.19,-581.06 367.99,-570.96 364.2,-580.85 371.19,-581.06"/>
+</g>
+<!-- s6 -->
+<g id="node12" class="node">
+<title>s6</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M274,-492C274,-492 135,-492 135,-492 129,-492 123,-486 123,-480 123,-480 123,-468 123,-468 123,-462 129,-456 135,-456 135,-456 274,-456 274,-456 280,-456 286,-462 286,-468 286,-468 286,-480 286,-480 286,-486 280,-492 274,-492"/>
+<text text-anchor="middle" x="204.5" y="-471.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">回填 stdout/stderr/exit_code</text>
+</g>
+<!-- d3&#45;&gt;s6 -->
+<g id="edge15" class="edge">
+<title>d3&#45;&gt;s6</title>
+<path fill="none" stroke="#5a5a5a" d="M346.72,-541.77C322.14,-530.23 281.46,-511.13 249.89,-496.31"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="251.37,-493.14 240.83,-492.06 248.4,-499.48 251.37,-493.14"/>
+<text text-anchor="middle" x="306.5" y="-511" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">成功</text>
+</g>
+<!-- s10 -->
+<g id="node17" class="node">
+<title>s10</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M458,-492C458,-492 327,-492 327,-492 321,-492 315,-486 315,-480 315,-480 315,-468 315,-468 315,-462 321,-456 327,-456 327,-456 458,-456 458,-456 464,-456 470,-462 470,-468 470,-468 470,-480 470,-480 470,-486 464,-492 458,-492"/>
+<text text-anchor="middle" x="392.5" y="-477.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">回填 error_msg + exit_code</text>
+<text text-anchor="middle" x="392.5" y="-465.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">强制销毁 SSH 子进程</text>
+</g>
+<!-- d3&#45;&gt;s10 -->
+<g id="edge16" class="edge">
+<title>d3&#45;&gt;s10</title>
+<path fill="none" stroke="#5a5a5a" d="M373.36,-536.42C376.45,-526.49 380.54,-513.37 384.14,-501.81"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="387.52,-502.76 387.15,-492.17 380.83,-500.67 387.52,-502.76"/>
+<text text-anchor="middle" x="403" y="-511" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">失败/超时</text>
+</g>
+<!-- d4 -->
+<g id="node13" class="node">
+<title>d4</title>
+<polygon fill="#fff3d6" stroke="#e0b400" points="204.5,-423 142.5,-391 204.5,-359 266.5,-391 204.5,-423"/>
+<text text-anchor="middle" x="204.5" y="-394.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">输出超过</text>
+<text text-anchor="middle" x="204.5" y="-382.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">64KB?</text>
+</g>
+<!-- s6&#45;&gt;d4 -->
+<g id="edge17" class="edge">
+<title>s6&#45;&gt;d4</title>
+<path fill="none" stroke="#5a5a5a" d="M204.5,-455.82C204.5,-449.16 204.5,-441.22 204.5,-433.25"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="208,-433.22 204.5,-423.22 201,-433.22 208,-433.22"/>
+</g>
+<!-- s7 -->
+<g id="node14" class="node">
+<title>s7</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M216.5,-316C216.5,-316 100.5,-316 100.5,-316 94.5,-316 88.5,-310 88.5,-304 88.5,-304 88.5,-292 88.5,-292 88.5,-286 94.5,-280 100.5,-280 100.5,-280 216.5,-280 216.5,-280 222.5,-280 228.5,-286 228.5,-292 228.5,-292 228.5,-304 228.5,-304 228.5,-310 222.5,-316 216.5,-316"/>
+<text text-anchor="middle" x="158.5" y="-301.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">大输出落 outputs/</text>
+<text text-anchor="middle" x="158.5" y="-289.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">结构体只保留摘要 + 指针</text>
+</g>
+<!-- d4&#45;&gt;s7 -->
+<g id="edge18" class="edge">
+<title>d4&#45;&gt;s7</title>
+<path fill="none" stroke="#5a5a5a" d="M182.91,-369.81C175.93,-362.09 168.87,-352.78 164.5,-343 162.24,-337.94 160.77,-332.25 159.84,-326.68"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="163.26,-325.85 158.61,-316.33 156.31,-326.67 163.26,-325.85"/>
+<text text-anchor="middle" x="169.5" y="-335" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">是</text>
+</g>
+<!-- s8 -->
+<g id="node15" class="node">
+<title>s8</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M341,-316C341,-316 270,-316 270,-316 264,-316 258,-310 258,-304 258,-304 258,-292 258,-292 258,-286 264,-280 270,-280 270,-280 341,-280 341,-280 347,-280 353,-286 353,-292 353,-292 353,-304 353,-304 353,-310 347,-316 341,-316"/>
+<text text-anchor="middle" x="305.5" y="-295.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">内联写入结构体</text>
+</g>
+<!-- d4&#45;&gt;s8 -->
+<g id="edge19" class="edge">
+<title>d4&#45;&gt;s8</title>
+<path fill="none" stroke="#5a5a5a" d="M226.42,-370.25C241.77,-356.42 262.39,-337.84 278.72,-323.13"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="281.26,-325.55 286.35,-316.25 276.58,-320.35 281.26,-325.55"/>
+<text text-anchor="middle" x="272.5" y="-335" font-family="Noto Sans CJK SC" font-size="10.00" fill="#333333">否</text>
+</g>
+<!-- s9 -->
+<g id="node16" class="node">
+<title>s9</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M253.5,-247C253.5,-247 181.5,-247 181.5,-247 175.5,-247 169.5,-241 169.5,-235 169.5,-235 169.5,-223 169.5,-223 169.5,-217 175.5,-211 181.5,-211 181.5,-211 253.5,-211 253.5,-211 259.5,-211 265.5,-217 265.5,-223 265.5,-223 265.5,-235 265.5,-235 265.5,-241 259.5,-247 253.5,-247"/>
+<text text-anchor="middle" x="217.5" y="-226.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">移至 completed</text>
+</g>
+<!-- s7&#45;&gt;s9 -->
+<g id="edge20" class="edge">
+<title>s7&#45;&gt;s9</title>
+<path fill="none" stroke="#5a5a5a" d="M173.69,-279.75C180.32,-272.22 188.21,-263.26 195.46,-255.03"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="198.17,-257.25 202.15,-247.43 192.92,-252.62 198.17,-257.25"/>
+</g>
+<!-- s8&#45;&gt;s9 -->
+<g id="edge21" class="edge">
+<title>s8&#45;&gt;s9</title>
+<path fill="none" stroke="#5a5a5a" d="M282.84,-279.75C272.27,-271.7 259.52,-262 248.11,-253.31"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="250.16,-250.47 240.09,-247.2 245.92,-256.04 250.16,-250.47"/>
+</g>
+<!-- s15 -->
+<g id="node23" class="node">
+<title>s15</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M270,-178C270,-178 165,-178 165,-178 159,-178 153,-172 153,-166 153,-166 153,-154 153,-154 153,-148 159,-142 165,-142 165,-142 270,-142 270,-142 276,-142 282,-148 282,-154 282,-154 282,-166 282,-166 282,-172 276,-178 270,-178"/>
+<text text-anchor="middle" x="217.5" y="-157.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">内网读取结果继续迭代</text>
+</g>
+<!-- s9&#45;&gt;s15 -->
+<g id="edge23" class="edge">
+<title>s9&#45;&gt;s15</title>
+<path fill="none" stroke="#5a5a5a" d="M217.5,-210.75C217.5,-204 217.5,-196.09 217.5,-188.59"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="221,-188.43 217.5,-178.43 214,-188.43 221,-188.43"/>
+</g>
+<!-- s11 -->
+<g id="node18" class="node">
+<title>s11</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M420,-409C420,-409 375,-409 375,-409 369,-409 363,-403 363,-397 363,-397 363,-385 363,-385 363,-379 369,-373 375,-373 375,-373 420,-373 420,-373 426,-373 432,-379 432,-385 432,-385 432,-397 432,-397 432,-403 426,-409 420,-409"/>
+<text text-anchor="middle" x="397.5" y="-388.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">移至 failed</text>
+</g>
+<!-- s10&#45;&gt;s11 -->
+<g id="edge22" class="edge">
+<title>s10&#45;&gt;s11</title>
+<path fill="none" stroke="#5a5a5a" d="M393.56,-455.82C394.22,-445.19 395.07,-431.31 395.82,-419.2"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="399.32,-419.35 396.44,-409.15 392.33,-418.92 399.32,-419.35"/>
+</g>
+<!-- s11&#45;&gt;s15 -->
+<g id="edge24" class="edge">
+<title>s11&#45;&gt;s15</title>
+<path fill="none" stroke="#5a5a5a" d="M396.12,-372.62C393.59,-349.7 386.58,-308.91 367.5,-280 339.77,-237.97 292.35,-204.02 258.24,-183.3"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="259.82,-180.17 249.44,-178.06 256.24,-186.18 259.82,-180.17"/>
+</g>
+<!-- n2 -->
+<g id="node20" class="node">
+<title>n2</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="276.5,-571 118.5,-571 118.5,-535 282.5,-535 282.5,-565 276.5,-571"/>
+<polyline fill="none" stroke="#e0b400" points="276.5,-571 276.5,-565 "/>
+<polyline fill="none" stroke="#e0b400" points="282.5,-565 276.5,-565 "/>
+<text text-anchor="middle" x="200.5" y="-550.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">仅审计用，不污染 completed</text>
+</g>
+<!-- s12&#45;&gt;n2 -->
+<g id="edge12" class="edge">
+<title>s12&#45;&gt;n2</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M200.5,-603.75C200.5,-593.82 200.5,-581.38 200.5,-571.43"/>
+</g>
+<!-- s13 -->
+<g id="node21" class="node">
+<title>s13</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M77,-571C77,-571 12,-571 12,-571 6,-571 0,-565 0,-559 0,-559 0,-547 0,-547 0,-541 6,-535 12,-535 12,-535 77,-535 77,-535 83,-535 89,-541 89,-547 89,-547 89,-559 89,-559 89,-565 83,-571 77,-571"/>
+<text text-anchor="middle" x="44.5" y="-550.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">移至 cancelled</text>
+</g>
+<!-- s12&#45;&gt;s13 -->
+<g id="edge13" class="edge">
+<title>s12&#45;&gt;s13</title>
+<path fill="none" stroke="#5a5a5a" d="M160.73,-603.92C140.29,-595.14 115.19,-584.36 93.55,-575.07"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="94.77,-571.78 84.2,-571.05 92,-578.21 94.77,-571.78"/>
+</g>
+<!-- s13&#45;&gt;s15 -->
+<g id="edge25" class="edge">
+<title>s13&#45;&gt;s15</title>
+<path fill="none" stroke="#5a5a5a" d="M44.5,-534.87C44.5,-519.27 44.5,-495.59 44.5,-475 44.5,-475 44.5,-475 44.5,-228 44.5,-205.52 95.92,-187.64 142.7,-176.02"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="143.69,-179.38 152.59,-173.64 142.05,-172.58 143.69,-179.38"/>
+</g>
+<!-- s14&#45;&gt;s11 -->
+<g id="edge9" class="edge">
+<title>s14&#45;&gt;s11</title>
+<path fill="none" stroke="#5a5a5a" d="M514.5,-696.89C514.5,-678.6 514.5,-648.75 514.5,-623 514.5,-623 514.5,-623 514.5,-473 514.5,-436.24 474.97,-414.84 441.86,-403.37"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="442.88,-400.03 432.29,-400.26 440.72,-406.68 442.88,-400.03"/>
+</g>
+<!-- s16 -->
+<g id="node24" class="node">
+<title>s16</title>
+<path fill="#f7f9fc" stroke="#7a93be" d="M284,-109C284,-109 151,-109 151,-109 145,-109 139,-103 139,-97 139,-97 139,-85 139,-85 139,-79 145,-73 151,-73 151,-73 284,-73 284,-73 290,-73 296,-79 296,-85 296,-85 296,-97 296,-97 296,-103 290,-109 284,-109"/>
+<text text-anchor="middle" x="217.5" y="-88.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">结果文件保留 10 分钟后清理</text>
+</g>
+<!-- s15&#45;&gt;s16 -->
+<g id="edge26" class="edge">
+<title>s15&#45;&gt;s16</title>
+<path fill="none" stroke="#5a5a5a" d="M217.5,-141.75C217.5,-135 217.5,-127.09 217.5,-119.59"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="221,-119.43 217.5,-109.43 214,-119.43 221,-119.43"/>
+</g>
+<!-- s16&#45;&gt;stop -->
+<g id="edge27" class="edge">
+<title>s16&#45;&gt;stop</title>
+<path fill="none" stroke="#5a5a5a" d="M217.5,-72.94C217.5,-66.14 217.5,-58.11 217.5,-50.42"/>
+<polygon fill="#5a5a5a" stroke="#5a5a5a" points="221,-50.29 217.5,-40.29 214,-50.29 221,-50.29"/>
+</g>
+<!-- lg1 -->
+<g id="node25" class="node">
+<title>lg1</title>
+<polygon fill="#f7f9fc" stroke="#7a93be" points="644.5,-1212 492.5,-1212 492.5,-1176 644.5,-1176 644.5,-1212"/>
+<text text-anchor="middle" x="568.5" y="-1191.5" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">pending &#160;&#160;&#160;待执行（内网写入）</text>
+</g>
+<!-- lg2 -->
+<g id="node26" class="node">
+<title>lg2</title>
+<polygon fill="#f7f9fc" stroke="#7a93be" points="646,-1143 491,-1143 491,-1107 646,-1107 646,-1143"/>
+<text text-anchor="middle" x="568.5" y="-1122.5" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">processing &#160;Worker 抢占执行中</text>
+</g>
+<!-- lg1&#45;&gt;lg2 -->
+<!-- lg3 -->
+<g id="node27" class="node">
+<title>lg3</title>
+<polygon fill="#f7f9fc" stroke="#7a93be" points="465,-1074 356,-1074 356,-1038 465,-1038 465,-1074"/>
+<text text-anchor="middle" x="410.5" y="-1053.5" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">completed &#160;执行成功</text>
+</g>
+<!-- lg2&#45;&gt;lg3 -->
+<!-- lg4 -->
+<g id="node28" class="node">
+<title>lg4</title>
+<polygon fill="#f7f9fc" stroke="#7a93be" points="643,-1074 494,-1074 494,-1038 643,-1038 643,-1074"/>
+<text text-anchor="middle" x="568.5" y="-1053.5" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">failed &#160;&#160;&#160;&#160;失败 / 超时 / 策略拦截</text>
+</g>
+<!-- lg2&#45;&gt;lg4 -->
+<!-- lg5 -->
+<g id="node29" class="node">
+<title>lg5</title>
+<polygon fill="#f7f9fc" stroke="#7a93be" points="845,-1074 672,-1074 672,-1038 845,-1038 845,-1074"/>
+<text text-anchor="middle" x="758.5" y="-1053.5" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">cancelled &#160;内网取消 + 孤儿结果回收</text>
+</g>
+<!-- lg2&#45;&gt;lg5 -->
+<!-- lg6 -->
+<g id="node30" class="node">
+<title>lg6</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="692.5,-1005 438.5,-1005 438.5,-964 698.5,-964 698.5,-999 692.5,-1005"/>
+<polyline fill="none" stroke="#e0b400" points="692.5,-1005 692.5,-999 "/>
+<polyline fill="none" stroke="#e0b400" points="698.5,-999 692.5,-999 "/>
+<text text-anchor="middle" x="568.5" y="-993" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">状态机严格单向流转</text>
+<text text-anchor="middle" x="568.5" y="-982" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">pending → processing → completed/failed/cancelled</text>
+<text text-anchor="middle" x="568.5" y="-971" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">禁止逆向流转</text>
+</g>
+<!-- lg4&#45;&gt;lg6 -->
+</g>
+</svg>

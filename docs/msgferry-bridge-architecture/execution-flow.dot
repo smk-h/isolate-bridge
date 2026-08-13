@@ -1,0 +1,251 @@
+digraph G {
+  graph [bgcolor="white", fontname="Noto Sans CJK SC", fontsize=18,
+         label="MsgFerry 完整执行流程：从内网 Claude 提交到设备 A 执行回传", labelloc="t", pad="0.4", ranksep=0.1, nodesep=0.4, rankdir=TB];
+  node [fontname="Noto Sans CJK SC", fontsize=10];
+  edge [fontname="Noto Sans CJK SC", fontsize=10];
+
+  PH [shape=plaintext, label="", group="PH", width=0.1];
+  node [shape=box, style="rounded,filled", fillcolor="#DCE9FB", color="#7A93BE", fontcolor="#1F2933"];
+  CC [group="CC", label="Claude Code\n(内网)"];
+  TOOL [group="TOOL", label="MCP / TypeScript 工具\n(内网)"];
+  Q [group="Q", label="HGFS 队列\n(pending/done/...)"];
+  W [group="W", label="Node Worker\n(Windows)"];
+  D [group="D", label="设备 A\n(外网 SSH)"];
+  { rank=same; PH; CC; TOOL; Q; W; D; }
+
+  node [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE"];
+  node [shape=note, fillcolor="#FFFBE6", color="#E0B400", fontcolor="#5C4A00"];
+  ph_0 [shape=plaintext, label="阶段一：内网提交任务", fontsize=11, fontcolor="#1F2933", group="PH"];
+  CC_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_0 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_1 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_2 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_3 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  ph_4 [shape=plaintext, label="阶段二：外网消费并抢占", fontsize=11, fontcolor="#1F2933", group="PH"];
+  CC_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_4 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_5 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_6 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  note_7 [shape=note, label="O_CREAT|O_EXCL\n创建成功者拥有执行权"];
+  CC_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_7 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_8 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  ph_9 [shape=plaintext, label="阶段三：安全校验与执行", fontsize=11, fontcolor="#1F2933", group="PH"];
+  CC_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_9 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  note_10 [shape=note, label="命令白/黑名单校验"];
+  CC_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_10 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_11 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_12 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_13 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  note_14 [shape=note, label="结构体只保留\n摘要 + 指针"];
+  CC_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_14 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_15 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  ph_16 [shape=plaintext, label="阶段四：结果回写与消费", fontsize=11, fontcolor="#1F2933", group="PH"];
+  CC_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_16 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_17 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_18 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_19 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  note_20 [shape=note, label="truncated=true 则\n按指针读 outputs/"];
+  CC_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_20 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  ph_21 [shape=plaintext, label="阶段五：超时取消兜底", fontsize=11, fontcolor="#1F2933", group="PH"];
+  CC_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_21 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_22 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_23 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  note_24 [shape=note, label="已取消则写\ncancelled/<id>.result(审计)\n不污染 completed"];
+  CC_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_24 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  ph_25 [shape=plaintext, label="阶段六：心跳保活", fontsize=11, fontcolor="#1F2933", group="PH"];
+  CC_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_25 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_26 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  CC_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_27 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+  note_28 [shape=note, label="now-last_beat>15s 则\n返回 worker_offline"];
+  CC_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="CC"];
+  TOOL_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="TOOL"];
+  Q_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="Q"];
+  W_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="W"];
+  D_28 [shape=point, width=0.06, height=0.06, label="", color="#7A93BE", fillcolor="#7A93BE", group="D"];
+
+  // lifelines
+  edge [style=invis, arrowhead=none];
+  PH -> CC -> TOOL -> Q -> W -> D;  // header order
+  PH -> ph_0 -> ph_4 -> ph_9 -> ph_16 -> ph_21 -> ph_25;
+  edge [style=solid, arrowhead=none, color="#8CA3C7", penwidth=1.2];
+  CC -> CC_0 -> CC_1 -> CC_2 -> CC_3 -> CC_4 -> CC_5 -> CC_6 -> CC_7 -> CC_8 -> CC_9 -> CC_10 -> CC_11 -> CC_12 -> CC_13 -> CC_14 -> CC_15 -> CC_16 -> CC_17 -> CC_18 -> CC_19 -> CC_20 -> CC_21 -> CC_22 -> CC_23 -> CC_24 -> CC_25 -> CC_26 -> CC_27 -> CC_28;
+  TOOL -> TOOL_0 -> TOOL_1 -> TOOL_2 -> TOOL_3 -> TOOL_4 -> TOOL_5 -> TOOL_6 -> TOOL_7 -> TOOL_8 -> TOOL_9 -> TOOL_10 -> TOOL_11 -> TOOL_12 -> TOOL_13 -> TOOL_14 -> TOOL_15 -> TOOL_16 -> TOOL_17 -> TOOL_18 -> TOOL_19 -> TOOL_20 -> TOOL_21 -> TOOL_22 -> TOOL_23 -> TOOL_24 -> TOOL_25 -> TOOL_26 -> TOOL_27 -> TOOL_28;
+  Q -> Q_0 -> Q_1 -> Q_2 -> Q_3 -> Q_4 -> Q_5 -> Q_6 -> Q_7 -> Q_8 -> Q_9 -> Q_10 -> Q_11 -> Q_12 -> Q_13 -> Q_14 -> Q_15 -> Q_16 -> Q_17 -> Q_18 -> Q_19 -> Q_20 -> Q_21 -> Q_22 -> Q_23 -> Q_24 -> Q_25 -> Q_26 -> Q_27 -> Q_28;
+  W -> W_0 -> W_1 -> W_2 -> W_3 -> W_4 -> W_5 -> W_6 -> W_7 -> W_8 -> W_9 -> W_10 -> W_11 -> W_12 -> W_13 -> W_14 -> W_15 -> W_16 -> W_17 -> W_18 -> W_19 -> W_20 -> W_21 -> W_22 -> W_23 -> W_24 -> W_25 -> W_26 -> W_27 -> W_28;
+  D -> D_0 -> D_1 -> D_2 -> D_3 -> D_4 -> D_5 -> D_6 -> D_7 -> D_8 -> D_9 -> D_10 -> D_11 -> D_12 -> D_13 -> D_14 -> D_15 -> D_16 -> D_17 -> D_18 -> D_19 -> D_20 -> D_21 -> D_22 -> D_23 -> D_24 -> D_25 -> D_26 -> D_27 -> D_28;
+
+  // row alignment
+  { rank=same; CC_0; TOOL_0; Q_0; W_0; D_0; ph_0; }
+  { rank=same; CC_1; TOOL_1; Q_1; W_1; D_1; }
+  { rank=same; CC_2; TOOL_2; Q_2; W_2; D_2; }
+  { rank=same; CC_3; TOOL_3; Q_3; W_3; D_3; }
+  { rank=same; CC_4; TOOL_4; Q_4; W_4; D_4; ph_4; }
+  { rank=same; CC_5; TOOL_5; Q_5; W_5; D_5; }
+  { rank=same; CC_6; TOOL_6; Q_6; W_6; D_6; }
+  { rank=same; CC_7; TOOL_7; Q_7; W_7; D_7; note_7; }
+  { rank=same; CC_8; TOOL_8; Q_8; W_8; D_8; }
+  { rank=same; CC_9; TOOL_9; Q_9; W_9; D_9; ph_9; }
+  { rank=same; CC_10; TOOL_10; Q_10; W_10; D_10; note_10; }
+  { rank=same; CC_11; TOOL_11; Q_11; W_11; D_11; }
+  { rank=same; CC_12; TOOL_12; Q_12; W_12; D_12; }
+  { rank=same; CC_13; TOOL_13; Q_13; W_13; D_13; }
+  { rank=same; CC_14; TOOL_14; Q_14; W_14; D_14; note_14; }
+  { rank=same; CC_15; TOOL_15; Q_15; W_15; D_15; }
+  { rank=same; CC_16; TOOL_16; Q_16; W_16; D_16; ph_16; }
+  { rank=same; CC_17; TOOL_17; Q_17; W_17; D_17; }
+  { rank=same; CC_18; TOOL_18; Q_18; W_18; D_18; }
+  { rank=same; CC_19; TOOL_19; Q_19; W_19; D_19; }
+  { rank=same; CC_20; TOOL_20; Q_20; W_20; D_20; note_20; }
+  { rank=same; CC_21; TOOL_21; Q_21; W_21; D_21; ph_21; }
+  { rank=same; CC_22; TOOL_22; Q_22; W_22; D_22; }
+  { rank=same; CC_23; TOOL_23; Q_23; W_23; D_23; }
+  { rank=same; CC_24; TOOL_24; Q_24; W_24; D_24; note_24; }
+  { rank=same; CC_25; TOOL_25; Q_25; W_25; D_25; ph_25; }
+  { rank=same; CC_26; TOOL_26; Q_26; W_26; D_26; }
+  { rank=same; CC_27; TOOL_27; Q_27; W_27; D_27; }
+  { rank=same; CC_28; TOOL_28; Q_28; W_28; D_28; note_28; }
+
+  // phase dividers
+  edge [style=dashed, arrowhead=none, color="#B0B8C4", penwidth=1.4];
+  CC_0 -> D_0 [constraint=false];
+  CC_4 -> D_4 [constraint=false];
+  CC_9 -> D_9 [constraint=false];
+  CC_16 -> D_16 [constraint=false];
+  CC_21 -> D_21 [constraint=false];
+  CC_25 -> D_25 [constraint=false];
+  // messages
+  edge [style=solid, arrowhead=normal, penwidth=1.1];
+  CC_1 -> TOOL_1 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="生成 Shell 指令"];
+  TOOL_2 -> Q_2 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="检查 task_id 幂等"];
+  TOOL_3 -> Q_3 [color="#2B5797", style="solid", penwidth=1.1, constraint=false, xlabel="写 .tmp → rename pending/<task_id>.json"];
+  W_5 -> Q_5 [color="#E65100", style="solid", penwidth=1.1, constraint=false, xlabel="轮询 pending (500ms 退避)"];
+  W_6 -> Q_6 [color="#E65100", style="solid", penwidth=1.1, constraint=false, xlabel="创建 processing/<task_id>.lock 抢占"];
+  W_7 -> note_7 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_8 -> Q_8 [color="#E65100", style="solid", penwidth=1.1, constraint=false, xlabel="二次确认 processing 无同 id 文件"];
+  W_10 -> note_10 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_11 -> D_11 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="校验通过：SSH 执行命令"];
+  D_12 -> W_12 [color="#6A1B9B", style="dashed", penwidth=1.1, constraint=false, xlabel="stdout / stderr / exit_code"];
+  W_13 -> Q_13 [color="#6A1B9B", style="solid", penwidth=1.1, constraint=false, xlabel="输出超 64KB：落盘 outputs/<task_id>.stdout"];
+  W_14 -> note_14 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_15 -> Q_15 [color="#C62828", style="solid", penwidth=1.1, constraint=false, xlabel="校验失败：写 failed，error_msg=blocked_by_policy"];
+  W_17 -> Q_17 [color="#2E7D32", style="solid", penwidth=1.1, constraint=false, xlabel="回写 completed / failed"];
+  CC_18 -> TOOL_18 [color="#00838F", style="solid", penwidth=1.1, constraint=false, xlabel="轮询结果目录"];
+  TOOL_19 -> CC_19 [color="#00838F", style="dashed", penwidth=1.1, constraint=false, xlabel="读取结果 JSON"];
+  TOOL_20 -> note_20 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  TOOL_22 -> Q_22 [color="#C62828", style="solid", penwidth=1.1, constraint=false, xlabel="超时写 cancelled/<task_id>"];
+  W_23 -> Q_23 [color="#C62828", style="solid", penwidth=1.1, constraint=false, xlabel="回写前检查 cancelled/"];
+  W_24 -> note_24 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+  W_26 -> Q_26 [color="#AAAAAA", style="solid", penwidth=1.1, constraint=false, xlabel="每 5s 写 heartbeat.json"];
+  TOOL_27 -> Q_27 [color="#AAAAAA", style="solid", penwidth=1.1, constraint=false, xlabel="提交前读心跳"];
+  TOOL_28 -> note_28 [style=dashed, dir=none, color="#B9A00B", arrowhead=none, penwidth=1];
+}

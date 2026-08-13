@@ -1,0 +1,121 @@
+digraph layered_architecture {
+  graph [
+    bgcolor="white", fontname="Noto Sans CJK SC", fontsize=18,
+    label="MsgFerry 双进程协作架构：内网 MCP 服务 + 外网 Node Worker + HGFS 文件队列",
+    labelloc="t", pad="0.4", ranksep=0.35, nodesep=0.25, rankdir=TB, compound=true
+  ];
+  node [
+    fontname="Noto Sans CJK SC", fontsize=11, shape=box, style="rounded,filled",
+    fillcolor="#F7F9FC", color="#7A93BE", fontcolor="#1F2933"
+  ];
+  edge [fontname="Noto Sans CJK SC", fontsize=10, color="#5A5A5A", fontcolor="#333333"];
+
+  /* ===== 上层：内网虚拟机 ===== */
+  subgraph cluster_intranet {
+    label="内网虚拟机（VMware 虚拟桌面）— 网络完全隔离，无外网";
+    fontname="Noto Sans CJK SC"; fontsize=12; fontcolor="#1F2933";
+    style="rounded,filled"; fillcolor="#DDF3E4"; color="#7A93BE";
+    node [fillcolor="#DCE9FB"];
+    cc      [label="Claude Code\n唯一智能体 · 规划/分析/生成/解析"];
+    node [fillcolor="#B4C9E8"];
+    mcp     [label="MCP Server (TypeScript)\n独立进程① · submit/cancel/health"];
+    node [fillcolor="#FFFFFF"];
+    inlog   [label="内网提交日志\ntask_id / 时间 / 结果"];
+    { rank=same; cc; mcp; inlog; }
+  }
+
+  /* ===== 中层：HGFS 队列（唯一跨域介质） ===== */
+  subgraph cluster_hgfs {
+    label="VMware HGFS 共享文件夹 — 唯一跨域通信介质，不走网卡协议栈";
+    fontname="Noto Sans CJK SC"; fontsize=12; fontcolor="#1F2933";
+    style="rounded,filled"; fillcolor="#FFE8E8"; color="#7A93BE";
+    node [fillcolor="#FFFFFF"];
+    pending [label="pending/\n待执行任务"];
+    proc    [label="processing/\n+ .lock 抢占"];
+    done    [label="completed/\n成功结果"];
+    fail    [label="failed/\n失败/超时/拦截"];
+    canc    [label="cancelled/\n取消+孤儿回收"];
+    outs    [label="outputs/\n大输出分包"];
+    hb      [label="heartbeat.json\nWorker 心跳"];
+    pol     [label="policy/\n命令策略"];
+    { rank=same; pending; proc; done; fail; canc; outs; hb; pol; }
+    pending -> proc -> done -> fail -> canc -> outs -> hb -> pol [style=invis, arrowhead=none];
+  }
+
+  /* ===== 下层：Windows 宿主机 ===== */
+  subgraph cluster_host {
+    label="Windows 宿主机（公网可达）";
+    fontname="Noto Sans CJK SC"; fontsize=12; fontcolor="#1F2933";
+    style="rounded,filled"; fillcolor="#DDF3E4"; color="#7A93BE";
+    node [fillcolor="#B4C9E8"];
+    worker  [label="Node.js Worker (TypeScript)\n独立进程② · 常驻后台 / 纯 IO"];
+    node [fillcolor="#FFFFFF"];
+    w2      [label="安全策略\n白/黑名单校验"];
+    w3      [label="SSH 执行\n超时控制"];
+    outlog  [label="审计日志\n滚动 / 30 天"];
+    { rank=same; worker; w2; w3; outlog; }
+  }
+
+  /* ===== 外部设备 ===== */
+  deviceA [label="外部设备 A\n仅外网 SSH 接入", fillcolor="#FFF3D6"];
+
+  /* ===== 共享类型契约 ===== */
+  shared  [label="shared/\n任务结构体类型 · 错误码枚举 · 路径常量", fillcolor="#F0E8FA"];
+
+  /* ===== 垂直层序（不可见约束边）：内网 → HGFS → 宿主机 ===== */
+  edge [style=invis, arrowhead=none];
+  mcp -> pending;
+  pending -> worker;
+  worker -> w3;
+  w3 -> deviceA;
+  shared -> mcp;
+
+  /* ===== 数据流向编号①~⑥ ===== */
+  edge [style=solid, penwidth=2];
+  mcp   -> pending [label="① 写任务 (.tmp → rename)", color="#2B5797", fontcolor="#2B5797", constraint=false];
+  worker -> pending [label="② 轮询 pending (500ms 退避)", color="#E65100", fontcolor="#E65100", constraint=false];
+  worker -> proc  [label="③ 创建 .lock 抢占", color="#2E7D32", fontcolor="#2E7D32", constraint=false];
+  w3    -> deviceA [label="④ SSH 执行", color="#6A1B9B", fontcolor="#6A1B9B", constraint=false];
+  worker -> done  [label="⑤ 回写结果 (completed/failed)", color="#C62828", fontcolor="#C62828", constraint=false];
+  mcp   -> done  [label="⑥ 轮询结果 (500ms 退避)", color="#00838F", fontcolor="#00838F", constraint=false];
+
+  /* ===== 进程内部调用（浅灰弱关系） ===== */
+  edge [style=solid, penwidth=1, color="#CCCCCC", fontcolor="#999999"];
+  cc     -> mcp     [label="MCP 工具调用 (stdio)", constraint=false];
+  worker -> w2      [label="校验", constraint=false];
+  worker -> w3      [label="执行", constraint=false];
+  worker -> outlog  [label="记录", constraint=false];
+
+  /* ===== Worker 辅助写入（灰） ===== */
+  edge [style=solid, penwidth=1, color="#AAAAAA", fontcolor="#888888"];
+  worker -> hb   [label="5s 写心跳", constraint=false];
+  mcp    -> hb   [label="提交前读心跳", constraint=false];
+  worker -> canc [label="检查取消标记", constraint=false];
+  worker -> outs [label="落大输出", constraint=false];
+
+  /* ===== shared 共享关系（紫色虚线） ===== */
+  edge [style=dashed, color="#7B1FA2", fontcolor="#7B1FA2", penwidth=1.2];
+  shared -> mcp    [label="引用类型", constraint=false];
+  shared -> worker [label="引用类型", constraint=false];
+
+  /* ===== 图例（底部） ===== */
+  subgraph cluster_legend {
+    label="图例";
+    fontname="Noto Sans CJK SC"; fontsize=10; fontcolor="#1F2933";
+    style="rounded,filled"; fillcolor="#F7F9FC"; color="#7A93BE";
+    node [shape=box, style=filled, fontsize=8, margin="0.05,0.03"];
+    l1 [label="① 写任务", color="#2B5797", fillcolor="#2B5797", fontcolor="white"];
+    l2 [label="② 轮询 pending", color="#E65100", fillcolor="#E65100", fontcolor="white"];
+    l3 [label="③ 抢占锁", color="#2E7D32", fillcolor="#2E7D32", fontcolor="white"];
+    l4 [label="④ SSH 执行", color="#6A1B9B", fillcolor="#6A1B9B", fontcolor="white"];
+    l5 [label="⑤ 回写结果", color="#C62828", fillcolor="#C62828", fontcolor="white"];
+    l6 [label="⑥ 轮询结果", color="#00838F", fillcolor="#00838F", fontcolor="white"];
+    l7 [label="辅助操作", color="#AAAAAA", fillcolor="#AAAAAA", fontcolor="white"];
+    l8 [label="shared 类型契约", color="#7B1FA2", fillcolor="#F0E8FA", fontcolor="#7B1FA2"];
+    l9 [label="进程内部调用", color="#CCCCCC", fillcolor="#CCCCCC", fontcolor="#666666"];
+    { rank=same; l1; l2; l3; l4; l5; l6; l7; l8; l9; }
+  }
+
+  /* 图例固定到框架最底部 */
+  deviceA -> l1 [style=invis, arrowhead=none];
+}

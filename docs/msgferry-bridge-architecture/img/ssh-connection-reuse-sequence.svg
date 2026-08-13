@@ -1,1 +1,1670 @@
-<svg id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-width: 1167.5px; background-color: white;" viewBox="-50 -10 1167.5 2254" role="graphics-document document" aria-roledescription="sequence"><rect x="40" y="1674" fill="rgb(255, 240, 248)" width="960" height="406" class="rect"/><rect x="40" y="1180" fill="rgb(240, 255, 240)" width="1027.5" height="484" class="rect"/><rect x="40" y="811" fill="rgb(255, 250, 240)" width="1027.5" height="359" class="rect"/><rect x="40" y="143" fill="rgb(240, 248, 255)" width="960" height="658" class="rect"/><g><rect x="890" y="2168" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-bottom"/><text x="965" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="965" dy="-8">设备A</tspan></text><text x="965" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="965" dy="8">(SSH daemon)</tspan></text></g><g><rect x="690" y="2168" fill="#eaeaea" stroke="#666" width="150" height="65" name="M" rx="3" ry="3" class="actor actor-bottom"/><text x="765" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="765" dy="-8">sessions: Map</tspan></text><text x="765" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="765" dy="8">device→Client</tspan></text></g><g><rect x="338.5" y="2168" fill="#eaeaea" stroke="#666" width="157" height="65" name="W" rx="3" ry="3" class="actor actor-bottom"/><text x="417" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="417" dy="-8">SshExecExecutor</tspan></text><text x="417" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="417" dy="8">(Worker 外网)</tspan></text></g><g><rect x="0" y="2168" fill="#eaeaea" stroke="#666" width="150" height="65" name="AI" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="-8">Claude Code</tspan></text><text x="75" y="2200.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="8">(内网编排层)</tspan></text></g><g><line id="actor3" x1="965" y1="65" x2="965" y2="2168" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="A" data-et="life-line" data-id="A"/><g id="root-3" data-et="participant" data-type="participant" data-id="A"><rect x="890" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-top"/><text x="965" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="965" dy="-8">设备A</tspan></text><text x="965" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="965" dy="8">(SSH daemon)</tspan></text></g></g><g><line id="actor2" x1="765" y1="65" x2="765" y2="2168" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="M" data-et="life-line" data-id="M"/><g id="root-2" data-et="participant" data-type="participant" data-id="M"><rect x="690" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="M" rx="3" ry="3" class="actor actor-top"/><text x="765" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="765" dy="-8">sessions: Map</tspan></text><text x="765" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="765" dy="8">device→Client</tspan></text></g></g><g><line id="actor1" x1="417" y1="65" x2="417" y2="2168" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="W" data-et="life-line" data-id="W"/><g id="root-1" data-et="participant" data-type="participant" data-id="W"><rect x="338.5" y="0" fill="#eaeaea" stroke="#666" width="157" height="65" name="W" rx="3" ry="3" class="actor actor-top"/><text x="417" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="417" dy="-8">SshExecExecutor</tspan></text><text x="417" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="417" dy="8">(Worker 外网)</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="2168" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="AI" data-et="life-line" data-id="AI"/><g id="root-0" data-et="participant" data-type="participant" data-id="AI"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="AI" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="-8">Claude Code</tspan></text><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="8">(内网编排层)</tspan></text></g></g><style>#my-svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#333;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#my-svg .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#my-svg .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#my-svg .error-icon{fill:#552222;}#my-svg .error-text{fill:#552222;stroke:#552222;}#my-svg .edge-thickness-normal{stroke-width:1px;}#my-svg .edge-thickness-thick{stroke-width:3.5px;}#my-svg .edge-pattern-solid{stroke-dasharray:0;}#my-svg .edge-thickness-invisible{stroke-width:0;fill:none;}#my-svg .edge-pattern-dashed{stroke-dasharray:3;}#my-svg .edge-pattern-dotted{stroke-dasharray:2;}#my-svg .marker{fill:#333333;stroke:#333333;}#my-svg .marker.cross{stroke:#333333;}#my-svg svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#my-svg p{margin:0;}#my-svg .actor{stroke:#9370DB;fill:#ECECFF;stroke-width:1;}#my-svg rect.actor.outer-path[data-look="neo"]{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg rect.note[data-look="neo"]{stroke:#aaaa33;fill:#fff5ad;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg text.actor&gt;tspan{fill:black;stroke:none;}#my-svg .actor-line{stroke:#9370DB;}#my-svg .innerArc{stroke-width:1.5;stroke-dasharray:none;}#my-svg .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#333;}#my-svg .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#333;}#my-svg [id$="-arrowhead"] path{fill:#333;stroke:#333;}#my-svg .sequenceNumber{fill:white;}#my-svg [id$="-sequencenumber"]{fill:#333;}#my-svg [id$="-crosshead"] path{fill:#333;stroke:#333;}#my-svg .messageText{fill:#333;stroke:none;}#my-svg .labelBox{stroke:#9370DB;fill:#ECECFF;filter:none;}#my-svg .labelText,#my-svg .labelText&gt;tspan{fill:black;stroke:none;}#my-svg .loopText,#my-svg .loopText&gt;tspan{fill:black;stroke:none;}#my-svg .sectionTitle,#my-svg .sectionTitle&gt;tspan{fill:black;stroke:none;}#my-svg .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:#9370DB;fill:#9370DB;}#my-svg .note{stroke:#aaaa33;fill:#fff5ad;}#my-svg .noteText,#my-svg .noteText&gt;tspan{fill:black;stroke:none;font-weight:normal;}#my-svg .activation0{fill:#f4f4f4;stroke:#666;}#my-svg .activation1{fill:#f4f4f4;stroke:#666;}#my-svg .activation2{fill:#f4f4f4;stroke:#666;}#my-svg .actorPopupMenu{position:absolute;}#my-svg .actorPopupMenuPanel{position:absolute;fill:#ECECFF;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#my-svg .actor-man circle,#my-svg line{fill:#ECECFF;stroke-width:2px;}#my-svg g rect.rect{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));stroke:#9370DB;}#my-svg .node .neo-node{stroke:#9370DB;}#my-svg [data-look="neo"].node rect,#my-svg [data-look="neo"].cluster rect,#my-svg [data-look="neo"].node polygon{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg [data-look="neo"].swimlane.cluster rect{filter:none;}#my-svg [data-look="neo"].node path{stroke:#9370DB;stroke-width:1px;}#my-svg [data-look="neo"].node .outer-path{filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg [data-look="neo"].node .neo-line path{stroke:#9370DB;filter:none;}#my-svg [data-look="neo"].node circle{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg [data-look="neo"].node circle .state-start{fill:#000000;}#my-svg [data-look="neo"].icon-shape .icon{fill:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg [data-look="neo"].icon-shape .icon-neo path{stroke:#9370DB;filter:drop-shadow(1px 2px 2px rgba(185, 185, 185, 1));}#my-svg :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g/><defs><symbol id="my-svg-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="my-svg-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="my-svg-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="my-svg-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="my-svg-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="my-svg-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="my-svg-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="my-svg-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="my-svg-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="my-svg-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="my-svg-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><g data-et="note" data-id="i1"><rect x="229.2578125" y="75" fill="#EDF2AE" stroke="#666" width="375.484375" height="58" class="note"/><text x="417" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="417">核心：复用的是「门」(传输连接)，</tspan></text><text x="417" y="99" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="417">不是「屋子里的人」(每次命令都是全新进程)</tspan></text></g><g data-et="note" data-id="i3"><rect x="50" y="163" fill="#EDF2AE" stroke="#666" width="940" height="39" class="note"/><text x="520" y="168" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="520">阶段一：首次连接设备A —— 完整握手</tspan></text></g><g data-et="note" data-id="i14"><rect x="670.16015625" y="752" fill="#EDF2AE" stroke="#666" width="189.6796875" height="39" class="note"/><text x="765" y="757" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="765">生成会话 id：ssh_1</tspan></text></g><g data-et="note" data-id="i17"><rect x="50" y="831" fill="#EDF2AE" stroke="#666" width="940" height="39" class="note"/><text x="520" y="836" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="520">阶段二：命令1 —— 复用连接，开新 channel</tspan></text></g><g data-et="note" data-id="i22"><rect x="392" y="1102" fill="#EDF2AE" stroke="#666" width="598" height="58" class="note"/><text x="691" y="1107" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="691">channel 随命令销毁，进程销毁，</tspan></text><text x="691" y="1126" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="691">环境变量不保留；传输连接不动</tspan></text></g><g data-et="note" data-id="i25"><rect x="50" y="1200" fill="#EDF2AE" stroke="#666" width="940" height="39" class="note"/><text x="520" y="1205" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="520">阶段三：命令2 —— 零握手复用</tspan></text></g><g data-et="note" data-id="i33"><rect x="392" y="1615" fill="#EDF2AE" stroke="#666" width="598" height="39" class="note"/><text x="691" y="1620" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="691">省掉 TCP握手+KEX+认证的固定开销</tspan></text></g><g data-et="note" data-id="i36"><rect x="50" y="1694" fill="#EDF2AE" stroke="#666" width="940" height="39" class="note"/><text x="520" y="1699" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="520">阶段四：接入设备B —— 独立连接缓存</tspan></text></g><g data-et="note" data-id="i40"><rect x="600.078125" y="1887" fill="#EDF2AE" stroke="#666" width="329.84375" height="39" class="note"/><text x="765" y="1892" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="765">生成会话 id：ssh_2（与 ssh_1 并存）</tspan></text></g><g data-et="note" data-id="i45"><rect x="375.30078125" y="2090" fill="#EDF2AE" stroke="#666" width="431.3984375" height="58" class="note"/><text x="591" y="2095" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="591">连接超时(10s)/keepalive(15s)/close()</tspan></text><text x="591" y="2114" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="noteText" dy="1em" style="font-size: 16px; font-weight: 400;"><tspan x="591">统一由 ExecSession 管理，Worker 退出时全量关闭</tspan></text></g><text x="245" y="217" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">submit_ssh_task(cmd1, device=A)</text><line x1="82" y1="250" x2="413" y2="250" class="messageLine0" data-et="message" data-id="i4" data-from="AI" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="75" y1="250" x2="75" y2="250" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="75" y="254" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">1</text><text x="418" y="265" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">getOrCreateSession("A") → sessions 未命中</text><path d="M 418,298 C 478,288 478,328 418,318" class="messageLine0" data-et="message" data-id="i5" data-from="W" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" x1="424" style="fill: none;"/><line x1="417" y1="298" x2="417" y2="298" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="302" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">2</text><text x="590" y="343" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">查 map：无 "A" 的 Client</text><line x1="424" y1="376" x2="761" y2="376" class="messageLine0" data-et="message" data-id="i6" data-from="W" data-to="M" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="376" x2="417" y2="376" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="380" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">3</text><text x="593" y="391" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">undefined</text><line x1="770" y1="424" x2="421" y2="424" class="messageLine1" data-et="message" data-id="i7" data-from="M" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="765" y1="424" x2="765" y2="424" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="765" y="428" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">4</text><text x="418" y="439" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">new ssh2 Client() + 读私钥/密码</text><path d="M 418,472 C 478,462 478,502 418,492" class="messageLine0" data-et="message" data-id="i8" data-from="W" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" x1="424" style="fill: none;"/><line x1="417" y1="472" x2="417" y2="472" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="476" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">5</text><text x="690" y="517" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">TCP 三次握手</text><line x1="424" y1="550" x2="961" y2="550" class="messageLine0" data-et="message" data-id="i9" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="550" x2="417" y2="550" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="554" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">6</text><text x="693" y="565" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">建立 TCP</text><line x1="970" y1="598" x2="421" y2="598" class="messageLine1" data-et="message" data-id="i10" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="965" y1="598" x2="965" y2="598" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="602" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">7</text><text x="690" y="613" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">SSH 版本协商 → 密钥交换(KEX) → 认证签名</text><line x1="424" y1="646" x2="961" y2="646" class="messageLine0" data-et="message" data-id="i11" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="646" x2="417" y2="646" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="650" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">8</text><text x="693" y="661" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">ready（握手完成）</text><line x1="970" y1="694" x2="421" y2="694" class="messageLine1" data-et="message" data-id="i12" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="965" y1="694" x2="965" y2="694" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="698" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">9</text><text x="590" y="709" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">缓存 Client → sessions.set("A", client)</text><line x1="424" y1="742" x2="761" y2="742" class="messageLine0" data-et="message" data-id="i13" data-from="W" data-to="M" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="742" x2="417" y2="742" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="746" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">10</text><text x="690" y="885" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">client.exec(cmd1)</text><line x1="424" y1="918" x2="961" y2="918" class="messageLine0" data-et="message" data-id="i18" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="918" x2="417" y2="918" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="922" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">11</text><text x="966" y="933" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">远端 sh -c cmd1（全新子进程）</text><path d="M 966,966 C 1026,956 1026,996 966,986" class="messageLine0" data-et="message" data-id="i19" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" x1="972" style="fill: none;"/><line x1="965" y1="966" x2="965" y2="966" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="970" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">12</text><text x="693" y="1011" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">channel stdout/stderr/exit</text><line x1="970" y1="1044" x2="421" y2="1044" class="messageLine1" data-et="message" data-id="i20" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="965" y1="1044" x2="965" y2="1044" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="1048" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">13</text><text x="248" y="1059" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">返回 cmd1 结果（连接仍保留）</text><line x1="422" y1="1092" x2="79" y2="1092" class="messageLine1" data-et="message" data-id="i21" data-from="W" data-to="AI" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="417" y1="1092" x2="417" y2="1092" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1096" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">14</text><text x="245" y="1254" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">submit_ssh_task(cmd2, device=A)</text><line x1="82" y1="1287" x2="413" y2="1287" class="messageLine0" data-et="message" data-id="i26" data-from="AI" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="75" y1="1287" x2="75" y2="1287" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="75" y="1291" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">15</text><text x="590" y="1302" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">查 map：命中 "A" → 直接返回 Client</text><line x1="424" y1="1335" x2="761" y2="1335" class="messageLine0" data-et="message" data-id="i27" data-from="W" data-to="M" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="1335" x2="417" y2="1335" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1339" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">16</text><text x="593" y="1350" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">ssh_1 Client（无握手）</text><line x1="770" y1="1383" x2="421" y2="1383" class="messageLine1" data-et="message" data-id="i28" data-from="M" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="765" y1="1383" x2="765" y2="1383" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="765" y="1387" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">17</text><text x="690" y="1398" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">client.exec(cmd2)</text><line x1="424" y1="1431" x2="961" y2="1431" class="messageLine0" data-et="message" data-id="i29" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="1431" x2="417" y2="1431" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1435" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">18</text><text x="966" y="1446" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">远端 sh -c cmd2（全新子进程）</text><path d="M 966,1479 C 1026,1469 1026,1509 966,1499" class="messageLine0" data-et="message" data-id="i30" data-from="A" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" x1="972" style="fill: none;"/><line x1="965" y1="1479" x2="965" y2="1479" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="1483" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">19</text><text x="693" y="1524" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">channel stdout/stderr/exit</text><line x1="970" y1="1557" x2="421" y2="1557" class="messageLine1" data-et="message" data-id="i31" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="965" y1="1557" x2="965" y2="1557" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="1561" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">20</text><text x="248" y="1572" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">返回 cmd2 结果</text><line x1="422" y1="1605" x2="79" y2="1605" class="messageLine1" data-et="message" data-id="i32" data-from="W" data-to="AI" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="417" y1="1605" x2="417" y2="1605" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1609" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">21</text><text x="245" y="1748" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">submit_ssh_task(cmd, device=B)</text><line x1="82" y1="1781" x2="413" y2="1781" class="messageLine0" data-et="message" data-id="i37" data-from="AI" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="75" y1="1781" x2="75" y2="1781" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="75" y="1785" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">22</text><text x="590" y="1796" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">查 map：无 "B" → 重新完整握手</text><line x1="424" y1="1829" x2="761" y2="1829" class="messageLine0" data-et="message" data-id="i38" data-from="W" data-to="M" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="1829" x2="417" y2="1829" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1833" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">23</text><text x="590" y="1844" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">缓存 Client → sessions.set("B", client)</text><line x1="424" y1="1877" x2="761" y2="1877" class="messageLine0" data-et="message" data-id="i39" data-from="W" data-to="M" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="1877" x2="417" y2="1877" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1881" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">24</text><text x="690" y="1941" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">client.exec(cmd)</text><line x1="424" y1="1974" x2="961" y2="1974" class="messageLine0" data-et="message" data-id="i41" data-from="W" data-to="A" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="fill: none;"/><line x1="417" y1="1974" x2="417" y2="1974" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="1978" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">25</text><text x="693" y="1989" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">结果</text><line x1="970" y1="2022" x2="421" y2="2022" class="messageLine1" data-et="message" data-id="i42" data-from="A" data-to="W" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="965" y1="2022" x2="965" y2="2022" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="965" y="2026" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">26</text><text x="248" y="2037" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">返回结果（A/B 连接互不干扰、各自复用）</text><line x1="422" y1="2070" x2="79" y2="2070" class="messageLine1" data-et="message" data-id="i43" data-from="W" data-to="AI" stroke-width="2" stroke="none" marker-end="url(#my-svg-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><line x1="417" y1="2070" x2="417" y2="2070" stroke-width="0" marker-start="url(#my-svg-sequencenumber)"/><text x="417" y="2074" font-family="sans-serif" font-size="12px" text-anchor="middle" class="sequenceNumber">27</text></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.43.0 (0)
+ -->
+<!-- Title: G Pages: 1 -->
+<svg width="1108pt" height="731pt"
+ viewBox="0.00 0.00 1108.10 731.32" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(28.8 702.52)">
+<title>G</title>
+<polygon fill="white" stroke="transparent" points="-28.8,28.8 -28.8,-702.52 1079.3,-702.52 1079.3,28.8 -28.8,28.8"/>
+<text text-anchor="middle" x="525.25" y="-655.32" font-family="Noto Sans CJK SC" font-size="18.00">SSH 传输连接握手与复用：复用的是「门」，不是「屋子里的人」</text>
+<!-- PH -->
+<g id="node1" class="node">
+<title>PH</title>
+</g>
+<!-- AI -->
+<g id="node2" class="node">
+<title>AI</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M294.5,-645.72C294.5,-645.72 242.5,-645.72 242.5,-645.72 236.5,-645.72 230.5,-639.72 230.5,-633.72 230.5,-633.72 230.5,-621.72 230.5,-621.72 230.5,-615.72 236.5,-609.72 242.5,-609.72 242.5,-609.72 294.5,-609.72 294.5,-609.72 300.5,-609.72 306.5,-615.72 306.5,-621.72 306.5,-621.72 306.5,-633.72 306.5,-633.72 306.5,-639.72 300.5,-645.72 294.5,-645.72"/>
+<text text-anchor="middle" x="268.5" y="-630.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">Claude Code</text>
+<text text-anchor="middle" x="268.5" y="-619.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(内网编排层)</text>
+</g>
+<!-- PH&#45;&gt;AI -->
+<!-- ph_0 -->
+<g id="node6" class="node">
+<title>ph_0</title>
+<path fill="#fffbe6" stroke="transparent" d="M214.83,-601.72C214.83,-601.72 22.17,-601.72 22.17,-601.72 18.83,-601.72 15.5,-598.39 15.5,-595.05 15.5,-595.05 15.5,-588.39 15.5,-588.39 15.5,-585.05 18.83,-581.72 22.17,-581.72 22.17,-581.72 214.83,-581.72 214.83,-581.72 218.17,-581.72 221.5,-585.05 221.5,-588.39 221.5,-588.39 221.5,-595.05 221.5,-595.05 221.5,-598.39 218.17,-601.72 214.83,-601.72"/>
+<text text-anchor="middle" x="118.5" y="-588.92" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段一：首次连接设备 A —— 完整握手</text>
+</g>
+<!-- PH&#45;&gt;ph_0 -->
+<!-- W -->
+<g id="node3" class="node">
+<title>W</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M417,-645.72C417,-645.72 348,-645.72 348,-645.72 342,-645.72 336,-639.72 336,-633.72 336,-633.72 336,-621.72 336,-621.72 336,-615.72 342,-609.72 348,-609.72 348,-609.72 417,-609.72 417,-609.72 423,-609.72 429,-615.72 429,-621.72 429,-621.72 429,-633.72 429,-633.72 429,-639.72 423,-645.72 417,-645.72"/>
+<text text-anchor="middle" x="382.5" y="-630.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">SshExecExecutor</text>
+<text text-anchor="middle" x="382.5" y="-619.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(Worker 外网)</text>
+</g>
+<!-- AI&#45;&gt;W -->
+<!-- AI_0 -->
+<g id="node7" class="node">
+<title>AI_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-591.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI&#45;&gt;AI_0 -->
+<g id="edge10" class="edge">
+<title>AI&#45;&gt;AI_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-609.32C268.5,-603.05 268.5,-596.85 268.5,-594.14"/>
+</g>
+<!-- M -->
+<g id="node4" class="node">
+<title>M</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M780.5,-645.72C780.5,-645.72 716.5,-645.72 716.5,-645.72 710.5,-645.72 704.5,-639.72 704.5,-633.72 704.5,-633.72 704.5,-621.72 704.5,-621.72 704.5,-615.72 710.5,-609.72 716.5,-609.72 716.5,-609.72 780.5,-609.72 780.5,-609.72 786.5,-609.72 792.5,-615.72 792.5,-621.72 792.5,-621.72 792.5,-633.72 792.5,-633.72 792.5,-639.72 786.5,-645.72 780.5,-645.72"/>
+<text text-anchor="middle" x="748.5" y="-630.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">sessions: Map</text>
+<text text-anchor="middle" x="748.5" y="-619.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">device → Client</text>
+</g>
+<!-- W&#45;&gt;M -->
+<!-- W_0 -->
+<g id="node8" class="node">
+<title>W_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-591.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- W&#45;&gt;W_0 -->
+<g id="edge43" class="edge">
+<title>W&#45;&gt;W_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-609.32C382.5,-603.05 382.5,-596.85 382.5,-594.14"/>
+</g>
+<!-- A -->
+<g id="node5" class="node">
+<title>A</title>
+<path fill="#dce9fb" stroke="#7a93be" d="M893.5,-645.72C893.5,-645.72 833.5,-645.72 833.5,-645.72 827.5,-645.72 821.5,-639.72 821.5,-633.72 821.5,-633.72 821.5,-621.72 821.5,-621.72 821.5,-615.72 827.5,-609.72 833.5,-609.72 833.5,-609.72 893.5,-609.72 893.5,-609.72 899.5,-609.72 905.5,-615.72 905.5,-621.72 905.5,-621.72 905.5,-633.72 905.5,-633.72 905.5,-639.72 899.5,-645.72 893.5,-645.72"/>
+<text text-anchor="middle" x="863.5" y="-630.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">设备 A</text>
+<text text-anchor="middle" x="863.5" y="-619.72" font-family="Noto Sans CJK SC" font-size="10.00" fill="#1f2933">(SSH daemon)</text>
+</g>
+<!-- M&#45;&gt;A -->
+<!-- M_0 -->
+<g id="node9" class="node">
+<title>M_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-591.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- M&#45;&gt;M_0 -->
+<g id="edge76" class="edge">
+<title>M&#45;&gt;M_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-609.32C748.5,-603.05 748.5,-596.85 748.5,-594.14"/>
+</g>
+<!-- A_0 -->
+<g id="node10" class="node">
+<title>A_0</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-591.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- A&#45;&gt;A_0 -->
+<g id="edge109" class="edge">
+<title>A&#45;&gt;A_0</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-609.32C863.5,-603.05 863.5,-596.85 863.5,-594.14"/>
+</g>
+<!-- ph_8 -->
+<g id="node40" class="node">
+<title>ph_8</title>
+<path fill="#fffbe6" stroke="transparent" d="M230.33,-472.8C230.33,-472.8 6.67,-472.8 6.67,-472.8 3.33,-472.8 0,-469.47 0,-466.13 0,-466.13 0,-459.47 0,-459.47 0,-456.13 3.33,-452.8 6.67,-452.8 6.67,-452.8 230.33,-452.8 230.33,-452.8 233.67,-452.8 237,-456.13 237,-459.47 237,-459.47 237,-466.13 237,-466.13 237,-469.47 233.67,-472.8 230.33,-472.8"/>
+<text text-anchor="middle" x="118.5" y="-460" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段二：命令 1 —— 复用连接，开新 channel</text>
+</g>
+<!-- ph_0&#45;&gt;ph_8 -->
+<!-- AI_0&#45;&gt;A_0 -->
+<g id="edge142" class="edge">
+<title>AI_0&#45;&gt;A_0</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M270.92,-592.14C282.79,-594.16 335.99,-602.97 380,-605.72 462.28,-610.87 668.71,-610.82 751,-605.72 795.79,-602.94 850.03,-594.01 861.36,-592.09"/>
+</g>
+<!-- AI_1 -->
+<g id="node11" class="node">
+<title>AI_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-571.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_0&#45;&gt;AI_1 -->
+<g id="edge11" class="edge">
+<title>AI_0&#45;&gt;AI_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-589.53C268.5,-586.25 268.5,-577.1 268.5,-573.78"/>
+</g>
+<!-- W_1 -->
+<g id="node12" class="node">
+<title>W_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-571.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_0&#45;&gt;W_1 -->
+<g id="edge44" class="edge">
+<title>W_0&#45;&gt;W_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-589.53C382.5,-586.25 382.5,-577.1 382.5,-573.78"/>
+</g>
+<!-- M_1 -->
+<g id="node13" class="node">
+<title>M_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-571.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_0&#45;&gt;M_1 -->
+<g id="edge77" class="edge">
+<title>M_0&#45;&gt;M_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-589.53C748.5,-586.25 748.5,-577.1 748.5,-573.78"/>
+</g>
+<!-- A_1 -->
+<g id="node14" class="node">
+<title>A_1</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-571.56" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_0&#45;&gt;A_1 -->
+<g id="edge110" class="edge">
+<title>A_0&#45;&gt;A_1</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-589.53C863.5,-586.25 863.5,-577.1 863.5,-573.78"/>
+</g>
+<!-- AI_1&#45;&gt;W_1 -->
+<g id="edge147" class="edge">
+<title>AI_1&#45;&gt;W_1</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M270.73,-571.56C303.83,-571.56 336.94,-571.56 370.04,-571.56"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="370.32,-575.06 380.32,-571.56 370.32,-568.06 370.32,-575.06"/>
+<text text-anchor="middle" x="404.32" y="-574.56" font-family="Noto Sans CJK SC" font-size="10.00">submit_ssh_task(cmd1, device=A)</text>
+</g>
+<!-- AI_2 -->
+<g id="node15" class="node">
+<title>AI_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-559.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_1&#45;&gt;AI_2 -->
+<g id="edge12" class="edge">
+<title>AI_1&#45;&gt;AI_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-569.29C268.5,-567.31 268.5,-563.5 268.5,-561.52"/>
+</g>
+<!-- W_2 -->
+<g id="node16" class="node">
+<title>W_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-559.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_1&#45;&gt;W_2 -->
+<g id="edge45" class="edge">
+<title>W_1&#45;&gt;W_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-569.29C382.5,-567.31 382.5,-563.5 382.5,-561.52"/>
+</g>
+<!-- M_2 -->
+<g id="node17" class="node">
+<title>M_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-559.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_1&#45;&gt;M_2 -->
+<g id="edge78" class="edge">
+<title>M_1&#45;&gt;M_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-569.29C748.5,-567.31 748.5,-563.5 748.5,-561.52"/>
+</g>
+<!-- A_2 -->
+<g id="node18" class="node">
+<title>A_2</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-559.24" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_1&#45;&gt;A_2 -->
+<g id="edge111" class="edge">
+<title>A_1&#45;&gt;A_2</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-569.29C863.5,-567.31 863.5,-563.5 863.5,-561.52"/>
+</g>
+<!-- AI_3 -->
+<g id="node19" class="node">
+<title>AI_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-546.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_2&#45;&gt;AI_3 -->
+<g id="edge13" class="edge">
+<title>AI_2&#45;&gt;AI_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-556.97C268.5,-554.99 268.5,-551.18 268.5,-549.2"/>
+</g>
+<!-- W_2&#45;&gt;M_2 -->
+<g id="edge148" class="edge">
+<title>W_2&#45;&gt;M_2</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M385,-559.24C501.93,-559.24 618.86,-559.24 735.79,-559.24"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="736.02,-562.74 746.02,-559.24 736.02,-555.74 736.02,-562.74"/>
+<text text-anchor="middle" x="614.44" y="-551.24" font-family="Noto Sans CJK SC" font-size="10.00">getOrCreateSession(&quot;A&quot;) → sessions 未命中</text>
+</g>
+<!-- W_3 -->
+<g id="node20" class="node">
+<title>W_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-546.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_2&#45;&gt;W_3 -->
+<g id="edge46" class="edge">
+<title>W_2&#45;&gt;W_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-556.97C382.5,-554.99 382.5,-551.18 382.5,-549.2"/>
+</g>
+<!-- M_3 -->
+<g id="node21" class="node">
+<title>M_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-546.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_2&#45;&gt;M_3 -->
+<g id="edge79" class="edge">
+<title>M_2&#45;&gt;M_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-556.97C748.5,-554.99 748.5,-551.18 748.5,-549.2"/>
+</g>
+<!-- A_3 -->
+<g id="node22" class="node">
+<title>A_3</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-546.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_2&#45;&gt;A_3 -->
+<g id="edge112" class="edge">
+<title>A_2&#45;&gt;A_3</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-556.97C863.5,-554.99 863.5,-551.18 863.5,-549.2"/>
+</g>
+<!-- AI_4 -->
+<g id="node23" class="node">
+<title>AI_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-534.6" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_3&#45;&gt;AI_4 -->
+<g id="edge14" class="edge">
+<title>AI_3&#45;&gt;AI_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-544.65C268.5,-542.67 268.5,-538.86 268.5,-536.88"/>
+</g>
+<!-- W_4 -->
+<g id="node24" class="node">
+<title>W_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-534.6" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_3&#45;&gt;W_4 -->
+<g id="edge47" class="edge">
+<title>W_3&#45;&gt;W_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-544.65C382.5,-542.67 382.5,-538.86 382.5,-536.88"/>
+</g>
+<!-- M_3&#45;&gt;W_3 -->
+<g id="edge149" class="edge">
+<title>M_3&#45;&gt;W_3</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" stroke-dasharray="5,2" d="M746.02,-546.92C629.09,-546.92 512.16,-546.92 395.23,-546.92"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="395,-543.42 385,-546.92 395,-550.42 395,-543.42"/>
+<text text-anchor="middle" x="479.82" y="-538.92" font-family="Noto Sans CJK SC" font-size="10.00">查 map：无 &quot;A&quot; 的 Client → undefined</text>
+</g>
+<!-- M_4 -->
+<g id="node25" class="node">
+<title>M_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-534.6" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_3&#45;&gt;M_4 -->
+<g id="edge80" class="edge">
+<title>M_3&#45;&gt;M_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-544.65C748.5,-542.67 748.5,-538.86 748.5,-536.88"/>
+</g>
+<!-- A_4 -->
+<g id="node26" class="node">
+<title>A_4</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-534.6" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_3&#45;&gt;A_4 -->
+<g id="edge113" class="edge">
+<title>A_3&#45;&gt;A_4</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-544.65C863.5,-542.67 863.5,-538.86 863.5,-536.88"/>
+</g>
+<!-- AI_5 -->
+<g id="node27" class="node">
+<title>AI_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-522.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_4&#45;&gt;AI_5 -->
+<g id="edge15" class="edge">
+<title>AI_4&#45;&gt;AI_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-532.33C268.5,-530.35 268.5,-526.54 268.5,-524.56"/>
+</g>
+<!-- W_4&#45;&gt;A_4 -->
+<g id="edge150" class="edge">
+<title>W_4&#45;&gt;A_4</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M384.84,-534.72C407.93,-535.87 597.49,-544.96 751,-540.76 787.25,-539.77 830,-536.98 850.82,-535.52"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="851.33,-538.99 861.05,-534.78 850.82,-532.01 851.33,-538.99"/>
+<text text-anchor="middle" x="731.48" y="-533.68" font-family="Noto Sans CJK SC" font-size="10.00">new ssh2 Client() + 读私钥/密码 → TCP 三次握手</text>
+</g>
+<!-- W_5 -->
+<g id="node28" class="node">
+<title>W_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-522.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_4&#45;&gt;W_5 -->
+<g id="edge48" class="edge">
+<title>W_4&#45;&gt;W_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-532.33C382.5,-530.35 382.5,-526.54 382.5,-524.56"/>
+</g>
+<!-- M_5 -->
+<g id="node29" class="node">
+<title>M_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-522.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_4&#45;&gt;M_5 -->
+<g id="edge81" class="edge">
+<title>M_4&#45;&gt;M_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-532.33C748.5,-530.35 748.5,-526.54 748.5,-524.56"/>
+</g>
+<!-- A_5 -->
+<g id="node30" class="node">
+<title>A_5</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-522.28" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_4&#45;&gt;A_5 -->
+<g id="edge114" class="edge">
+<title>A_4&#45;&gt;A_5</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-532.33C863.5,-530.35 863.5,-526.54 863.5,-524.56"/>
+</g>
+<!-- AI_6 -->
+<g id="node31" class="node">
+<title>AI_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-509.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_5&#45;&gt;AI_6 -->
+<g id="edge16" class="edge">
+<title>AI_5&#45;&gt;AI_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-520.01C268.5,-518.03 268.5,-514.22 268.5,-512.24"/>
+</g>
+<!-- W_6 -->
+<g id="node32" class="node">
+<title>W_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-509.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_5&#45;&gt;W_6 -->
+<g id="edge49" class="edge">
+<title>W_5&#45;&gt;W_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-520.01C382.5,-518.03 382.5,-514.22 382.5,-512.24"/>
+</g>
+<!-- M_6 -->
+<g id="node33" class="node">
+<title>M_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-509.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_5&#45;&gt;M_6 -->
+<g id="edge82" class="edge">
+<title>M_5&#45;&gt;M_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-520.01C748.5,-518.03 748.5,-514.22 748.5,-512.24"/>
+</g>
+<!-- A_5&#45;&gt;W_5 -->
+<g id="edge151" class="edge">
+<title>A_5&#45;&gt;W_5</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" stroke-dasharray="5,2" d="M861.05,-522.46C849.03,-523.36 795.19,-527.23 751,-528.44 611.29,-532.26 441.71,-525.08 394.95,-522.89"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="395,-519.38 384.84,-522.4 394.66,-526.38 395,-519.38"/>
+<text text-anchor="middle" x="505.59" y="-521.36" font-family="Noto Sans CJK SC" font-size="10.00">SSH 版本协商 → 密钥交换(KEX) → 认证签名 → ready</text>
+</g>
+<!-- A_6 -->
+<g id="node34" class="node">
+<title>A_6</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-509.96" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_5&#45;&gt;A_6 -->
+<g id="edge115" class="edge">
+<title>A_5&#45;&gt;A_6</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-520.01C863.5,-518.03 863.5,-514.22 863.5,-512.24"/>
+</g>
+<!-- AI_7 -->
+<g id="node36" class="node">
+<title>AI_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-490.3" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_6&#45;&gt;AI_7 -->
+<g id="edge17" class="edge">
+<title>AI_6&#45;&gt;AI_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-507.33C268.5,-503.91 268.5,-496.05 268.5,-492.78"/>
+</g>
+<!-- W_6&#45;&gt;M_6 -->
+<g id="edge152" class="edge">
+<title>W_6&#45;&gt;M_6</title>
+<path fill="none" stroke="#2b5797" stroke-width="1.1" d="M385,-509.96C501.93,-509.96 618.86,-509.96 735.79,-509.96"/>
+<polygon fill="#2b5797" stroke="#2b5797" stroke-width="1.1" points="736.02,-513.46 746.02,-509.96 736.02,-506.46 736.02,-513.46"/>
+<text text-anchor="middle" x="651.19" y="-501.96" font-family="Noto Sans CJK SC" font-size="10.00">缓存 Client → sessions.set(&quot;A&quot;, client)</text>
+</g>
+<!-- W_7 -->
+<g id="node37" class="node">
+<title>W_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-490.3" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_6&#45;&gt;W_7 -->
+<g id="edge50" class="edge">
+<title>W_6&#45;&gt;W_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-507.33C382.5,-503.91 382.5,-496.05 382.5,-492.78"/>
+</g>
+<!-- M_7 -->
+<g id="node38" class="node">
+<title>M_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-490.3" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_6&#45;&gt;M_7 -->
+<g id="edge83" class="edge">
+<title>M_6&#45;&gt;M_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-507.33C748.5,-503.91 748.5,-496.05 748.5,-492.78"/>
+</g>
+<!-- A_7 -->
+<g id="node39" class="node">
+<title>A_7</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-490.3" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_6&#45;&gt;A_7 -->
+<g id="edge116" class="edge">
+<title>A_6&#45;&gt;A_7</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-507.33C863.5,-503.91 863.5,-496.05 863.5,-492.78"/>
+</g>
+<!-- note_7 -->
+<g id="node35" class="node">
+<title>note_7</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="512.33,-499.8 413.5,-499.8 413.5,-480.8 515.5,-480.8 515.5,-496.63 512.33,-499.8"/>
+<polyline fill="none" stroke="#e0b400" points="512.33,-499.8 512.33,-496.63 "/>
+<polyline fill="none" stroke="#e0b400" points="515.5,-496.63 512.33,-496.63 "/>
+<text text-anchor="middle" x="464.5" y="-487.8" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">生成会话 id：ssh_1</text>
+</g>
+<!-- AI_8 -->
+<g id="node41" class="node">
+<title>AI_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-462.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_7&#45;&gt;AI_8 -->
+<g id="edge18" class="edge">
+<title>AI_7&#45;&gt;AI_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-487.93C268.5,-483.46 268.5,-469.35 268.5,-465.06"/>
+</g>
+<!-- W_7&#45;&gt;note_7 -->
+<g id="edge153" class="edge">
+<title>W_7&#45;&gt;note_7</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M384.74,-490.3C394.3,-490.3 403.85,-490.3 413.41,-490.3"/>
+</g>
+<!-- W_8 -->
+<g id="node42" class="node">
+<title>W_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-462.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_7&#45;&gt;W_8 -->
+<g id="edge51" class="edge">
+<title>W_7&#45;&gt;W_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-487.93C382.5,-483.46 382.5,-469.35 382.5,-465.06"/>
+</g>
+<!-- M_8 -->
+<g id="node43" class="node">
+<title>M_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-462.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_7&#45;&gt;M_8 -->
+<g id="edge84" class="edge">
+<title>M_7&#45;&gt;M_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-487.93C748.5,-483.46 748.5,-469.35 748.5,-465.06"/>
+</g>
+<!-- A_8 -->
+<g id="node44" class="node">
+<title>A_8</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-462.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_7&#45;&gt;A_8 -->
+<g id="edge117" class="edge">
+<title>A_7&#45;&gt;A_8</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-487.93C863.5,-483.46 863.5,-469.35 863.5,-465.06"/>
+</g>
+<!-- ph_14 -->
+<g id="node67" class="node">
+<title>ph_14</title>
+<path fill="#fffbe6" stroke="transparent" d="M197.83,-342.84C197.83,-342.84 39.17,-342.84 39.17,-342.84 35.83,-342.84 32.5,-339.51 32.5,-336.17 32.5,-336.17 32.5,-329.51 32.5,-329.51 32.5,-326.17 35.83,-322.84 39.17,-322.84 39.17,-322.84 197.83,-322.84 197.83,-322.84 201.17,-322.84 204.5,-326.17 204.5,-329.51 204.5,-329.51 204.5,-336.17 204.5,-336.17 204.5,-339.51 201.17,-342.84 197.83,-342.84"/>
+<text text-anchor="middle" x="118.5" y="-330.04" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段三：命令 2 —— 零握手复用</text>
+</g>
+<!-- ph_8&#45;&gt;ph_14 -->
+<!-- AI_8&#45;&gt;A_8 -->
+<g id="edge143" class="edge">
+<title>AI_8&#45;&gt;A_8</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M270.92,-463.22C282.79,-465.24 335.99,-474.05 380,-476.8 462.28,-481.95 668.71,-481.9 751,-476.8 795.79,-474.02 850.03,-465.09 861.36,-463.17"/>
+</g>
+<!-- AI_9 -->
+<g id="node45" class="node">
+<title>AI_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-442.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_8&#45;&gt;AI_9 -->
+<g id="edge19" class="edge">
+<title>AI_8&#45;&gt;AI_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-460.61C268.5,-457.33 268.5,-448.18 268.5,-444.86"/>
+</g>
+<!-- W_9 -->
+<g id="node46" class="node">
+<title>W_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-442.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_8&#45;&gt;W_9 -->
+<g id="edge52" class="edge">
+<title>W_8&#45;&gt;W_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-460.61C382.5,-457.33 382.5,-448.18 382.5,-444.86"/>
+</g>
+<!-- M_9 -->
+<g id="node47" class="node">
+<title>M_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-442.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_8&#45;&gt;M_9 -->
+<g id="edge85" class="edge">
+<title>M_8&#45;&gt;M_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-460.61C748.5,-457.33 748.5,-448.18 748.5,-444.86"/>
+</g>
+<!-- A_9 -->
+<g id="node48" class="node">
+<title>A_9</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-442.64" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_8&#45;&gt;A_9 -->
+<g id="edge118" class="edge">
+<title>A_8&#45;&gt;A_9</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-460.61C863.5,-457.33 863.5,-448.18 863.5,-444.86"/>
+</g>
+<!-- AI_10 -->
+<g id="node50" class="node">
+<title>AI_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-422.98" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_9&#45;&gt;AI_10 -->
+<g id="edge20" class="edge">
+<title>AI_9&#45;&gt;AI_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-440.01C268.5,-436.59 268.5,-428.73 268.5,-425.46"/>
+</g>
+<!-- W_9&#45;&gt;A_9 -->
+<g id="edge154" class="edge">
+<title>W_9&#45;&gt;A_9</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" d="M384.84,-442.76C407.93,-443.91 597.49,-453 751,-448.8 787.25,-447.81 830,-445.02 850.82,-443.56"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="851.33,-447.03 861.05,-442.82 850.82,-440.05 851.33,-447.03"/>
+<text text-anchor="middle" x="509.98" y="-452.72" font-family="Noto Sans CJK SC" font-size="10.00">client.exec(cmd1) 在已握手连接上开 exec channel</text>
+</g>
+<!-- W_10 -->
+<g id="node51" class="node">
+<title>W_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-422.98" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_9&#45;&gt;W_10 -->
+<g id="edge53" class="edge">
+<title>W_9&#45;&gt;W_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-440.01C382.5,-436.59 382.5,-428.73 382.5,-425.46"/>
+</g>
+<!-- M_10 -->
+<g id="node52" class="node">
+<title>M_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-422.98" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_9&#45;&gt;M_10 -->
+<g id="edge86" class="edge">
+<title>M_9&#45;&gt;M_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-440.01C748.5,-436.59 748.5,-428.73 748.5,-425.46"/>
+</g>
+<!-- A_10 -->
+<g id="node53" class="node">
+<title>A_10</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-422.98" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_9&#45;&gt;A_10 -->
+<g id="edge119" class="edge">
+<title>A_9&#45;&gt;A_10</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-440.01C863.5,-436.59 863.5,-428.73 863.5,-425.46"/>
+</g>
+<!-- note_10 -->
+<g id="node49" class="node">
+<title>note_10</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="1047.33,-432.48 894.5,-432.48 894.5,-413.48 1050.5,-413.48 1050.5,-429.31 1047.33,-432.48"/>
+<polyline fill="none" stroke="#e0b400" points="1047.33,-432.48 1047.33,-429.31 "/>
+<polyline fill="none" stroke="#e0b400" points="1050.5,-429.31 1047.33,-429.31 "/>
+<text text-anchor="middle" x="972.5" y="-420.48" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">远端 sh &#45;c cmd1（全新子进程）</text>
+</g>
+<!-- AI_11 -->
+<g id="node54" class="node">
+<title>AI_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-403.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_10&#45;&gt;AI_11 -->
+<g id="edge21" class="edge">
+<title>AI_10&#45;&gt;AI_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-420.35C268.5,-416.93 268.5,-409.07 268.5,-405.8"/>
+</g>
+<!-- W_11 -->
+<g id="node55" class="node">
+<title>W_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-403.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_10&#45;&gt;W_11 -->
+<g id="edge54" class="edge">
+<title>W_10&#45;&gt;W_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-420.35C382.5,-416.93 382.5,-409.07 382.5,-405.8"/>
+</g>
+<!-- M_11 -->
+<g id="node56" class="node">
+<title>M_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-403.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_10&#45;&gt;M_11 -->
+<g id="edge87" class="edge">
+<title>M_10&#45;&gt;M_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-420.35C748.5,-416.93 748.5,-409.07 748.5,-405.8"/>
+</g>
+<!-- A_10&#45;&gt;note_10 -->
+<g id="edge155" class="edge">
+<title>A_10&#45;&gt;note_10</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M866.05,-422.98C875.48,-422.98 884.9,-422.98 894.33,-422.98"/>
+</g>
+<!-- A_11 -->
+<g id="node57" class="node">
+<title>A_11</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-403.32" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_10&#45;&gt;A_11 -->
+<g id="edge120" class="edge">
+<title>A_10&#45;&gt;A_11</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-420.35C863.5,-416.93 863.5,-409.07 863.5,-405.8"/>
+</g>
+<!-- AI_12 -->
+<g id="node58" class="node">
+<title>AI_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-391" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_11&#45;&gt;AI_12 -->
+<g id="edge22" class="edge">
+<title>AI_11&#45;&gt;AI_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-401.05C268.5,-399.07 268.5,-395.26 268.5,-393.28"/>
+</g>
+<!-- W_12 -->
+<g id="node59" class="node">
+<title>W_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-391" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_11&#45;&gt;W_12 -->
+<g id="edge55" class="edge">
+<title>W_11&#45;&gt;W_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-401.05C382.5,-399.07 382.5,-395.26 382.5,-393.28"/>
+</g>
+<!-- M_12 -->
+<g id="node60" class="node">
+<title>M_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-391" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_11&#45;&gt;M_12 -->
+<g id="edge88" class="edge">
+<title>M_11&#45;&gt;M_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-401.05C748.5,-399.07 748.5,-395.26 748.5,-393.28"/>
+</g>
+<!-- A_11&#45;&gt;W_11 -->
+<g id="edge156" class="edge">
+<title>A_11&#45;&gt;W_11</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" stroke-dasharray="5,2" d="M861.05,-403.5C849.03,-404.4 795.19,-408.27 751,-409.48 611.29,-413.3 441.71,-406.12 394.95,-403.93"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="395,-400.42 384.84,-403.44 394.66,-407.42 395,-400.42"/>
+<text text-anchor="middle" x="562.09" y="-413.4" font-family="Noto Sans CJK SC" font-size="10.00">channel stdout/stderr/exit</text>
+</g>
+<!-- A_12 -->
+<g id="node61" class="node">
+<title>A_12</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-391" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_11&#45;&gt;A_12 -->
+<g id="edge121" class="edge">
+<title>A_11&#45;&gt;A_12</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-401.05C863.5,-399.07 863.5,-395.26 863.5,-393.28"/>
+</g>
+<!-- AI_13 -->
+<g id="node63" class="node">
+<title>AI_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-365.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_12&#45;&gt;AI_13 -->
+<g id="edge23" class="edge">
+<title>AI_12&#45;&gt;AI_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-388.75C268.5,-384.85 268.5,-372.82 268.5,-368.45"/>
+</g>
+<!-- W_12&#45;&gt;AI_12 -->
+<g id="edge157" class="edge">
+<title>W_12&#45;&gt;AI_12</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" stroke-dasharray="5,2" d="M380.32,-391C347.21,-391 314.11,-391 281,-391"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="280.73,-387.5 270.73,-391 280.73,-394.5 280.73,-387.5"/>
+<text text-anchor="middle" x="256.23" y="-383" font-family="Noto Sans CJK SC" font-size="10.00">返回 cmd1 结果（连接仍保留）</text>
+</g>
+<!-- W_13 -->
+<g id="node64" class="node">
+<title>W_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-365.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_12&#45;&gt;W_13 -->
+<g id="edge56" class="edge">
+<title>W_12&#45;&gt;W_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-388.75C382.5,-384.85 382.5,-372.82 382.5,-368.45"/>
+</g>
+<!-- M_13 -->
+<g id="node65" class="node">
+<title>M_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-365.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_12&#45;&gt;M_13 -->
+<g id="edge89" class="edge">
+<title>M_12&#45;&gt;M_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-388.75C748.5,-384.85 748.5,-372.82 748.5,-368.45"/>
+</g>
+<!-- A_13 -->
+<g id="node66" class="node">
+<title>A_13</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-365.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_12&#45;&gt;A_13 -->
+<g id="edge122" class="edge">
+<title>A_12&#45;&gt;A_13</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-388.75C863.5,-384.85 863.5,-372.82 863.5,-368.45"/>
+</g>
+<!-- note_13 -->
+<g id="node62" class="node">
+<title>note_13</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="640.5,-380.84 413.5,-380.84 413.5,-350.84 645.5,-350.84 645.5,-375.84 640.5,-380.84"/>
+<polyline fill="none" stroke="#e0b400" points="640.5,-380.84 640.5,-375.84 "/>
+<polyline fill="none" stroke="#e0b400" points="645.5,-375.84 640.5,-375.84 "/>
+<text text-anchor="middle" x="529.5" y="-368.84" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">channel 随命令销毁、进程销毁、环境变量不保留</text>
+<text text-anchor="middle" x="529.5" y="-357.84" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">传输连接不动</text>
+</g>
+<!-- AI_14 -->
+<g id="node68" class="node">
+<title>AI_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-332.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_13&#45;&gt;AI_14 -->
+<g id="edge24" class="edge">
+<title>AI_13&#45;&gt;AI_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-363.51C268.5,-358.41 268.5,-340.16 268.5,-335.13"/>
+</g>
+<!-- W_13&#45;&gt;note_13 -->
+<g id="edge158" class="edge">
+<title>W_13&#45;&gt;note_13</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M384.8,-365.84C394.31,-365.84 403.83,-365.84 413.34,-365.84"/>
+</g>
+<!-- W_14 -->
+<g id="node69" class="node">
+<title>W_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-332.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_13&#45;&gt;W_14 -->
+<g id="edge57" class="edge">
+<title>W_13&#45;&gt;W_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-363.51C382.5,-358.41 382.5,-340.16 382.5,-335.13"/>
+</g>
+<!-- M_14 -->
+<g id="node70" class="node">
+<title>M_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-332.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_13&#45;&gt;M_14 -->
+<g id="edge90" class="edge">
+<title>M_13&#45;&gt;M_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-363.51C748.5,-358.41 748.5,-340.16 748.5,-335.13"/>
+</g>
+<!-- A_14 -->
+<g id="node71" class="node">
+<title>A_14</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-332.84" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_13&#45;&gt;A_14 -->
+<g id="edge123" class="edge">
+<title>A_13&#45;&gt;A_14</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-363.51C863.5,-358.41 863.5,-340.16 863.5,-335.13"/>
+</g>
+<!-- ph_23 -->
+<g id="node106" class="node">
+<title>ph_23</title>
+<path fill="#fffbe6" stroke="transparent" d="M215.33,-186.92C215.33,-186.92 21.67,-186.92 21.67,-186.92 18.33,-186.92 15,-183.59 15,-180.25 15,-180.25 15,-173.59 15,-173.59 15,-170.25 18.33,-166.92 21.67,-166.92 21.67,-166.92 215.33,-166.92 215.33,-166.92 218.67,-166.92 222,-170.25 222,-173.59 222,-173.59 222,-180.25 222,-180.25 222,-183.59 218.67,-186.92 215.33,-186.92"/>
+<text text-anchor="middle" x="118.5" y="-174.12" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">阶段四：接入设备 B —— 独立连接缓存</text>
+</g>
+<!-- ph_14&#45;&gt;ph_23 -->
+<!-- AI_14&#45;&gt;A_14 -->
+<g id="edge144" class="edge">
+<title>AI_14&#45;&gt;A_14</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M270.92,-333.26C282.79,-335.28 335.99,-344.09 380,-346.84 462.28,-351.99 668.71,-351.94 751,-346.84 795.79,-344.06 850.03,-335.13 861.36,-333.21"/>
+</g>
+<!-- AI_15 -->
+<g id="node72" class="node">
+<title>AI_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-312.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_14&#45;&gt;AI_15 -->
+<g id="edge25" class="edge">
+<title>AI_14&#45;&gt;AI_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-330.65C268.5,-327.37 268.5,-318.22 268.5,-314.9"/>
+</g>
+<!-- W_15 -->
+<g id="node73" class="node">
+<title>W_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-312.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_14&#45;&gt;W_15 -->
+<g id="edge58" class="edge">
+<title>W_14&#45;&gt;W_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-330.65C382.5,-327.37 382.5,-318.22 382.5,-314.9"/>
+</g>
+<!-- M_15 -->
+<g id="node74" class="node">
+<title>M_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-312.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_14&#45;&gt;M_15 -->
+<g id="edge91" class="edge">
+<title>M_14&#45;&gt;M_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-330.65C748.5,-327.37 748.5,-318.22 748.5,-314.9"/>
+</g>
+<!-- A_15 -->
+<g id="node75" class="node">
+<title>A_15</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-312.68" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_14&#45;&gt;A_15 -->
+<g id="edge124" class="edge">
+<title>A_14&#45;&gt;A_15</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-330.65C863.5,-327.37 863.5,-318.22 863.5,-314.9"/>
+</g>
+<!-- AI_15&#45;&gt;W_15 -->
+<g id="edge159" class="edge">
+<title>AI_15&#45;&gt;W_15</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" d="M270.73,-312.68C303.83,-312.68 336.94,-312.68 370.04,-312.68"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="370.32,-316.18 380.32,-312.68 370.32,-309.18 370.32,-316.18"/>
+<text text-anchor="middle" x="404.32" y="-315.68" font-family="Noto Sans CJK SC" font-size="10.00">submit_ssh_task(cmd2, device=A)</text>
+</g>
+<!-- AI_16 -->
+<g id="node76" class="node">
+<title>AI_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-300.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_15&#45;&gt;AI_16 -->
+<g id="edge26" class="edge">
+<title>AI_15&#45;&gt;AI_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-310.41C268.5,-308.43 268.5,-304.62 268.5,-302.64"/>
+</g>
+<!-- W_16 -->
+<g id="node77" class="node">
+<title>W_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-300.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_15&#45;&gt;W_16 -->
+<g id="edge59" class="edge">
+<title>W_15&#45;&gt;W_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-310.41C382.5,-308.43 382.5,-304.62 382.5,-302.64"/>
+</g>
+<!-- M_16 -->
+<g id="node78" class="node">
+<title>M_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-300.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_15&#45;&gt;M_16 -->
+<g id="edge92" class="edge">
+<title>M_15&#45;&gt;M_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-310.41C748.5,-308.43 748.5,-304.62 748.5,-302.64"/>
+</g>
+<!-- A_16 -->
+<g id="node79" class="node">
+<title>A_16</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-300.36" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_15&#45;&gt;A_16 -->
+<g id="edge125" class="edge">
+<title>A_15&#45;&gt;A_16</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-310.41C863.5,-308.43 863.5,-304.62 863.5,-302.64"/>
+</g>
+<!-- AI_17 -->
+<g id="node80" class="node">
+<title>AI_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-288.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_16&#45;&gt;AI_17 -->
+<g id="edge27" class="edge">
+<title>AI_16&#45;&gt;AI_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-298.09C268.5,-296.11 268.5,-292.3 268.5,-290.32"/>
+</g>
+<!-- W_16&#45;&gt;M_16 -->
+<g id="edge160" class="edge">
+<title>W_16&#45;&gt;M_16</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" d="M385,-300.36C501.93,-300.36 618.86,-300.36 735.79,-300.36"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="736.02,-303.86 746.02,-300.36 736.02,-296.86 736.02,-303.86"/>
+<text text-anchor="middle" x="483.69" y="-303.36" font-family="Noto Sans CJK SC" font-size="10.00">查 map：命中 &quot;A&quot; → 直接返回 Client</text>
+</g>
+<!-- W_17 -->
+<g id="node81" class="node">
+<title>W_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-288.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_16&#45;&gt;W_17 -->
+<g id="edge60" class="edge">
+<title>W_16&#45;&gt;W_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-298.09C382.5,-296.11 382.5,-292.3 382.5,-290.32"/>
+</g>
+<!-- M_17 -->
+<g id="node82" class="node">
+<title>M_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-288.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_16&#45;&gt;M_17 -->
+<g id="edge93" class="edge">
+<title>M_16&#45;&gt;M_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-298.09C748.5,-296.11 748.5,-292.3 748.5,-290.32"/>
+</g>
+<!-- A_17 -->
+<g id="node83" class="node">
+<title>A_17</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-288.04" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_16&#45;&gt;A_17 -->
+<g id="edge126" class="edge">
+<title>A_16&#45;&gt;A_17</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-298.09C863.5,-296.11 863.5,-292.3 863.5,-290.32"/>
+</g>
+<!-- AI_18 -->
+<g id="node84" class="node">
+<title>AI_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-275.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_17&#45;&gt;AI_18 -->
+<g id="edge28" class="edge">
+<title>AI_17&#45;&gt;AI_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-285.77C268.5,-283.79 268.5,-279.98 268.5,-278"/>
+</g>
+<!-- W_18 -->
+<g id="node85" class="node">
+<title>W_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-275.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_17&#45;&gt;W_18 -->
+<g id="edge61" class="edge">
+<title>W_17&#45;&gt;W_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-285.77C382.5,-283.79 382.5,-279.98 382.5,-278"/>
+</g>
+<!-- M_17&#45;&gt;W_17 -->
+<g id="edge161" class="edge">
+<title>M_17&#45;&gt;W_17</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" stroke-dasharray="5,2" d="M746.02,-288.04C629.09,-288.04 512.16,-288.04 395.23,-288.04"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="395,-284.54 385,-288.04 395,-291.54 395,-284.54"/>
+<text text-anchor="middle" x="513.32" y="-291.04" font-family="Noto Sans CJK SC" font-size="10.00">ssh_1 Client（无握手）</text>
+</g>
+<!-- M_18 -->
+<g id="node86" class="node">
+<title>M_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-275.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_17&#45;&gt;M_18 -->
+<g id="edge94" class="edge">
+<title>M_17&#45;&gt;M_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-285.77C748.5,-283.79 748.5,-279.98 748.5,-278"/>
+</g>
+<!-- A_18 -->
+<g id="node87" class="node">
+<title>A_18</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-275.72" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_17&#45;&gt;A_18 -->
+<g id="edge127" class="edge">
+<title>A_17&#45;&gt;A_18</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-285.77C863.5,-283.79 863.5,-279.98 863.5,-278"/>
+</g>
+<!-- AI_19 -->
+<g id="node89" class="node">
+<title>AI_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-256.06" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_18&#45;&gt;AI_19 -->
+<g id="edge29" class="edge">
+<title>AI_18&#45;&gt;AI_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-273.09C268.5,-269.67 268.5,-261.81 268.5,-258.54"/>
+</g>
+<!-- W_18&#45;&gt;A_18 -->
+<g id="edge162" class="edge">
+<title>W_18&#45;&gt;A_18</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" d="M384.84,-275.84C407.93,-276.99 597.49,-286.08 751,-281.88 787.25,-280.89 830,-278.1 850.82,-276.64"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="851.33,-280.11 861.05,-275.9 850.82,-273.13 851.33,-280.11"/>
+<text text-anchor="middle" x="535.98" y="-274.8" font-family="Noto Sans CJK SC" font-size="10.00">client.exec(cmd2) 新 channel，新进程</text>
+</g>
+<!-- W_19 -->
+<g id="node90" class="node">
+<title>W_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-256.06" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_18&#45;&gt;W_19 -->
+<g id="edge62" class="edge">
+<title>W_18&#45;&gt;W_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-273.09C382.5,-269.67 382.5,-261.81 382.5,-258.54"/>
+</g>
+<!-- M_19 -->
+<g id="node91" class="node">
+<title>M_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-256.06" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_18&#45;&gt;M_19 -->
+<g id="edge95" class="edge">
+<title>M_18&#45;&gt;M_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-273.09C748.5,-269.67 748.5,-261.81 748.5,-258.54"/>
+</g>
+<!-- A_19 -->
+<g id="node92" class="node">
+<title>A_19</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-256.06" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_18&#45;&gt;A_19 -->
+<g id="edge128" class="edge">
+<title>A_18&#45;&gt;A_19</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-273.09C863.5,-269.67 863.5,-261.81 863.5,-258.54"/>
+</g>
+<!-- note_19 -->
+<g id="node88" class="node">
+<title>note_19</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="1047.33,-265.56 894.5,-265.56 894.5,-246.56 1050.5,-246.56 1050.5,-262.39 1047.33,-265.56"/>
+<polyline fill="none" stroke="#e0b400" points="1047.33,-265.56 1047.33,-262.39 "/>
+<polyline fill="none" stroke="#e0b400" points="1050.5,-262.39 1047.33,-262.39 "/>
+<text text-anchor="middle" x="972.5" y="-253.56" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">远端 sh &#45;c cmd2（全新子进程）</text>
+</g>
+<!-- AI_20 -->
+<g id="node93" class="node">
+<title>AI_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-236.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_19&#45;&gt;AI_20 -->
+<g id="edge30" class="edge">
+<title>AI_19&#45;&gt;AI_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-253.43C268.5,-250.01 268.5,-242.15 268.5,-238.88"/>
+</g>
+<!-- W_20 -->
+<g id="node94" class="node">
+<title>W_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-236.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_19&#45;&gt;W_20 -->
+<g id="edge63" class="edge">
+<title>W_19&#45;&gt;W_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-253.43C382.5,-250.01 382.5,-242.15 382.5,-238.88"/>
+</g>
+<!-- M_20 -->
+<g id="node95" class="node">
+<title>M_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-236.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_19&#45;&gt;M_20 -->
+<g id="edge96" class="edge">
+<title>M_19&#45;&gt;M_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-253.43C748.5,-250.01 748.5,-242.15 748.5,-238.88"/>
+</g>
+<!-- A_19&#45;&gt;note_19 -->
+<g id="edge163" class="edge">
+<title>A_19&#45;&gt;note_19</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M866.05,-256.06C875.48,-256.06 884.9,-256.06 894.33,-256.06"/>
+</g>
+<!-- A_20 -->
+<g id="node96" class="node">
+<title>A_20</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-236.4" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_19&#45;&gt;A_20 -->
+<g id="edge129" class="edge">
+<title>A_19&#45;&gt;A_20</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-253.43C863.5,-250.01 863.5,-242.15 863.5,-238.88"/>
+</g>
+<!-- AI_21 -->
+<g id="node97" class="node">
+<title>AI_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-224.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_20&#45;&gt;AI_21 -->
+<g id="edge31" class="edge">
+<title>AI_20&#45;&gt;AI_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-234.13C268.5,-232.15 268.5,-228.34 268.5,-226.36"/>
+</g>
+<!-- W_21 -->
+<g id="node98" class="node">
+<title>W_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-224.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_20&#45;&gt;W_21 -->
+<g id="edge64" class="edge">
+<title>W_20&#45;&gt;W_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-234.13C382.5,-232.15 382.5,-228.34 382.5,-226.36"/>
+</g>
+<!-- M_21 -->
+<g id="node99" class="node">
+<title>M_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-224.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_20&#45;&gt;M_21 -->
+<g id="edge97" class="edge">
+<title>M_20&#45;&gt;M_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-234.13C748.5,-232.15 748.5,-228.34 748.5,-226.36"/>
+</g>
+<!-- A_20&#45;&gt;W_20 -->
+<g id="edge164" class="edge">
+<title>A_20&#45;&gt;W_20</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" stroke-dasharray="5,2" d="M861.05,-236.58C849.03,-237.48 795.19,-241.35 751,-242.56 611.29,-246.38 441.71,-239.2 394.95,-237.01"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="395,-233.5 384.84,-236.52 394.66,-240.5 395,-233.5"/>
+<text text-anchor="middle" x="562.09" y="-246.48" font-family="Noto Sans CJK SC" font-size="10.00">channel stdout/stderr/exit</text>
+</g>
+<!-- A_21 -->
+<g id="node100" class="node">
+<title>A_21</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-224.08" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_20&#45;&gt;A_21 -->
+<g id="edge130" class="edge">
+<title>A_20&#45;&gt;A_21</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-234.13C863.5,-232.15 863.5,-228.34 863.5,-226.36"/>
+</g>
+<!-- AI_22 -->
+<g id="node102" class="node">
+<title>AI_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-204.42" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_21&#45;&gt;AI_22 -->
+<g id="edge32" class="edge">
+<title>AI_21&#45;&gt;AI_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-221.45C268.5,-218.03 268.5,-210.17 268.5,-206.9"/>
+</g>
+<!-- W_21&#45;&gt;AI_21 -->
+<g id="edge165" class="edge">
+<title>W_21&#45;&gt;AI_21</title>
+<path fill="none" stroke="#2e7d32" stroke-width="1.1" stroke-dasharray="5,2" d="M380.32,-224.08C347.21,-224.08 314.11,-224.08 281,-224.08"/>
+<polygon fill="#2e7d32" stroke="#2e7d32" stroke-width="1.1" points="280.73,-220.58 270.73,-224.08 280.73,-227.58 280.73,-220.58"/>
+<text text-anchor="middle" x="342.73" y="-216.08" font-family="Noto Sans CJK SC" font-size="10.00">返回 cmd2 结果</text>
+</g>
+<!-- W_22 -->
+<g id="node103" class="node">
+<title>W_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-204.42" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_21&#45;&gt;W_22 -->
+<g id="edge65" class="edge">
+<title>W_21&#45;&gt;W_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-221.45C382.5,-218.03 382.5,-210.17 382.5,-206.9"/>
+</g>
+<!-- M_22 -->
+<g id="node104" class="node">
+<title>M_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-204.42" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_21&#45;&gt;M_22 -->
+<g id="edge98" class="edge">
+<title>M_21&#45;&gt;M_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-221.45C748.5,-218.03 748.5,-210.17 748.5,-206.9"/>
+</g>
+<!-- A_22 -->
+<g id="node105" class="node">
+<title>A_22</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-204.42" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_21&#45;&gt;A_22 -->
+<g id="edge131" class="edge">
+<title>A_21&#45;&gt;A_22</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-221.45C863.5,-218.03 863.5,-210.17 863.5,-206.9"/>
+</g>
+<!-- note_22 -->
+<g id="node101" class="node">
+<title>note_22</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="595.83,-213.92 414,-213.92 414,-194.92 599,-194.92 599,-210.75 595.83,-213.92"/>
+<polyline fill="none" stroke="#e0b400" points="595.83,-213.92 595.83,-210.75 "/>
+<polyline fill="none" stroke="#e0b400" points="599,-210.75 595.83,-210.75 "/>
+<text text-anchor="middle" x="506.5" y="-201.92" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">省掉 TCP 握手 + KEX + 认证的固定开销</text>
+</g>
+<!-- AI_23 -->
+<g id="node107" class="node">
+<title>AI_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-176.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_22&#45;&gt;AI_23 -->
+<g id="edge33" class="edge">
+<title>AI_22&#45;&gt;AI_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-202.05C268.5,-197.58 268.5,-183.47 268.5,-179.18"/>
+</g>
+<!-- W_22&#45;&gt;note_22 -->
+<g id="edge166" class="edge">
+<title>W_22&#45;&gt;note_22</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M384.92,-204.42C394.58,-204.42 404.24,-204.42 413.89,-204.42"/>
+</g>
+<!-- W_23 -->
+<g id="node108" class="node">
+<title>W_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-176.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_22&#45;&gt;W_23 -->
+<g id="edge66" class="edge">
+<title>W_22&#45;&gt;W_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-202.05C382.5,-197.58 382.5,-183.47 382.5,-179.18"/>
+</g>
+<!-- M_23 -->
+<g id="node109" class="node">
+<title>M_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-176.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_22&#45;&gt;M_23 -->
+<g id="edge99" class="edge">
+<title>M_22&#45;&gt;M_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-202.05C748.5,-197.58 748.5,-183.47 748.5,-179.18"/>
+</g>
+<!-- A_23 -->
+<g id="node110" class="node">
+<title>A_23</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-176.92" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_22&#45;&gt;A_23 -->
+<g id="edge132" class="edge">
+<title>A_22&#45;&gt;A_23</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-202.05C863.5,-197.58 863.5,-183.47 863.5,-179.18"/>
+</g>
+<!-- ph_31 -->
+<g id="node140" class="node">
+<title>ph_31</title>
+<path fill="#fffbe6" stroke="transparent" d="M165.33,-58C165.33,-58 71.67,-58 71.67,-58 68.33,-58 65,-54.67 65,-51.33 65,-51.33 65,-44.67 65,-44.67 65,-41.33 68.33,-38 71.67,-38 71.67,-38 165.33,-38 165.33,-38 168.67,-38 172,-41.33 172,-44.67 172,-44.67 172,-51.33 172,-51.33 172,-54.67 168.67,-58 165.33,-58"/>
+<text text-anchor="middle" x="118.5" y="-45.2" font-family="Noto Sans CJK SC" font-size="11.00" fill="#1f2933">连接生命周期管理</text>
+</g>
+<!-- ph_23&#45;&gt;ph_31 -->
+<!-- AI_23&#45;&gt;A_23 -->
+<g id="edge145" class="edge">
+<title>AI_23&#45;&gt;A_23</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M270.92,-177.34C282.79,-179.36 335.99,-188.17 380,-190.92 462.28,-196.07 668.71,-196.02 751,-190.92 795.79,-188.14 850.03,-179.21 861.36,-177.29"/>
+</g>
+<!-- AI_24 -->
+<g id="node111" class="node">
+<title>AI_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-156.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_23&#45;&gt;AI_24 -->
+<g id="edge34" class="edge">
+<title>AI_23&#45;&gt;AI_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-174.73C268.5,-171.45 268.5,-162.3 268.5,-158.98"/>
+</g>
+<!-- W_24 -->
+<g id="node112" class="node">
+<title>W_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-156.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_23&#45;&gt;W_24 -->
+<g id="edge67" class="edge">
+<title>W_23&#45;&gt;W_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-174.73C382.5,-171.45 382.5,-162.3 382.5,-158.98"/>
+</g>
+<!-- M_24 -->
+<g id="node113" class="node">
+<title>M_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-156.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_23&#45;&gt;M_24 -->
+<g id="edge100" class="edge">
+<title>M_23&#45;&gt;M_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-174.73C748.5,-171.45 748.5,-162.3 748.5,-158.98"/>
+</g>
+<!-- A_24 -->
+<g id="node114" class="node">
+<title>A_24</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-156.76" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_23&#45;&gt;A_24 -->
+<g id="edge133" class="edge">
+<title>A_23&#45;&gt;A_24</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-174.73C863.5,-171.45 863.5,-162.3 863.5,-158.98"/>
+</g>
+<!-- AI_24&#45;&gt;W_24 -->
+<g id="edge167" class="edge">
+<title>AI_24&#45;&gt;W_24</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" d="M270.73,-156.76C303.83,-156.76 336.94,-156.76 370.04,-156.76"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="370.32,-160.26 380.32,-156.76 370.32,-153.26 370.32,-160.26"/>
+<text text-anchor="middle" x="401.82" y="-159.76" font-family="Noto Sans CJK SC" font-size="10.00">submit_ssh_task(cmd, device=B)</text>
+</g>
+<!-- AI_25 -->
+<g id="node115" class="node">
+<title>AI_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-144.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_24&#45;&gt;AI_25 -->
+<g id="edge35" class="edge">
+<title>AI_24&#45;&gt;AI_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-154.49C268.5,-152.51 268.5,-148.7 268.5,-146.72"/>
+</g>
+<!-- W_25 -->
+<g id="node116" class="node">
+<title>W_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-144.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_24&#45;&gt;W_25 -->
+<g id="edge68" class="edge">
+<title>W_24&#45;&gt;W_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-154.49C382.5,-152.51 382.5,-148.7 382.5,-146.72"/>
+</g>
+<!-- M_25 -->
+<g id="node117" class="node">
+<title>M_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-144.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_24&#45;&gt;M_25 -->
+<g id="edge101" class="edge">
+<title>M_24&#45;&gt;M_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-154.49C748.5,-152.51 748.5,-148.7 748.5,-146.72"/>
+</g>
+<!-- A_25 -->
+<g id="node118" class="node">
+<title>A_25</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-144.44" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_24&#45;&gt;A_25 -->
+<g id="edge134" class="edge">
+<title>A_24&#45;&gt;A_25</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-154.49C863.5,-152.51 863.5,-148.7 863.5,-146.72"/>
+</g>
+<!-- AI_26 -->
+<g id="node119" class="node">
+<title>AI_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-132.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_25&#45;&gt;AI_26 -->
+<g id="edge36" class="edge">
+<title>AI_25&#45;&gt;AI_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-142.17C268.5,-140.19 268.5,-136.38 268.5,-134.4"/>
+</g>
+<!-- W_25&#45;&gt;M_25 -->
+<g id="edge168" class="edge">
+<title>W_25&#45;&gt;M_25</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" d="M385,-144.44C501.93,-144.44 618.86,-144.44 735.79,-144.44"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="736.02,-147.94 746.02,-144.44 736.02,-140.94 736.02,-147.94"/>
+<text text-anchor="middle" x="493.19" y="-147.44" font-family="Noto Sans CJK SC" font-size="10.00">查 map：无 &quot;B&quot; → 重新完整握手</text>
+</g>
+<!-- W_26 -->
+<g id="node120" class="node">
+<title>W_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-132.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_25&#45;&gt;W_26 -->
+<g id="edge69" class="edge">
+<title>W_25&#45;&gt;W_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-142.17C382.5,-140.19 382.5,-136.38 382.5,-134.4"/>
+</g>
+<!-- M_26 -->
+<g id="node121" class="node">
+<title>M_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-132.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_25&#45;&gt;M_26 -->
+<g id="edge102" class="edge">
+<title>M_25&#45;&gt;M_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-142.17C748.5,-140.19 748.5,-136.38 748.5,-134.4"/>
+</g>
+<!-- A_26 -->
+<g id="node122" class="node">
+<title>A_26</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-132.12" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_25&#45;&gt;A_26 -->
+<g id="edge135" class="edge">
+<title>A_25&#45;&gt;A_26</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-142.17C863.5,-140.19 863.5,-136.38 863.5,-134.4"/>
+</g>
+<!-- AI_27 -->
+<g id="node124" class="node">
+<title>AI_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-112.46" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_26&#45;&gt;AI_27 -->
+<g id="edge37" class="edge">
+<title>AI_26&#45;&gt;AI_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-129.49C268.5,-126.07 268.5,-118.21 268.5,-114.94"/>
+</g>
+<!-- W_26&#45;&gt;M_26 -->
+<g id="edge169" class="edge">
+<title>W_26&#45;&gt;M_26</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" d="M385,-132.12C501.93,-132.12 618.86,-132.12 735.79,-132.12"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="736.02,-135.62 746.02,-132.12 736.02,-128.62 736.02,-135.62"/>
+<text text-anchor="middle" x="478.69" y="-135.12" font-family="Noto Sans CJK SC" font-size="10.00">缓存 Client → sessions.set(&quot;B&quot;, client)</text>
+</g>
+<!-- W_27 -->
+<g id="node125" class="node">
+<title>W_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-112.46" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_26&#45;&gt;W_27 -->
+<g id="edge70" class="edge">
+<title>W_26&#45;&gt;W_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-129.49C382.5,-126.07 382.5,-118.21 382.5,-114.94"/>
+</g>
+<!-- M_27 -->
+<g id="node126" class="node">
+<title>M_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-112.46" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_26&#45;&gt;M_27 -->
+<g id="edge103" class="edge">
+<title>M_26&#45;&gt;M_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-129.49C748.5,-126.07 748.5,-118.21 748.5,-114.94"/>
+</g>
+<!-- A_27 -->
+<g id="node127" class="node">
+<title>A_27</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-112.46" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_26&#45;&gt;A_27 -->
+<g id="edge136" class="edge">
+<title>A_26&#45;&gt;A_27</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-129.49C863.5,-126.07 863.5,-118.21 863.5,-114.94"/>
+</g>
+<!-- note_27 -->
+<g id="node123" class="node">
+<title>note_27</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="591.83,-121.96 414,-121.96 414,-102.96 595,-102.96 595,-118.79 591.83,-121.96"/>
+<polyline fill="none" stroke="#e0b400" points="591.83,-121.96 591.83,-118.79 "/>
+<polyline fill="none" stroke="#e0b400" points="595,-118.79 591.83,-118.79 "/>
+<text text-anchor="middle" x="504.5" y="-109.96" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">生成会话 id：ssh_2（与 ssh_1 并存）</text>
+</g>
+<!-- AI_28 -->
+<g id="node128" class="node">
+<title>AI_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-92.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_27&#45;&gt;AI_28 -->
+<g id="edge38" class="edge">
+<title>AI_27&#45;&gt;AI_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-109.83C268.5,-106.41 268.5,-98.55 268.5,-95.28"/>
+</g>
+<!-- W_27&#45;&gt;note_27 -->
+<g id="edge170" class="edge">
+<title>W_27&#45;&gt;note_27</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M384.88,-112.46C394.54,-112.46 404.2,-112.46 413.85,-112.46"/>
+</g>
+<!-- W_28 -->
+<g id="node129" class="node">
+<title>W_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-92.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_27&#45;&gt;W_28 -->
+<g id="edge71" class="edge">
+<title>W_27&#45;&gt;W_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-109.83C382.5,-106.41 382.5,-98.55 382.5,-95.28"/>
+</g>
+<!-- M_28 -->
+<g id="node130" class="node">
+<title>M_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-92.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_27&#45;&gt;M_28 -->
+<g id="edge104" class="edge">
+<title>M_27&#45;&gt;M_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-109.83C748.5,-106.41 748.5,-98.55 748.5,-95.28"/>
+</g>
+<!-- A_28 -->
+<g id="node131" class="node">
+<title>A_28</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-92.8" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_27&#45;&gt;A_28 -->
+<g id="edge137" class="edge">
+<title>A_27&#45;&gt;A_28</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-109.83C863.5,-106.41 863.5,-98.55 863.5,-95.28"/>
+</g>
+<!-- AI_29 -->
+<g id="node132" class="node">
+<title>AI_29</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-80.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_28&#45;&gt;AI_29 -->
+<g id="edge39" class="edge">
+<title>AI_28&#45;&gt;AI_29</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-90.53C268.5,-88.55 268.5,-84.74 268.5,-82.76"/>
+</g>
+<!-- W_28&#45;&gt;A_28 -->
+<g id="edge171" class="edge">
+<title>W_28&#45;&gt;A_28</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" d="M384.84,-92.92C407.93,-94.07 597.49,-103.16 751,-98.96 787.25,-97.97 830,-95.18 850.82,-93.72"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="851.33,-97.19 861.05,-92.98 850.82,-90.21 851.33,-97.19"/>
+<text text-anchor="middle" x="542.98" y="-91.88" font-family="Noto Sans CJK SC" font-size="10.00">client.exec(cmd) 在 B 的连接上执行</text>
+</g>
+<!-- W_29 -->
+<g id="node133" class="node">
+<title>W_29</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-80.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_28&#45;&gt;W_29 -->
+<g id="edge72" class="edge">
+<title>W_28&#45;&gt;W_29</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-90.53C382.5,-88.55 382.5,-84.74 382.5,-82.76"/>
+</g>
+<!-- M_29 -->
+<g id="node134" class="node">
+<title>M_29</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-80.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_28&#45;&gt;M_29 -->
+<g id="edge105" class="edge">
+<title>M_28&#45;&gt;M_29</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-90.53C748.5,-88.55 748.5,-84.74 748.5,-82.76"/>
+</g>
+<!-- A_29 -->
+<g id="node135" class="node">
+<title>A_29</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-80.48" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_28&#45;&gt;A_29 -->
+<g id="edge138" class="edge">
+<title>A_28&#45;&gt;A_29</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-90.53C863.5,-88.55 863.5,-84.74 863.5,-82.76"/>
+</g>
+<!-- AI_30 -->
+<g id="node136" class="node">
+<title>AI_30</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-68.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_29&#45;&gt;AI_30 -->
+<g id="edge40" class="edge">
+<title>AI_29&#45;&gt;AI_30</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-78.21C268.5,-76.23 268.5,-72.42 268.5,-70.44"/>
+</g>
+<!-- W_30 -->
+<g id="node137" class="node">
+<title>W_30</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-68.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_29&#45;&gt;W_30 -->
+<g id="edge73" class="edge">
+<title>W_29&#45;&gt;W_30</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-78.21C382.5,-76.23 382.5,-72.42 382.5,-70.44"/>
+</g>
+<!-- M_30 -->
+<g id="node138" class="node">
+<title>M_30</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-68.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_29&#45;&gt;M_30 -->
+<g id="edge106" class="edge">
+<title>M_29&#45;&gt;M_30</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-78.21C748.5,-76.23 748.5,-72.42 748.5,-70.44"/>
+</g>
+<!-- A_29&#45;&gt;W_29 -->
+<g id="edge172" class="edge">
+<title>A_29&#45;&gt;W_29</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" stroke-dasharray="5,2" d="M861.05,-80.66C849.03,-81.56 795.19,-85.43 751,-86.64 611.29,-90.46 441.71,-83.28 394.95,-81.09"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="395,-77.58 384.84,-80.6 394.66,-84.58 395,-77.58"/>
+<text text-anchor="middle" x="613.09" y="-79.56" font-family="Noto Sans CJK SC" font-size="10.00">结果</text>
+</g>
+<!-- A_30 -->
+<g id="node139" class="node">
+<title>A_30</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-68.16" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_29&#45;&gt;A_30 -->
+<g id="edge139" class="edge">
+<title>A_29&#45;&gt;A_30</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-78.21C863.5,-76.23 863.5,-72.42 863.5,-70.44"/>
+</g>
+<!-- AI_31 -->
+<g id="node141" class="node">
+<title>AI_31</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-48" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_30&#45;&gt;AI_31 -->
+<g id="edge41" class="edge">
+<title>AI_30&#45;&gt;AI_31</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-65.97C268.5,-62.69 268.5,-53.54 268.5,-50.22"/>
+</g>
+<!-- W_30&#45;&gt;AI_30 -->
+<g id="edge173" class="edge">
+<title>W_30&#45;&gt;AI_30</title>
+<path fill="none" stroke="#6a1b9b" stroke-width="1.1" stroke-dasharray="5,2" d="M380.32,-68.16C347.21,-68.16 314.11,-68.16 281,-68.16"/>
+<polygon fill="#6a1b9b" stroke="#6a1b9b" stroke-width="1.1" points="280.73,-64.66 270.73,-68.16 280.73,-71.66 280.73,-64.66"/>
+<text text-anchor="middle" x="417.73" y="-60.16" font-family="Noto Sans CJK SC" font-size="10.00">返回结果（A/B 连接互不干扰、各自复用）</text>
+</g>
+<!-- W_31 -->
+<g id="node142" class="node">
+<title>W_31</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-48" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_30&#45;&gt;W_31 -->
+<g id="edge74" class="edge">
+<title>W_30&#45;&gt;W_31</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-65.97C382.5,-62.69 382.5,-53.54 382.5,-50.22"/>
+</g>
+<!-- M_31 -->
+<g id="node143" class="node">
+<title>M_31</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-48" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_30&#45;&gt;M_31 -->
+<g id="edge107" class="edge">
+<title>M_30&#45;&gt;M_31</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-65.97C748.5,-62.69 748.5,-53.54 748.5,-50.22"/>
+</g>
+<!-- A_31 -->
+<g id="node144" class="node">
+<title>A_31</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-48" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_30&#45;&gt;A_31 -->
+<g id="edge140" class="edge">
+<title>A_30&#45;&gt;A_31</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-65.97C863.5,-62.69 863.5,-53.54 863.5,-50.22"/>
+</g>
+<!-- AI_31&#45;&gt;A_31 -->
+<g id="edge146" class="edge">
+<title>AI_31&#45;&gt;A_31</title>
+<path fill="none" stroke="#b0b8c4" stroke-width="1.4" stroke-dasharray="5,2" d="M270.92,-48.42C282.79,-50.44 335.99,-59.25 380,-62 462.28,-67.15 668.71,-67.1 751,-62 795.79,-59.22 850.03,-50.29 861.36,-48.37"/>
+</g>
+<!-- AI_32 -->
+<g id="node146" class="node">
+<title>AI_32</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="268.5" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- AI_31&#45;&gt;AI_32 -->
+<g id="edge42" class="edge">
+<title>AI_31&#45;&gt;AI_32</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M268.5,-45.67C268.5,-40.57 268.5,-22.32 268.5,-17.29"/>
+</g>
+<!-- W_32 -->
+<g id="node147" class="node">
+<title>W_32</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="382.5" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- W_31&#45;&gt;W_32 -->
+<g id="edge75" class="edge">
+<title>W_31&#45;&gt;W_32</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M382.5,-45.67C382.5,-40.57 382.5,-22.32 382.5,-17.29"/>
+</g>
+<!-- M_32 -->
+<g id="node148" class="node">
+<title>M_32</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="748.5" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- M_31&#45;&gt;M_32 -->
+<g id="edge108" class="edge">
+<title>M_31&#45;&gt;M_32</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M748.5,-45.67C748.5,-40.57 748.5,-22.32 748.5,-17.29"/>
+</g>
+<!-- A_32 -->
+<g id="node149" class="node">
+<title>A_32</title>
+<ellipse fill="#7a93be" stroke="#7a93be" cx="863.5" cy="-15" rx="2.16" ry="2.16"/>
+</g>
+<!-- A_31&#45;&gt;A_32 -->
+<g id="edge141" class="edge">
+<title>A_31&#45;&gt;A_32</title>
+<path fill="none" stroke="#8ca3c7" stroke-width="1.2" d="M863.5,-45.67C863.5,-40.57 863.5,-22.32 863.5,-17.29"/>
+</g>
+<!-- note_32 -->
+<g id="node145" class="node">
+<title>note_32</title>
+<polygon fill="#fffbe6" stroke="#e0b400" points="712.5,-30 413.5,-30 413.5,0 717.5,0 717.5,-25 712.5,-30"/>
+<polyline fill="none" stroke="#e0b400" points="712.5,-30 712.5,-25 "/>
+<polyline fill="none" stroke="#e0b400" points="717.5,-25 712.5,-25 "/>
+<text text-anchor="middle" x="565.5" y="-18" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">连接超时(10s) / keepalive(15s) / close() 统一由 ExecSession 管理</text>
+<text text-anchor="middle" x="565.5" y="-7" font-family="Noto Sans CJK SC" font-size="10.00" fill="#5c4a00">Worker 退出时全量关闭</text>
+</g>
+<!-- W_32&#45;&gt;note_32 -->
+<g id="edge174" class="edge">
+<title>W_32&#45;&gt;note_32</title>
+<path fill="none" stroke="#b9a00b" stroke-dasharray="5,2" d="M385,-15C394.4,-15 403.8,-15 413.2,-15"/>
+</g>
+</g>
+</svg>

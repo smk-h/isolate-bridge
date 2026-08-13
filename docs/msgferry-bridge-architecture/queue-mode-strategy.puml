@@ -1,0 +1,77 @@
+@startuml 队列模式策略抽象
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam defaultFontName "Segoe UI"
+skinparam ArrowColor #5A5A5A
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #7A93BE
+  BorderThickness 1
+  FontColor #1F2933
+  FontSize 12
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #E0B400
+  FontColor #5C4A00
+  FontSize 10
+}
+
+title 队列模式策略抽象：shared / exchange 分支收敛到 QueueModeStrategy
+
+rectangle "QueueModeStrategy\n(协议无关接口)\nqueue/strategy.ts" as iface #DCE9FB {
+  rectangle "initDirs()\nlistTasks()\nreadTask()" as m1 #FFFFFF
+  rectangle "writeResult()\nwriteCancelledResult()\ncheckCancelled()" as m2 #FFFFFF
+  rectangle "writeHeartbeat()\ngcResults()\nafterConsumed()" as m3 #FFFFFF
+}
+
+rectangle "SharedQueueStrategy\nqueue_mode=shared\nqueue/strategy.ts" as shared #DDF3E4 {
+  rectangle "领取源: pending/" as s1 #FFFFFF
+  rectangle "回写: completed|failed/" as s2 #FFFFFF
+  rectangle "取消: cancelled/<id>" as s3 #FFFFFF
+  rectangle "心跳: 根 heartbeat.json" as s4 #FFFFFF
+  rectangle "GC: completed|failed/" as s5 #FFFFFF
+}
+
+rectangle "ExchangeQueueStrategy\nqueue_mode=exchange\nqueue/strategy.ts" as ex #DDF3E4 {
+  rectangle "领取源: outbound/" as e1 #FFFFFF
+  rectangle "回写: inbound/result_<id>" as e2 #FFFFFF
+  rectangle "取消: outbound/cancel_<id>.marker" as e3 #FFFFFF
+  rectangle "心跳: inbound/heartbeat.json" as e4 #FFFFFF
+  rectangle "GC: inbound/" as e5 #FFFFFF
+}
+
+rectangle "业务流\nmain.ts / task-runner.ts / housekeeping.ts" as biz #FFF3D6 {
+  rectangle "主循环领任务" as b1 #FFFFFF
+  rectangle "processTask 业务流" as b2 #FFFFFF
+  rectangle "心跳 / GC 周期" as b3 #FFFFFF
+}
+
+' 策略实现关系
+iface -down-> shared : <color:#7A93BE>实现</color>
+iface -down-> ex : <color:#7A93BE>实现</color>
+shared -up-> biz : <color:#7A93BE>被调用（协议无关）</color>
+ex -up-> biz : <color:#7A93BE>被调用（协议无关）</color>
+
+note bottom of iface
+  createQueueStrategy(queue_mode)
+  返回对应策略实例
+  新增队列模式只需加策略类 + 工厂一行
+end note
+
+note right of shared
+  shared 模式零同步开销
+  MCP 与 Worker 直接读写同一共享目录
+end note
+
+note right of ex
+  exchange 模式经 outbound/inbound
+  单向信箱 + 同步命令摆渡
+  sent/ 留痕避免二次上行
+end note
+
+@enduml
