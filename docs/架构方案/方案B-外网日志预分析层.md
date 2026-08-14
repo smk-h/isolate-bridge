@@ -248,7 +248,7 @@ for (let attempt = 0; attempt <= MAX_RETRY; attempt++) {
 
 ### 9. 新增 shared 扩展点
 
-- `shared/tasks.ts` 新增 `AnalysisTask` 类型（参考 `SessionTask` 先例，照抄模式扩展）。
+- `shared/tasks.ts` 新增 `AnalysisTask` 类型（参考 `CommandTask` 先例，照抄模式扩展）。
 - `shared/errors.ts` 新增 `AnalystRateLimited`、`AnalystTimeout` 错误码。
 - 新增 `analyst-heartbeat.json`，或给 heartbeat 结构加 `mode: 'ssh' | 'analysis'`。
 

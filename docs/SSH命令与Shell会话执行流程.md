@@ -2,32 +2,33 @@
 
 ## 一、 概述
 
-本文档详细说明 MsgFerry 外网 Worker 中 **SSH command（一次性命令）** 与 **Shell 会话（交互式会话）** 两条执行链路各自的命令执行流程与逻辑，是对 [架构文档](./msgferry-bridge-architecture.md) 中「1.2.1 SSH 传输连接复用机制」「1.2.2 SSH 交互式会话机制」两小节的展开与细化，时序图基于当前 Worker 最新代码逻辑重绘。
+本文档详细说明 MsgFerry 外网 Worker 中 **SSH command（一次性命令）** 与 **Shell 单命令**（shell 通道单命令执行）两条执行链路各自的命令执行流程与逻辑，是对 [架构文档](./msgferry-bridge-architecture.md) 中「1.2.1 SSH 传输连接复用机制」「1.2.2 SSH 交互式会话机制」两小节的展开与细化，时序图基于当前 Worker 最新代码逻辑重绘。
 
 两条链路分别对应 Worker 配置 `exec_mode` 的两种取值：
 
 - `command`（默认）：一次性命令，走 [SshExecExecutor](../packages/worker/src/executor/ssh-exec.ts)，在 SSH **exec 通道**上执行一条命令，跑完即走。
-- `shell`：交互式会话，走 [SessionManager](../packages/worker/src/session/index.ts) + [SshSessionFactory](../packages/worker/src/executor/ssh-session.ts)，在 SSH **shell 通道 + pty** 上做 stdin/stdout 双向文件摆渡，适合低频交互。
+- `shell`：单命令执行，走 [SshShellExecExecutor](../packages/worker/src/executor/ssh-shell-exec.ts)，在 SSH **shell 通道 + pty** 上执行单条命令（以唯一 marker 检测命令结束），并同步落盘**原始会话日志**。
 
 ### 1. 核心差异总览
 
-| 维度 | SSH command（exec_mode=command） | Shell 会话（exec_mode=shell） |
+| 维度 | SSH command（exec_mode=command） | Shell 单命令（exec_mode=shell） |
 | --- | --- | --- |
-| 执行器 | [SshExecExecutor](../packages/worker/src/executor/ssh-exec.ts) | [SessionManager](../packages/worker/src/session/index.ts) |
-| SSH 通道 | `client.exec(cmd)` 一次性 exec 通道 | `client.shell()` 长生命周期 shell 通道 + pty |
-| 生命周期 | 短：单条命令，跑完即走 | 长：会话持续存在，轮询注入/回读 |
-| 连接复用 | 按设备缓存传输连接（`SshClientCache`） | 每会话独立建连，由工厂管理 |
+| 执行器 | [SshExecExecutor](../packages/worker/src/executor/ssh-exec.ts) | [SshShellExecExecutor](../packages/worker/src/executor/ssh-shell-exec.ts) |
+| SSH 通道 | `client.exec(cmd)` 一次性 exec 通道 | `client.shell()` shell 通道 + pty |
+| 生命周期 | 短：单条命令，跑完即走 | 短：单条命令，marker 判定结束 |
+| 连接复用 | 按设备缓存传输连接（`SshClientCache`） | 按设备缓存 shell 会话（长连接复用） |
 | 命令状态 | 全新子进程，环境变量不保留 | 会话内可累积状态（交互式） |
-| 输入输出 | 一次性收集 stdout/stderr/exit_code | 文件摆渡：`stdin/*.input`、`stdout/*.output` |
-| 关闭方式 | channel 随命令结束自动关闭 | `close.marker` / 空闲超时 / 远端关闭 三路 |
-| 典型场景 | 单条巡检/操作命令 | 需保持状态的交互式调试（低频） |
+| 输入输出 | 一次性收集 stdout/stderr/exit_code | 收集 stdout/stderr + marker 退出码，同时落盘原始日志 |
+| 关闭方式 | channel 随命令结束自动关闭 | 远端关闭 / 超时 / 主动 close |
+| 典型场景 | 单条巡检/操作命令 | 设备不支持 exec 通道、需交互式 shell |
 
 ### 2. 涉及的核心文件
 
 - [ssh-exec.ts](../packages/worker/src/executor/ssh-exec.ts)：一次性命令执行器
 - [ssh-conn.ts](../packages/worker/src/executor/ssh-conn.ts)：公共连接层（`connectClient` / `SshClientCache`）
-- [ssh-session.ts](../packages/worker/src/executor/ssh-session.ts)：交互式 shell 会话与工厂
-- [session/index.ts](../packages/worker/src/session/index.ts)：交互式会话管理器（stdin/stdout 摆渡）
+- [ssh-shell-exec.ts](../packages/worker/src/executor/ssh-shell-exec.ts)：shell 单命令执行器
+- [ssh-session.ts](../packages/worker/src/executor/ssh-session.ts)：交互式 shell 会话与工厂（含原始日志）
+- [file-logger.ts](../packages/shared/src/file-logger.ts)：原始会话日志落盘
 - [config/index.ts](../packages/worker/src/config/index.ts)：`ExecMode` 类型与配置解析
 - [config/device.ts](../packages/worker/src/config/device.ts)：`findSshConfig` 设备配置查找
 
@@ -211,22 +212,17 @@ async closeAll(): Promise<void> {
 }
 ```
 
-## 三、 Shell 交互式会话执行流程
+## 三、 Shell 单命令执行流程与原始会话日志
 
-该链路由 `exec_mode=shell` 触发，核心是**长生命周期 stdin/stdout 文件摆渡**：Worker 为每个 running 会话建立 shell channel + pty，通过固定会话目录做双向文件交换。受 HGFS 轮询延迟限制，仅适合低频交互，不适合 vim 等全屏 TUI。
+该链路由 `exec_mode=shell` 触发，由 [SshShellExecExecutor](../packages/worker/src/executor/ssh-shell-exec.ts) 承担。它**不是**长生命周期会话管理，而是**短生命周期单命令执行**：在 SSH **shell 通道 + pty** 上注入一条命令，用唯一结束标记（`echo <marker>:$?`）检测命令结束并解析退出码，跑完即返回结果。
 
-![SSH shell 会话执行时序](./SSH命令与Shell会话执行流程/img/ssh-shell-session-sequence.svg)
+> **历史说明**：早期 `exec_mode=shell` 曾对应 `sessions/` 目录下的长会话 stdin/stdout 文件摆渡（`SessionManager`）。该机制因「会话创建」链路未落地、目录始终为空壳而**已下线**。当前 shell 模式只保留上面所述的**单命令执行 + 原始日志**，不再创建 `sessions/` 目录，也不再做任何 stdin/stdout 文件摆渡。
 
-会话目录约定（`<hgfs_root>/sessions/<session_id>/`）：
-
-- `session.json`：会话元信息（`SessionTask`，status=running）
-- `stdin/`：内网写入的输入文件（`<seq>.input`），Worker 轮询读取后注入 shell
-- `stdout/`：Worker 回写的输出文件（`<seq>.output`），供内网轮询读取
-- `close.marker`：内网写入的关闭标记，触发会话关闭
+> 时序图源码见 [ssh-shell-session-sequence.mmd](./SSH命令与Shell会话执行流程/ssh-shell-session-sequence.mmd)（描述当前 shell 单命令执行 + 原始日志流程，可用 mermaid 渲染为 SVG）。
 
 ### 0. 原始会话日志（SSH shell 会话原始日志）
 
-除业务摆渡目录（`sessions/`）外，Worker 还会在 **`LOG_SAVE` 开启**时，为每个 SSH shell 会话写一份**原始输入输出合并日志**，目录与命名约定如下：
+Worker 会在 **`LOG_SAVE` 开启**时，为每个 SSH shell 会话写一份**原始输入输出合并日志**，目录与命名约定如下：
 
 ```
 <hgfs_root>/logs/ssh-shell/<deviceName>/ssh_<id>_<YYYY-MM-DD_HHMMSS>.log
@@ -240,35 +236,15 @@ async closeAll(): Promise<void> {
 
 相关实现：[FileLogger](../packages/shared/src/file-logger.ts)、[SshSession](../packages/worker/src/executor/ssh-session.ts)。
 
-### 1. 打开会话 SessionManager.open()
+### 1. 会话工厂建连与 shell 通道
+
+[SshShellExecExecutor](../packages/worker/src/executor/ssh-shell-exec.ts) 持有 `ShellSessionFactory`（经 [createShellSessionFactory](../packages/worker/src/executor/factory.ts) 选择 ssh2 / mock 实现），首次用到某设备时按需建连打开 shell 通道：
 
 ```ts
-// packages/worker/src/session/index.ts
-async open(session: SessionTask): Promise<void> {
-  const shell = await this.factory.open(session.device);
-  this.factories.set(session.session_id, shell);
-  this.stdoutSeq.set(session.session_id, session.stdout_seq ?? 0);
-  this.lastActive.set(session.session_id, Date.now());
-  // 订阅输出 → 落盘 stdout/<seq>.output
-  shell.onStdout((chunk) => this.appendStdout(session, chunk));
-  shell.onStderr((chunk) => this.appendStdout(session, chunk, true));
-  shell.onClose(() => this.finalize(session, SessionStatus.Closed, 'remote_closed'));
-  // 注入初始命令（若存在）
-  if (session.cmd && session.cmd.trim() !== '') {
-    shell.write(session.cmd + '\n');
-  }
-}
-```
-
-#### 1.1 工厂建连与 shell 通道
-
-[SshSessionFactory.open()](../packages/worker/src/executor/ssh-session.ts)：
-
-```ts
-// packages/worker/src/executor/ssh-session.ts
+// packages/worker/src/executor/ssh-session.ts（SshSessionFactory.open）
 const client = await connectClient(sshConfig, sessionId);   // 建连（复用 connectClient）
 const stream = await this.openShellChannel(client, sessionId);
-const session = new SshSession(sessionId, normalized, stream);
+const session = new SshSession(sessionId, normalized, stream, logRoot);
 ```
 
 ```ts
@@ -281,140 +257,85 @@ client.shell({ term: 'xterm', cols: 120, rows: 40 }, (err, stream) => {
 【**执行要点**】
 
 - 走完整握手后 `client.shell()` 打开 shell channel + pty（`term: xterm`，默认 `cols: 120, rows: 40`）。
-- 封装为 [SshSession](../packages/worker/src/executor/ssh-session.ts)，订阅 `onStdout` / `onStderr` / `onClose`。
-- 注入初始命令 `shell.write(session.cmd + "\n")`。
-- 与一次性命令执行器（`SshExecExecutor`）**解耦**，会话生命周期由调用方 `SessionManager` 管理。
+- 封装为 [SshSession](../packages/worker/src/executor/ssh-session.ts)，在 `stream.on('data')` / `stream.stderr.on('data')` 中**同步写原始日志**（FileLogger）。
+- 会话 `open()` 时若 `LOG_SAVE` 开启，即初始化 FileLogger 并写入 BOM 头部。
+- `SshShellExecExecutor` 按设备**缓存 shell 会话**（长连接复用），远端关闭时自动从缓存驱逐，下次任务重连。
 
-#### 1.2 输出落盘 appendStdout()
+### 2. 单命令执行 execute()
 
 ```ts
-// packages/worker/src/session/index.ts
-private appendStdout(session: SessionTask, chunk: string, stderr = false): void {
-  const seq = this.stdoutSeq.get(session.session_id) ?? 0;
-  void writeStdoutOutput(this.root, session.session_id, seq, chunk).then(() => {
-    this.stdoutSeq.set(session.session_id, seq + 1);
+// packages/worker/src/executor/ssh-shell-exec.ts
+async execute(cmd: string, timeout_sec: number, device?: string): Promise<CmdResult> {
+  const session = await this.getOrOpenSession(device);
+  return this.enqueue(normalized, () => {
+    return new Promise<CmdResult>((resolve) => {
+      // 唯一结束标记：随机后缀避免与命令输出中的文本冲突
+      const marker = `__MSG_DONE_${Math.random().toString(36).slice(2, 10)}`;
+      const markerRe = new RegExp(`${marker}:(\\d+)`);
+      const onStdout = (chunk) => {
+        stdout += chunk;
+        const m = stdout.match(markerRe);
+        if (!m) return;
+        stdout = stripMarkerLines(stdout, marker);   // 剥离 marker 相关行
+        finish({ stdout, stderr, exit_code: Number(m[1]), timed_out: false });
+      };
+      session.onStdout(onStdout);
+      session.onStderr(onStderr);
+      session.onClose(onClose);
+      session.write(`${cmd}\n`);          // 注入命令
+      session.write(`echo ${marker}:$?\n`); // 注入结束标记回显退出码
+    });
   });
-  this.lastActive.set(session.session_id, Date.now());
 }
 ```
 
-【**执行要点**】
+【**执行要点**]
 
-- stdout 与 stderr 均并入同一 stdout 输出流（交互式 shell 场景 stderr 极少单独使用）。
-- 通过 `writeStdoutOutput()` **原子写**（`.tmp` → `rename`）落盘，推进 `stdout_seq`。
+- 交互式 shell 执行完命令不会自动关闭通道，靠超时兜底会白等，因此在命令后注入唯一 `marker`（`echo <marker>:$?`），在 stdout 中匹配到 `marker:N` 即判定命令结束并解析退出码 `N`。
+- 用 `stripMarkerLines()` 把含 marker 的回显行（注入命令回显 + pty 回显）剥离，避免污染返回给上层的结果。
+- 按 device 串行化命令（`enqueue`）：同一设备上命令排队执行，避免并发写同一 shell 通道导致输出交错。
+- 命令结束后**不关闭会话**，仅释放命令级回调，长连接复用；超时（`timeout_sec`）或会话提前关闭（远端退出）也会结束本次命令。
 
-### 2. stdin 注入（tick 轮询）
+### 3. 原始日志落盘
 
-每轮 `tick(idleTimeoutMs)` 扫描所有 open 会话，按顺序处理：
+原始日志随 `SshSession` 生命周期自动落盘，无需单独进程：
 
 ```ts
-// packages/worker/src/session/index.ts
-// 1. 注入新 stdin 输入
-const inputs = await listStdinInputs(this.root, id);
-const shell = this.factories.get(id)!;
-for (const seq of inputs) {
-  const content = await readAndRemoveStdinInput(this.root, id, seq);
-  shell.write(content);
-  this.lastActive.set(id, Date.now());
-}
+// packages/worker/src/executor/ssh-session.ts
+stream.on('data', (chunk) => {
+  const text = chunk.toString('utf-8');
+  this.fileLogger.write(text);            // 逐行写入日志（时间戳 + 清洗）
+  for (const cb of [...this.stdoutCbs]) cb(text);
+});
+// stderr 同理 → this.fileLogger.write(text)
 ```
 
-【**执行要点**】
+- `FileLogger.write()` 做**行缓冲**：跨 chunk 的半行先缓存，凑成整行才落盘，保证「一行一个时间戳」。
+- `sanitizeLine()` 剥离 ANSI 颜色、控制字符转 `[CSI]/[OSC]` 等可见标记，保证日志可读。
+- 会话 `close()` 时 `fileLogger.disable()` 冲刷残留行缓冲并关闭文件流。
 
-- `listStdinInputs()` 列出 `stdin/` 下 `*.input` 的序号（升序，过滤 `.tmp` 半成品）。
-- `readAndRemoveStdinInput()` 读取并删除单个输入文件。
-- `shell.write(content)` 注入 shell，并更新 `lastActive`（供空闲超时判定）。
+### 4. 关闭与全局回收
 
-### 3. stdout 回写
-
-- shell 输出经 `onStdout` / `onStderr` 回调进入 `appendStdout()`。
-- 原子写落盘到 `stdout/<seq>.output` 并推进序号。
-- 内网侧轮询读取 `stdout/<seq>.output` 即可获得命令输出。
-
-### 4. 关闭三路
-
-三种关闭触发方式，均**先置终态再关 shell**：
-
-```ts
-// packages/worker/src/session/index.ts
-// 2. 关闭标记检查
-if (closeRequested) {
-  await this.finalize(session, SessionStatus.Closed, 'close_marker');
-  await this.closeShell(id);
-}
-// 3. 空闲超时检查
-if (idleTimeoutMs > 0) {
-  const last = this.lastActive.get(id) ?? 0;
-  if (Date.now() - last > idleTimeoutMs) {
-    await this.finalize(session, SessionStatus.Aborted, 'idle_timeout');
-    await this.closeShell(id);
-  }
-}
-```
-
-| 触发方式 | 终态 | reason |
-| --- | --- | --- |
-| 内网写 `close.marker` | `closed` | `close_marker` |
-| 空闲超时 `idle_timeout` | `aborted` | `idle_timeout` |
-| 远端关闭（shell onClose） | `closed` | `remote_closed` |
-
-#### 4.1 finalize() 幂等收尾
-
-```ts
-// packages/worker/src/session/index.ts
-private finalize(session, status, reason): Promise<void> {
-  const id = session.session_id;
-  if (this.closing.has(id)) return Promise.resolve();  // 防并发重复 finalize
-  this.closing.add(id);
-  return this.enqueueWrite(id, async () => {
-    session.status = status;
-    session.end_time = Date.now();
-    session.error_msg = reason;
-    await writeSessionMeta(this.root, session);   // 原子写回 session.json
-  }).finally(() => { this.closing.delete(id); });
-}
-```
-
-【**要点**】
-
-- `closing` 集合防止「close_marker / idle_timeout」与 shell onClose 的 `remote_closed` **并发覆盖**。
-- `enqueueWrite` 用会话级写队列串行化元信息写，避免并发 `rename` 竞态。
-- 关闭顺序：先置终态回写 `session.json`，再 `closeShell()` 关 channel、释放连接。
-
-### 5. 全局关闭 closeAll()
-
-Worker 优雅退出时：
-
-```ts
-// packages/worker/src/session/index.ts
-async closeAll(): Promise<void> {
-  const ids = [...this.factories.keys()];
-  for (const id of ids) {
-    const session = await readSessionMeta(this.root, id);
-    if (session) await this.finalize(session, SessionStatus.Aborted, 'worker_shutdown');
-    await this.closeShell(id);
-  }
-  await this.factory.closeAll();   // 关闭全部底层连接
-}
-```
+- **单会话关闭**：`SshSession.close()` 冲刷 FileLogger 残留并 `stream.end()` 关闭 shell 通道，1s 兜底强制结束。
+- **远端关闭**：`stream.on('close')` 触发，`SshShellExecExecutor` 会从设备缓存中驱逐该会话，下次任务自动重连。
+- **全局回收**：Worker 优雅退出时 `SshShellExecExecutor.close()` / `SshSessionFactory.closeAll()` 关闭全部缓存会话与底层连接。
 
 ## 四、 两种模式对比与选型建议
 
 ### 1. 连接复用策略对比
 
 - **SSH command**：按设备缓存**传输连接**（`SshClientCache`），每次命令在其上开新 exec channel，channel 用完即销毁。
-- **Shell 会话**：每个会话**独立建连**并常驻，由 `SshSessionFactory` 统一管理、`closeAll` 全量关闭。
+- **Shell 单命令**：按设备缓存**交互式 shell 会话**（`SshShellExecExecutor`），同一设备后续命令复用已建会话，远端关闭时自动驱逐重建。
 
 ### 2. 命令状态与并发
 
 - **SSH command**：每条命令全新子进程、无状态，适合并发/批量单条命令。
-- **Shell 会话**：会话内可累积状态，但同一 shell 通道需**串行**注入，不适合并发。
+- **Shell 单命令**：会话内可累积状态，但同一 shell 通道需**串行**执行（`SshShellExecExecutor` 按设备串行化命令队列），不适合并发。
 
 ### 3. 选型建议
 
 - 需要**无状态、高频、可并发**的单条巡检/操作 → `exec_mode=command`。
-- 需要**保持状态、低频交互**的调试（且能接受 HGFS 轮询延迟）→ `exec_mode=shell`。
-- 若目标设备不支持 exec 通道、仅支持交互式 shell（如部分 Dropbear / 受限登录 shell），可基于 shell 通道做**单命令执行**（见 [ssh-shell-exec.ts](../packages/worker/src/executor/ssh-shell-exec.ts)，注入 `echo <marker>:$?` 检测命令结束）。
+- 目标设备不支持 exec 通道、仅支持交互式 shell（如部分 Dropbear / 受限登录 shell）→ `exec_mode=shell`，基于 shell 通道做**单命令执行**（见 [ssh-shell-exec.ts](../packages/worker/src/executor/ssh-shell-exec.ts)，注入 `echo <marker>:$?` 检测命令结束），并同步落盘**原始会话日志**。
 
 ## 五、 设备在线判断与重试流程
 
