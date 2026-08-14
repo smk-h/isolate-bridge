@@ -11,6 +11,7 @@
 
 import { logger } from '../log/index.js';
 import type { CmdExecutor, CmdResult, ShellSession, ShellSessionFactory } from './types.js';
+import { FileLogger, isLogSaveEnabled } from '@smai-kit/msgferry-shared';
 
 /**
  * Mock SSH 执行器
@@ -48,11 +49,16 @@ class MockShellSession implements ShellSession {
   private readonly stdoutCbs: Array<(chunk: string) => void> = [];
   private readonly stderrCbs: Array<(chunk: string) => void> = [];
   private readonly closeCbs: Array<() => void> = [];
+  private readonly fileLogger = new FileLogger();
   private closed = false;
 
-  constructor(sessionId: string, device: string) {
+  constructor(sessionId: string, device: string, logRoot?: string) {
     this.sessionId = sessionId;
     this.device = device;
+    // Mock 会话同样支持 SSH shell 原始日志（LOG_SAVE 开启时落盘）
+    if (logRoot && isLogSaveEnabled()) {
+      this.fileLogger.enableForShell(logRoot, device, sessionId);
+    }
     // 打开后回显一行提示
     this.emitStdout(`[mock-shell] session ${sessionId} ready (device=${device})\n`);
   }
@@ -98,6 +104,7 @@ class MockShellSession implements ShellSession {
     if (this.closed) return Promise.resolve();
     this.closed = true;
     this.emitStdout('[mock-shell] session closed\n');
+    this.fileLogger.disable();
     for (const cb of this.closeCbs) cb();
     this.closeCbs.length = 0;
     return Promise.resolve();
@@ -108,6 +115,7 @@ class MockShellSession implements ShellSession {
    * @param chunk - 输出的 UTF-8 文本块
    */
   private emitStdout(chunk: string): void {
+    this.fileLogger.write(chunk);
     for (const cb of [...this.stdoutCbs]) cb(chunk);
   }
 }
@@ -119,9 +127,11 @@ export class MockShellSessionFactory implements ShellSessionFactory {
   private readonly sessions = new Set<MockShellSession>();
   private counter = 0;
 
+  constructor(private readonly logRoot?: string) {}
+
   async open(device?: string): Promise<ShellSession> {
     const normalized = device && device.trim() !== '' ? device : 'default';
-    const session = new MockShellSession(`ssh_${++this.counter}`, normalized);
+    const session = new MockShellSession(`ssh_${++this.counter}`, normalized, this.logRoot);
     this.sessions.add(session);
     logger.info(`[executor:mock] shell session opened: device=${normalized} sessionId=${session.sessionId}`);
     return session;

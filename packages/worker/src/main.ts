@@ -23,20 +23,13 @@ import type { QueueModeStrategy } from './queue/index.js';
 import { loadPolicy, createPolicyWatcher, ensurePolicyTemplate } from './policy/index.js';
 import {
   createExecutor,
-  createShellSessionFactory,
   SshExecExecutor,
   SshShellExecExecutor,
 } from './executor/index.js';
-import {
-  initSessionsDir,
-  listSessions,
-  readSessionMeta,
-  SessionManager,
-} from './session/index.js';
 import { AuditLogger, logger } from './log/index.js';
 import { startHeartbeatLoop, startGcLoop } from './housekeeping.js';
 import { processTask } from './task-runner.js';
-import { WORKER_CONFIG_FILE, resolveUnderRoot, SessionStatus } from '@smai-kit/msgferry-shared';
+import { WORKER_CONFIG_FILE, resolveUnderRoot } from '@smai-kit/msgferry-shared';
 
 /** 配置文件变更检测间隔（毫秒） */
 const CONFIG_WATCH_INTERVAL_MS = 2000;
@@ -110,25 +103,6 @@ function startConfigWatcher(root: string): void {
   timer.unref?.();
 }
 
-/**
- * 恢复 exec_mode=shell 时遗留的 running 会话
- * @param root - HGFS 共享根目录
- * @param sessionManager - 会话管理器
- */
-async function resumeSessions(root: string, sessionManager: SessionManager): Promise<void> {
-  const resume = await listSessions(root);
-  for (const sid of resume) {
-    const meta = await readSessionMeta(root, sid);
-    if (meta && meta.status === SessionStatus.Running) {
-      try {
-        await sessionManager.open(meta);
-      } catch (err) {
-        logger.error(`[worker] resume session ${sid} failed: ${(err as Error).message}`);
-      }
-    }
-  }
-}
-
 /** 主函数占位，下一步追加实现 */
 export async function main(): Promise<void> {
   const config = parseConfig(process.argv);
@@ -172,19 +146,6 @@ export async function main(): Promise<void> {
   const executor = createExecutor(config);
   const auditLogger = new AuditLogger(config.audit_log_dir);
 
-  // 交互式 shell 会话管理器（仅 exec_mode=shell 时启用）：
-  // - 初始化 sessions/ 目录
-  // - 启动时恢复遗留的 running 会话
-  // - 主循环每轮驱动 tick（注入 stdin、处理关闭/空闲超时）
-  let sessionManager: SessionManager | null = null;
-  if (config.exec_mode === 'shell') {
-    await initSessionsDir(root);
-    sessionManager = new SessionManager(root, createShellSessionFactory(config));
-    await resumeSessions(root, sessionManager);
-  }
-  // 会话空闲超时（毫秒）：exec_mode=shell 时以任务超时为基准做保护
-  const sessionIdleTimeoutMs = config.exec_mode === 'shell' ? config.result_ttl_sec * 1000 : 0;
-
   let processedCount = 0;
   const getStats = () => ({ processedCount, queueDepth: 0 });
   const heartbeatLoop = startHeartbeatLoop(root, config.heartbeat_interval_sec, getStats, strategy);
@@ -198,15 +159,6 @@ export async function main(): Promise<void> {
 
   // 主循环：任务领取 → 处理 → 消费后清理
   while (!shuttingDown) {
-    // 交互式会话驱动（exec_mode=shell）：注入 stdin、处理关闭/空闲超时
-    if (sessionManager && sessionManager.size > 0) {
-      try {
-        await sessionManager.tick(sessionIdleTimeoutMs);
-      } catch (err) {
-        logger.error(`[worker] session tick error: ${(err as Error).message}`);
-      }
-    }
-
     try {
       const tasks = await strategy.listTasks(root);
       if (tasks.length === 0) {
@@ -252,10 +204,6 @@ export async function main(): Promise<void> {
   await heartbeatLoop.stop();
   await gcLoop.stop();
   watcher.stop();
-  // 关闭所有已建立的交互式会话（exec_mode=shell）
-  if (sessionManager) {
-    await sessionManager.closeAll();
-  }
   // 关闭所有已建立的 SSH 会话
   if (executor instanceof SshExecExecutor) {
     await executor.close();

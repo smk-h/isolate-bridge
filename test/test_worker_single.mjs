@@ -118,6 +118,43 @@ function parseArgs() {
   return opts;
 }
 
+/**
+ * 生成北京时间（CST）格式的任务产生时间字符串，与 shared/timestamp.ts 保持一致
+ * 格式: YYYY-MM-DD HH:mm:ss.SSS（如 2026-08-14 08:12:07.123）
+ */
+function beijingSubmitTime(tsMs = Date.now()) {
+  const d = new Date(tsMs);
+  // 转成北京时区（CST, UTC+8）的各字段
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type) => parts.find((p) => p.type === type)?.value ?? '';
+  const ms = String(d.getMilliseconds()).padStart(3, '0');
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}.${ms}`;
+}
+
+/**
+ * 生成任务文件基名（文件名时间部分 + 任务 id 前 8 位），与 shared/timestamp.ts 保持一致
+ * 格式: yyyymmdd-hhmmssxxx-{task_id 前 8 位}
+ */
+function taskFileBaseName(submitTime, taskId) {
+  const timePart = submitTime.replaceAll('-', '').replaceAll(':', '').replaceAll('.', '').replace(' ', '-');
+  const shortId = taskId.slice(0, 8);
+  return `${timePart}-${shortId}`;
+}
+
+/** 生成任务文件完整文件名（含 .json 后缀） */
+function taskFileName(submitTime, taskId) {
+  return `${taskFileBaseName(submitTime, taskId)}.json`;
+}
+
 /** 构造一个 pending 状态的 CommandTask 结构体（与 shared/tasks.ts 保持一致） */
 function makeTask(cmd, device, timeoutSec) {
   const taskId = randomUUID();
@@ -129,7 +166,7 @@ function makeTask(cmd, device, timeoutSec) {
     cmd,
     device,                                  // 未指定则为 undefined，走默认设备
     timeout_sec: timeoutSec,
-    submit_time: Date.now(),
+    submit_time: beijingSubmitTime(),        // 北京时区时间字符串（YYYY-MM-DD HH:mm:ss.SSS）
     start_time: 0,
     end_time: 0,
     stdout: '',
@@ -165,7 +202,8 @@ function printHeartbeat(root) {
 
 /**
  * 写任务文件到对应队列目录
- * shared → pending/<id>.json；exchange → outbound/<id>.json
+ * shared → pending/<任务文件名>.json；exchange → outbound/<任务文件名>.json
+ * 文件名采用与 Worker 一致的规范命名：yyyymmdd-hhmmssxxx-{task_id 前 8 位}.json
  */
 function writeTasks(root, tasks, exchange) {
   const dir = exchange ? 'outbound' : 'pending';
@@ -176,14 +214,17 @@ function writeTasks(root, tasks, exchange) {
     process.exit(1);
   }
   for (const task of tasks) {
-    writeFileSync(join(targetDir, `${task.task_id}.json`), JSON.stringify(task, null, 2), 'utf-8');
-    console.log(`[test_worker_single] 已写入任务: ${dir}/${task.task_id}.json`);
+    const fileName = taskFileName(task.submit_time, task.task_id);
+    writeFileSync(join(targetDir, fileName), JSON.stringify(task, null, 2), 'utf-8');
+    console.log(`[test_worker_single] 已写入任务: ${dir}/${fileName}`);
   }
 }
 
 /**
  * 扫描结果目录，收集各任务终态结果
- * shared → completed/ 与 failed/ 下 <id>.json；exchange → inbound/ 下 result_<id>.json
+ * shared → completed/ 与 failed/ 下规范命名的任务文件；exchange → inbound/ 下 result_*.json
+ * 结果文件名采用 Worker 规范命名（yyyymmdd-hhmmssxxx-{task_id 前 8 位}.json），
+ * 需读取文件内容按完整 task_id 匹配（与 Worker findTaskFileByTaskId 一致）。
  */
 function collectResults(root, tasks, exchange) {
   const taskIds = new Set(tasks.map((t) => t.task_id));
@@ -195,16 +236,18 @@ function collectResults(root, tasks, exchange) {
       continue;
     }
     for (const name of readdirSync(fullDir)) {
-      if (!name.endsWith('.json')) {
-        continue;
-      }
-      const taskId = exchange ? name.replace(/^result_/, '').replace(/\.json$/, '') : name.replace(/\.json$/, '');
-      if (!taskIds.has(taskId)) {
+      if (!name.endsWith('.json') || name.endsWith('.tmp')) {
         continue;
       }
       try {
-        const result = JSON.parse(readFileSync(join(fullDir, name), 'utf-8'));
-        found.set(taskId, result);
+        const content = readFileSync(join(fullDir, name), 'utf-8');
+        const parsed = JSON.parse(content);
+        // 统一以文件内容中的完整 task_id 为准（结果文件内嵌完整 task_id，
+        // shared 用规范任务文件名，exchange 用 result_ 前缀文件名，均可忽略）。
+        const fileTaskId = parsed.task_id;
+        if (fileTaskId && taskIds.has(fileTaskId)) {
+          found.set(fileTaskId, parsed);
+        }
       } catch (err) {
         console.error(`[test_worker_single] 读取结果失败 ${dir}/${name}: ${err.message}`);
       }
@@ -246,7 +289,7 @@ function cleanupTasks(root, tasks, exchange) {
   const dir = exchange ? 'outbound' : 'pending';
   const targetDir = join(root, dir);
   for (const task of tasks) {
-    const p = join(targetDir, `${task.task_id}.json`);
+    const p = join(targetDir, taskFileName(task.submit_time, task.task_id));
     if (existsSync(p)) {
       rmSync(p, { force: true });
     }

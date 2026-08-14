@@ -18,5 +18,6 @@ export * from './tasks.js';
 export * from './utils.js';
 export * from './timestamp.js';
 export * from './terminal-sanitizer.js';
+export * from './file-logger.js';
 export * from './log-config.js';
 export * from './logger.js';

@@ -213,16 +213,6 @@ vm_share/
 
 exchange 模式下 MCP 侧还有一个 **本地镜像目录**（`$HOME/.msgferry/vm_share`），与共享目录的 `outbound/` / `inbound/` 结构一一对应，作为同步摆渡的本地中转。
 
-#### 3.3 会话目录（交互式会话，exec_mode=shell）
-
-```text
-vm_share/sessions/<session_id>/
-├─ session.json    # 会话元信息（status=running）
-├─ stdin/          # 内网写入的输入文件（<seq>.input）
-├─ stdout/         # Worker 回写的输出文件（<seq>.output）
-└─ close.marker    # 内网写入的关闭标记
-```
-
 ### 4. 消息原子性保障机制
 
 - **写文件原子化**：先写 `.tmp` 临时文件，写完完整内容后再 rename 为正式文件，避免半读脏数据。
@@ -342,7 +332,6 @@ Worker 的执行器由配置的 `executor` 与 `exec_mode` 决定，统一通过
 | `mock` | - | `MockSshExecutor` | 无（模拟） | 联调，无需真实 SSH |
 | `ssh2` | `command`（默认） | `SshExecExecutor` | SSH exec 通道 | 请求-响应式一次性命令 |
 | `ssh2` | `shell` | `SshShellExecExecutor` | SSH shell 通道 + pty | 目标设备不支持 exec 通道 |
-| `ssh2` | `shell` + session 任务 | `SessionManager` | SSH shell 通道 + pty | 长生命周期交互式会话 |
 
 ### 2. 一次性命令执行（exec 通道）
 
@@ -368,19 +357,6 @@ Worker 的执行器由配置的 `executor` 与 `exec_mode` 决定，统一通过
 - **命令串行化**：同一设备上的命令排队执行，避免并发写同一 shell 通道导致输出交错。
 - **结束标记检测**：交互式 shell 执行完命令不会关闭通道，因此在命令后注入唯一 marker（`echo <marker>:$?`），在 stdout 中匹配到 marker 即判定命令已结束并解析退出码，无需等到超时。
 - 命令结束后不关闭会话，仅释放命令级回调，长连接继续复用。
-
-### 4. 长生命周期交互式会话
-
-与一次性命令不同，**交互式 shell 会话**（`SessionManager`，`exec_mode=shell`）是 **长生命周期** 的 stdin/stdout 文件摆渡：Worker 为每个 running 会话建立 shell channel + pty，通过固定会话目录做双向文件交换，内网写输入、Worker 轮询注入、输出落盘供内网回读。
-
-![SSH 交互式会话时序](./msgferry-bridge-architecture/img/ssh-interactive-session-sequence.svg)
-
-要点：
-
-- **打开会话**：`SessionManager.open()` → `SshSessionFactory.open(device)` 走完整握手后 `client.shell()` 打开 shell channel + pty，注入初始命令，会话号形如 `ssh_1`。
-- **stdin 注入**：内网写 `<session_id>/stdin/<seq>.input`，Worker 每轮 `tick` 轮询 `listStdinInputs()` 读取并注入 shell；输出经 `onStdout` 回调落盘到 `<session_id>/stdout/<seq>.output` 供内网回读。
-- **关闭三路**：内网写 `close.marker`（`close_marker`）、空闲超时（`idle_timeout`）、或远端关闭（`remote_closed`），均先置终态回写 `session.json` 再关闭 channel；Worker 优雅退出时 `closeAll()` 全量关闭。
-- 受 HGFS 轮询延迟限制，仅适合低频交互，不适合 vim 等全屏 TUI。
 
 ## 六、 安全策略设计
 
@@ -525,13 +501,13 @@ Worker 运行在 **外网 Windows 宿主机**、MCP 运行在 **内网 Linux 虚
 
 ### 2. 局限性
 
-- **请求-响应式命令**：默认 exec 模式仅支持单条命令执行，交互式能力通过 shell 会话补充，但受 HGFS 轮询延迟限制，仅适合低频交互，不适合 vim 等全屏 TUI。
+- **请求-响应式命令**：默认 exec 模式仅支持单条命令执行；`exec_mode=shell` 提供基于 shell 通道的单命令执行（设备不支持 exec 通道时），并同步落盘**原始会话日志**。
 - **轮询延迟**：基于轮询机制存在毫秒级延迟，对 AI 调试场景可忽略。
 
 ### 3. 扩展能力
 
 - **批量任务与依赖编排**：任务结构体支持 `batch_id` 与 `depends_on`（task_id 列表），Worker 串行消费同一 batch 内有依赖关系的任务，无依赖的可并发。
-- **交互式会话能力**：已通过 `exec_mode=shell` 的 `SessionManager` 落地长生命周期会话，支持 stdin/stdout 双向文件摆渡。
+- **shell 单命令执行**：`exec_mode=shell` 通过 `SshShellExecExecutor` 在 shell 通道上执行单条命令（marker 检测结束），并按设备缓存会话、同步落盘**原始会话日志**（`logs/ssh-shell/<device>/`）。
 - **多设备接入**：`devices` 字典支持多设备各自建立独立 SSH 连接复用。
 
 ---

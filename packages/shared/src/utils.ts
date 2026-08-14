@@ -11,7 +11,7 @@
 
 import { TaskStatus, TERMINAL_STATUSES, VALID_TRANSITIONS } from './status.js';
 import { ErrorCode, RETRYABLE_ERROR_CODES } from './errors.js';
-import { CommandTask, SessionTask, DependencyChain } from './tasks.js';
+import { DependencyChain } from './tasks.js';
 
 /**
  * 判断给定状态是否为终态
@@ -31,24 +31,6 @@ export function isTerminalStatus(status: TaskStatus): boolean {
  */
 export function isRetryableErrorCode(code: ErrorCode): boolean {
   return RETRYABLE_ERROR_CODES.has(code);
-}
-
-/**
- * 判断给定任务是否为单命令任务
- * @param task - 任务对象（CommandTask 或 SessionTask）
- * @returns 是单命令任务返回 true，并收窄类型
- */
-export function isCommandTask(task: CommandTask | SessionTask): task is CommandTask {
-  return task.kind === 'command';
-}
-
-/**
- * 判断给定任务是否为 session 交互式任务
- * @param task - 任务对象（CommandTask 或 SessionTask）
- * @returns 是 session 任务返回 true，并收窄类型
- */
-export function isSessionTask(task: CommandTask | SessionTask): task is SessionTask {
-  return task.kind === 'session';
 }
 
 /**
