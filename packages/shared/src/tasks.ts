@@ -5,11 +5,11 @@
  * Author     : MsgFerry
  * Date       : 2026/08/07
  * Version    : 0.0.1
- * Description: MsgFerry shared 任务结构体（单命令任务、session 任务、批量任务）
+ * Description: MsgFerry shared 任务结构体（单命令任务、批量任务）
  * ======================================================
  */
 
-import { TaskStatus, SessionStatus } from './status.js';
+import { TaskStatus } from './status.js';
 
 /**
  * 单命令任务结构体
@@ -39,35 +39,6 @@ export interface CommandTask {
   status: TaskStatus;               // 任务状态
   worker_pid: number | null;        // 执行 Worker 的 PID
   policy_blocked: boolean;         // 是否被安全策略拦截
-}
-
-/**
- * Session 交互式会话任务结构体
- * 基于文件队列做 stdin/stdout 双向摆渡：
- *  - 内网写入 <sessions>/<session_id>/stdin/<seq>.input，Worker 轮询读取后
- *    通过 pty 注入 ssh shell 会话；
- *  - ssh 输出由 Worker 实时写入 <sessions>/<session_id>/stdout/<seq>.output；
- *  - 内网写 close 标记触发会话关闭（close_marker）。
- * 受限于 HGFS 轮询延迟，仅适合低频交互，不适合 vim 等全屏 TUI。
- */
-export interface SessionTask {
-  kind: 'session';                  // 判别字段，固定值
-  session_id: string;               // 会话唯一标识
-  cmd: string;                      // 初始命令（会话启动后首条注入的命令，可为空串）
-  device?: string;                  // 目标设备名（未指定走默认设备）
-  timeout_sec: number;              // 会话超时上限（从最后活跃起算的空闲超时）
-  submit_time: string;              // 任务产生时间（北京时间 YYYY-MM-DD HH:mm:ss.SSS）
-  start_time: string;               // 开始执行时间（北京时间，未开始为空串）
-  end_time: string;                 // 结束时间（北京时间，未结束为空串）
-  status: SessionStatus;            // 会话状态
-  session_dir: string;              // 会话摆渡根目录（<root>/sessions/<session_id>）
-  stdin_dir: string;                // stdin 摆渡目录（相对 session_dir）
-  stdout_dir: string;               // stdout 摆渡目录（相对 session_dir）
-  close_marker: string | null;      // 会话关闭标记路径，未关闭为 null
-  stdout_seq: number;               // stdout 下一序号（Worker 维护）
-  stdin_seq: number;                // stdin 下一序号（内网维护）
-  error_msg: string | null;
-  worker_pid: number | null;
 }
 
 /**

@@ -20,16 +20,6 @@ export const TaskStatus = {
 
 export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
-/** 会话状态枚举（远期 session 能力） */
-export const SessionStatus = {
-  Creating: 'creating',
-  Running: 'running',
-  Closed: 'closed',
-  Aborted: 'aborted',
-} as const;
-
-export type SessionStatus = typeof SessionStatus[keyof typeof SessionStatus];
-
 /** 终态集合：进入后不再流转 */
 export const TERMINAL_STATUSES: readonly TaskStatus[] = [
   TaskStatus.Completed,
