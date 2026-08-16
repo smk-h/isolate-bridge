@@ -197,9 +197,13 @@ exchange 模式的核心判据是：**MCP 侧配置了 `MSGFERRY_SYNC_PUSH_CMD` 
 > MSGFERRY_SYNC_PULL_CMD='cd {local_root}/inbound && file_transfer -g inbound'
 > ```
 >
-> 注意：命令里服务器侧只写相对 `inbound`，交给 `MSGFERRY_SYNC_MOCK_SERVER` 环境变量解析到服务器根，**不要**再硬编码 `nfs/vm_share/inbound` 前缀（否则环境变量一份、命令里又写死一份，改服务器根时会漏改导致不一致）。
+> 注意：
 >
-> 如果你的同步工具支持目标目录参数（如 `sync-mock` 的 `-g <src-dir> <dst-dir>`），也可直接写成 `MSGFERRY_SYNC_PULL_CMD='node scripts/sync-mock.mjs -g inbound {local_root}/inbound'`，无需 `cd`。
+> （1）命令里服务器侧只写相对 `inbound`，交给 `MSGFERRY_SYNC_MOCK_SERVER` 环境变量解析到服务器根，**不要**再硬编码类似 `nfs/vm_share/inbound` 这种前缀（否则环境变量一份、命令里又写死一份，改服务器根时会漏改导致不一致）。
+>
+> （2）如果你的同步工具支持目标目录参数（如 `sync-mock` 的 `-g <src-dir> <dst-dir>`），也可直接写成 `MSGFERRY_SYNC_PULL_CMD='node scripts/sync-mock.mjs -g inbound {local_root}/inbound'`，无需 `cd`。
+>
+> （3）一定要注意自己的同步工具下载的时候，具体到目录名时，是直接下载这个目录下来，还是直接把服务器上对应的这个目录中所有的文件拉到本地，例如，现在要拉inbound这个目录，一种情况是把inbound这个目录拉下来，另一种是把 inbound/xxx 这种文件拉下来到本地，但是没有 inbound 这一级目录，这个一定要注意。
 
 #### 2.2 sync-mock.mjs 工具
 
@@ -208,6 +212,52 @@ exchange 模式的核心判据是：**MCP 侧配置了 `MSGFERRY_SYNC_PUSH_CMD` 
 - 它需要 `MSGFERRY_SYNC_MOCK_SERVER` 指向交换服务器根 → 填 `/mnt/hgfs/sharedir/vm_share`（上面已放进 `.mcp.json` env，MCP spawn 子进程自动继承）。
 - 按 `-pd`（单文件上传）/ `-g`（整目录拉回）两个语义工作，与 `file_transfer` 对齐。
 - push/pull 模板用了 `{local_root}` 绝对路径占位符，故 `MSGFERRY_SYNC_MOCK_LOCAL` 可不配。
+
+##### 2.2.1 路径解析机制（谁替换、谁解析）
+
+同步命令里出现的路径，来源分两种：**本地侧靠 MCP 占位符替换**，**服务器侧靠工具内部解析**。这是最容易混淆的一处，先理清「谁替换、谁解析」：
+
+| 路径位置 | 命令中的写法 | 由谁处理 | 得到的结果 |
+| --- | --- | --- | --- |
+| 本地侧源/目标 | `{local_root}/inbound`、`{local_root}/{src}` | **MCP 模版替换**（`renderPushCommand` / `renderPullCommand`，纯字符串 `replaceAll`） | `MSGFERRY_LOCAL_ROOT` 展开的绝对路径，工具拿到直接用 |
+| 服务器侧目录 | `{dst}`（push，替换为 `outbound/`）、`inbound`（pull，字面相对路径） | **工具内部 resolve**（`resolvePath` = `resolve(MSGFERRY_SYNC_MOCK_SERVER, 相对目录)`） | `MSGFERRY_SYNC_MOCK_SERVER` 根下的绝对路径 |
+
+规则三条：
+
+- MCP **只做占位符替换、不做路径解析**：`{local_root}` / `{src}` / `{dst}` 替换成字面字符串，其余原样交给 spawn 出的工具（对应 `sync.ts` 的 `renderPushCommand` / `renderPullCommand`）。
+- **服务器侧永远只写相对目录**（`outbound/`、`inbound`），不带 `nfs/vm_share/` 前缀：绝对路径由工具按自己的服务器根 `MSGFERRY_SYNC_MOCK_SERVER` 解析，MCP 不关心服务器根长什么样。
+- 因此**改服务器根只动 `MSGFERRY_SYNC_MOCK_SERVER` 一个变量**，命令与脚本零改动；改本地根只动 `MSGFERRY_LOCAL_ROOT`，经 `{local_root}` 自动跟随。
+
+##### 2.2.2 具体示例（命令 → 源/目标路径解析）
+
+以 `.mcp.json` 的 exchange 配置为例，完整走一遍 push / pull 时，命令与 `MSGFERRY_SYNC_MOCK_SERVER` 如何决定 sync-mock 的拷贝源与目标（关键环境变量）：
+
+| 环境变量 | 值 |
+| --- | --- |
+| `MSGFERRY_LOCAL_ROOT` | `/home/sumu/.msgferry/vm_share` |
+| `MSGFERRY_SYNC_MOCK_SERVER` | `/mnt/hgfs/sharedir/vm_share` |
+
+**push 方向**（提交任务文件 `outbound/<id>.json`）：
+
+| 步骤 | 说明 |
+| --- | --- |
+| 1. MCP 渲染命令 | `{local_root}` → `/home/sumu/.msgferry/vm_share`、`{src}` → `outbound/<id>.json`、`{dst}` → `outbound/` |
+| 2. 实际执行 | `node .../sync-mock.mjs -pd /home/sumu/.msgferry/vm_share/outbound/<id>.json outbound/` |
+| 3. 解析本地源 | 参数已是绝对路径 → 原样 `/home/sumu/.msgferry/vm_share/outbound/<id>.json` |
+| 4. 解析服务器目标 | `resolvePath('outbound/')` = `resolve(MSGFERRY_SYNC_MOCK_SERVER, outbound/)` → `/mnt/hgfs/sharedir/vm_share/outbound/` |
+| 5. 拷贝结果 | 源 `/home/sumu/.msgferry/vm_share/outbound/<id>.json` → 目标 `/mnt/hgfs/sharedir/vm_share/outbound/<id>.json` |
+
+**pull 方向**（拉回 Worker 结果）：
+
+| 步骤 | 说明 |
+| --- | --- |
+| 1. MCP 渲染命令 | `{local_root}` → `/home/sumu/.msgferry/vm_share` |
+| 2. 实际执行 | `node .../sync-mock.mjs -g inbound /home/sumu/.msgferry/vm_share/inbound` |
+| 3. 解析服务器源 | `resolvePath('inbound')` = `resolve(MSGFERRY_SYNC_MOCK_SERVER, inbound)` → `/mnt/hgfs/sharedir/vm_share/inbound/` |
+| 4. 本地目标 | `/home/sumu/.msgferry/vm_share/inbound/` |
+| 5. 拷贝结果 | 源 `/mnt/hgfs/sharedir/vm_share/inbound/` → 目标 `/home/sumu/.msgferry/vm_share/inbound/`（整目录覆盖） |
+
+> 对应关系一句话：**命令负责「谁来传、传什么」（服务器侧只写相对 `outbound/`、`inbound`，不带前缀），`MSGFERRY_SYNC_MOCK_SERVER` 负责「传到服务器哪里」（把这些相对目录 resolve 到服务器根下）**。两者拆开，改服务器根只需动 `MSGFERRY_SYNC_MOCK_SERVER` 一个变量，命令与脚本代码零改动。
 
 exchange 模式数据流（保证文件正确单向摆渡的关键）：
 
