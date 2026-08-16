@@ -1,0 +1,8 @@
+# 测试用 Worker 配置模板（executor=mock + queue_mode=exchange）
+# 由 test/test_work.mjs 复制到 <hgfs-root>/config/worker.yaml 使用。
+# exchange 模式：Worker 扫 outbound/ 领任务、结果写 inbound/，心跳落 inbound/heartbeat.json。
+# 结果保留期调大到 3600，避免内网拉回周期较长时结果被 GC 清掉。
+queue_mode: exchange
+executor: mock
+exec_mode: command
+result_ttl_sec: 3600

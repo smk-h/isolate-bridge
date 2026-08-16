@@ -257,7 +257,7 @@ exec_mode: command      # 任务执行模式：command=一次性命令（默认�
 
 ## 四、 模拟测试
 
-本项目通过 `test/` 与 `scripts/` 下的辅助脚本完成端到端模拟测试，覆盖 **mock 执行器** 与 **真实 SSH 执行器** 两种方式，每种方式均支持 **shared（共享目录）** 与 **exchange（文件交换服务器）** 两种模式。
+本项目通过 `test/` 与 `scripts/` 下的辅助脚本完成端到端模拟测试，覆盖 **mock 执行器** 与 **真实 SSH 执行器** 两种方式，每种方式均支持 **shared（共享目录）** 与 **exchange（文件交换服务器）** 两种模式。配置模板统一放在 `test/config/`，由 `test/test_work.mjs` 按模式复制到 Worker 共享根目录。
 
 ### 1. 前置条件
 
@@ -265,35 +265,29 @@ exec_mode: command      # 任务执行模式：command=一次性命令（默认�
 # 1. 安装依赖并构建产物（所有测试脚本都依赖 dist/ 产物）
 pnpm install
 pnpm build
-
-# 2.（仅 SSH 本机模拟 `--device local` 需要）安装并启动本机 OpenSSH server
-sudo apt install openssh-server && sudo systemctl start ssh
 ```
 
-> 注意：`test/test_work_mock.mjs` 与 `test/test_work_ssh.mjs` 共用 `test/temp` 目录，**两者不要同时运行**。
+> 注意：`test/test_work.mjs` 复制的配置写入 `test/vm_share`（exchange 模式 MCP 本地根为 `test/msgferry/vm_share`），**不同模式/不同 worker 不要同时运行**。
 
 ### 2. 测试命令速览
 
 ```bash
-# mock 模拟测试（无需真实设备）
-node test/test_work_mock.mjs                # shared 共享目录模式（默认）
-node test/test_work_mock.mjs --exchange     # exchange 文件交换服务器模式
-
-# SSH 真实设备 / 本机模拟测试
-node test/test_work_ssh.mjs                              # 使用默认设备
-node test/test_work_ssh.mjs --device local               # 本机模拟设备（推荐，无需外部真实设备）
-node test/test_work_ssh.mjs --host <ip> --username <user> --password <pass> --port <port>  # 指定真实设备
+# 启动 Worker（executor + queue_mode 由 test/config 模板决定）
+node test/test_work.mjs                         # mock + shared（默认，无需真实设备）
+node test/test_work.mjs --executor ssh2         # ssh2 + shared（真实 SSH，默认设备）
+node test/test_work.mjs --exchange              # mock + exchange（文件交换服务器）
+node test/test_work.mjs --executor ssh2 --exchange  # ssh2 + exchange
 
 # MCP 客户端测试（配合上面 Worker 启动）
 node test/mcp-client.mjs                # shared 模式
 node test/mcp-client.mjs --exchange     # exchange 模式
-node test/mcp-client.mjs --device local # 指定设备名连接
+node test/mcp-client.mjs --device board-107 # 指定设备名连接（设备信息在 test/config ssh2 模板中静态配置）
 
 # 单独测试 Worker（无需启动 MCP Server，直接操作共享目录生成任务/获取结果）
 node test/test_worker_single.mjs                          # shared 模式（默认，写 pending/ 读 completed|failed/）
 node test/test_worker_single.mjs --exchange               # exchange 模式（写 outbound/ 读 inbound/）
 node test/test_worker_single.mjs --cmd "docker ps" --cmd "uname -a"  # 自定义命令（可多次）
-node test/test_worker_single.mjs --device local --timeout 15          # 指定设备与超时
+node test/test_worker_single.mjs --device board-107 --timeout 15          # 指定设备与超时
 
 # 模拟文件交换服务器脚本（cp 模拟 file_transfer，供 exchange 模式使用）
 node scripts/sync-mock.mjs -pd <src-file> <dst-dir>   # 上传方向

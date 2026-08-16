@@ -12,6 +12,15 @@
     "clean-log": "node scripts/clean-log.mjs",
     "kill-node": "node scripts/kill-node.mjs",
     "kill-node:dry-run": "node scripts/kill-node.mjs --dry-run",
+    "test:work:mock:shared": "node test/test_work.mjs",
+    "test:work:mock:exchange": "node test/test_work.mjs --exchange",
+    "test:work:ssh:shared": "node test/test_work.mjs --executor ssh2",
+    "test:work:ssh:exchange": "node test/test_work.mjs --executor ssh2 --exchange",
+    "test:client:shared": "node test/mcp-client.mjs",
+    "test:client:exchange": "node test/mcp-client.mjs --exchange",
+    "test:client:board-107": "node test/mcp-client.mjs --device board-107",
+    "test:client:shared:verbose": "node test/mcp-client.mjs --verbose",
+    "test:client:exchange:verbose": "node test/mcp-client.mjs --exchange --verbose",
     "git-sync-force": "node scripts/sync-force.mjs"
   },
   "engines": {

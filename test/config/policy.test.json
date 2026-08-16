@@ -1,0 +1,6 @@
+{
+  "whitelist_prefixes": ["docker", "kubectl", "systemctl", "journalctl", "cat", "ls", "tail", "pwd", "echo", "uname", "hostname"],
+  "blacklist_patterns": ["rm -rf /", "dd if=", "mkfs", ":(){"],
+  "dangerous_param_patterns": [],
+  "default_action": "allow"
+}

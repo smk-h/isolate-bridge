@@ -8,7 +8,10 @@
  * Description: 测试辅助脚本——以 MCP SDK Client 身份启动并连接 MCP Server，调用工具
  *
  * 用法：
- *   node test/mcp-client.mjs [--exchange] [--device <name>]
+ *   node test/mcp-client.mjs [--exchange] [--device <name>] [--verbose]
+ *
+ * 说明：默认只打印摘要（工具名、命令、断言 PASS/FAIL、关键字段），
+ *   --verbose 时打印完整期望/实际返回 JSON、工具详情与 MCP Server 全量日志。
  *
  * 说明：脚本内部会自动为 MCP Server 子进程主动赋值全部所需环境变量，
  *   无需在外部自行配置。配置以 JSON 对象 MCP_CONFIG 为统一来源，其内容
@@ -18,14 +21,15 @@
  *   与真实使用基本一致，行为更可控。
  *
  *   --device <name>  可选，目标设备名（透传给 submit_ssh_task 的 device 参数）；
- *                    未指定时走默认设备。配合 test_work_ssh.mjs --device local
- *                    可连接本机模拟设备做 SSH 模拟测试。
+ *                    未指定时走默认设备。设备连接信息在 test/config 的 ssh2
+ *                    配置模板 devices 块中静态配置（含 default / board-107）。
  *
  * 环境变量解析优先级：外部环境变量 > 测试覆盖默认值 > opencode.json 环境值。
- * 测试仅覆盖少数键使文件落在 test/temp 且用 cp 模拟交换服务器：
- *   MSGFERRY_LOCAL_ROOT         内网本地根目录，默认覆盖为 test/temp。
+ * 测试仅覆盖少数键使文件落在 test/vm_share（shared）/ test/msgferry/vm_share（exchange）且用 cp 模拟交换服务器：
+ *   MSGFERRY_LOCAL_ROOT         内网本地根目录，shared 默认 test/vm_share；
+ *                               exchange 默认 test/msgferry/vm_share。
  *                               若外部设置了该变量指向其他路径（如 $HOME），
- *                               脚本会打印告警提示测试文件不落在 test/temp
+ *                               脚本会打印告警提示测试文件不落在默认目录
  *   MSGFERRY_MAX_WAIT_MS        任务最大等待时长（来自 opencode.json）
  *   MSGFERRY_POLLING_INITIAL    轮询起步间隔（来自 opencode.json）
  *   MSGFERRY_POLLING_MAX        轮询退避上限（来自 opencode.json）
@@ -33,11 +37,11 @@
  *   LOG_DIR                     业务日志目录，缺省 <local_root>/logs/mcp-server
  *
  * --exchange 模式（文件交换服务器模式）：
- *   - 内网本地目录为 test/temp，模拟交换服务器为 test/temp_server
+ *   - 内网本地目录为 test/msgferry/vm_share，模拟交换服务器为 test/vm_share
  *   - MSGFERRY_SYNC_PUSH_CMD / PULL_CMD 默认用 scripts/sync-mock.mjs（cp 模拟
- *     file_transfer），沿用 opencode.json 的 {local_root} 模板前缀写法；
+ *     file_transfer），沿用 opencode.json 的 {local_root} 模板写法；
  *     真实环境可外部覆盖回 file_transfer 命令
- *   - 需先以 --exchange 启动 test_work_mock.mjs（worker 指向 test/temp_server）
+ *   - 需先以 --exchange 启动 test_work.mjs（worker 指向 test/vm_share）
  *
  * 行为：
  *   1. 通过 StdioClientTransport 启动并连接 MCP Server 子进程
@@ -53,7 +57,8 @@
  *   5. 测试完成后优雅退出
  *
  * 前置条件：
- *   - test/temp 为内网本地目录（含 outbound/inbound 单向信箱），由 MCP Server 在连接成功后自动创建
+ *   - shared：test/vm_share 为共享根目录（由 test_work.mjs 创建）
+ *   - exchange：内网本地 test/msgferry/vm_share（含 outbound/inbound 单向信箱）由 MCP Server 在连接成功后自动创建
  *   - Worker 进程已启动且心跳已写入
  * ======================================================
  */
@@ -71,15 +76,23 @@ const projectRoot = resolve(__dirname, '..');
 const mcpJs = resolve(projectRoot, 'dist', 'msgferry-mcp-server', 'index.mjs');
 
 // =====================================================
-// 统一配置源：内联 dist/msgferry-mcp-server/.opencode/opencode.json 的 mcp 部分
-// （源码配置在 packages/mcp-server/.opencode/opencode.json，构建后拷贝进 dist）。
-// 所有 MCP Server 环境变量的默认值均从对应 environment 解析，与真实使用保持一致。
+// 统一配置源：内联 dist/msgferry-mcp-server/.opencode/opencode.json 的 mcp 部分，
+// 并把 MCP 侧路径与模拟同步命令的测试覆盖值直接配置在 environment 中：
+//   - shared：MSGFERRY_LOCAL_ROOT = test/vm_share（与 Worker 共享根一致）
+//   - exchange：MSGFERRY_LOCAL_ROOT = test/msgferry/vm_share（内网本地根，与服务器隔离）
+//     MSGFERRY_SYNC_MOCK_SERVER = test/vm_share（模拟交换服务器根 = Worker 挂载根）
+//     MSGFERRY_SYNC_PUSH_CMD / PULL_CMD 用 scripts/sync-mock.mjs（cp 模拟 file_transfer）
+// 后续解析只做「外部环境变量 > MCP_CONFIG 默认值」，外部未设置即用这里的值。
 // =====================================================
+const testShareRoot = join(__dirname, 'vm_share');                // 共享根 / 模拟交换服务器根
+const testMcpLocalRoot = join(__dirname, 'msgferry', 'vm_share'); // 内网本地根（exchange）
+const syncMockCmd = `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')}`;
+
 const MCP_CONFIG = {
   mcp: {
     'msgferry-bridge': {
       environment: {
-        MSGFERRY_LOCAL_ROOT: '/mnt/hgfs/sharedir/vm_share',
+        MSGFERRY_LOCAL_ROOT: testShareRoot,
         MSGFERRY_MAX_WAIT_MS: '30000',
         MSGFERRY_POLLING_INITIAL: '500',
         MSGFERRY_POLLING_MAX: '3000',
@@ -88,24 +101,23 @@ const MCP_CONFIG = {
     },
     'msgferry-bridge-exchange': {
       environment: {
-        MSGFERRY_LOCAL_ROOT: '$HOME/.msgferry/vm_share',
+        MSGFERRY_LOCAL_ROOT: testMcpLocalRoot,
         MSGFERRY_MAX_WAIT_MS: '120000',
         MSGFERRY_POLLING_INITIAL: '500',
         MSGFERRY_POLLING_MAX: '3000',
-        MSGFERRY_SYNC_PUSH_CMD: 'file_transfer -pd {local_root}/{src} nfs/vm_share/{dst}',
-        MSGFERRY_SYNC_PULL_CMD: 'file_transfer -g nfs/vm_share/inbound {local_root}/inbound',
+        MSGFERRY_SYNC_PUSH_CMD: `${syncMockCmd} -pd {local_root}/{src} {dst}`,
+        MSGFERRY_SYNC_PULL_CMD: `${syncMockCmd} -g inbound {local_root}/inbound`,
         MSGFERRY_SYNC_TIMEOUT_MS: '30000',
         MSGFERRY_SYNC_RETRIES: '3',
+        MSGFERRY_SYNC_MOCK_SERVER: testShareRoot,
         LOG_SAVE: '1',
       },
     },
   },
 };
 
-// 解析配置：以 MCP_CONFIG（opencode.json 的 environment）为默认值来源，
-// 再叠加测试覆盖层（外部环境变量 > 测试默认值 > opencode.json 环境值）。
-// 测试只覆盖少数键（local_root 落到 test/temp、同步命令用 cp 模拟），
-// 其余环境变量直接复用 opencode.json 配置，行为与真实使用基本一致。
+// 解析配置：路径/同步命令等默认值统一取自 MCP_CONFIG，只叠加外部环境变量覆盖
+// （优先级：外部 process.env > MCP_CONFIG environment），外部未设置即用 MCP_CONFIG 里的值。
 function parseOpts() {
   const exchange = process.argv.includes('--exchange');
   const serverKey = exchange ? 'msgferry-bridge-exchange' : 'msgferry-bridge';
@@ -113,27 +125,18 @@ function parseOpts() {
 
   /**
    * 解析单个环境变量：
-   * 优先级：外部 process.env > 测试默认值 testDefault > opencode.json 环境值。
-   * 当 useConfigDefault 为 false 时跳过 opencode.json 值（用于同步命令等需强制替换的场景）。
+   * 优先级：外部 process.env > MCP_CONFIG 默认值。
    */
-  function pick(name, testDefault, useConfigDefault = true) {
+  function pick(name) {
     if (process.env[name] !== undefined && process.env[name] !== '') {
       return process.env[name];
     }
-    if (testDefault !== undefined) {
-      return testDefault;
-    }
-    if (useConfigDefault) {
-      const v = baseEnv[name];
-      if (v !== undefined && v !== '') {
-        return v;
-      }
-    }
-    return undefined;
+    const v = baseEnv[name];
+    return v !== undefined && v !== '' ? v : undefined;
   }
 
-  const opts = { exchange };
-  opts.localRoot = pick('MSGFERRY_LOCAL_ROOT', join(__dirname, 'temp'));
+  const opts = { exchange, verbose: process.argv.includes('--verbose') };
+  opts.localRoot = pick('MSGFERRY_LOCAL_ROOT');
   opts.maxWait = pick('MSGFERRY_MAX_WAIT_MS');
   opts.pollingInitial = pick('MSGFERRY_POLLING_INITIAL');
   opts.pollingMax = pick('MSGFERRY_POLLING_MAX');
@@ -149,25 +152,10 @@ function parseOpts() {
     : undefined;
 
   if (exchange) {
-    // 模拟交换服务器目录（测试专用，不在 opencode.json 中，外部可覆盖）
-    const serverRoot = pick('MSGFERRY_SYNC_MOCK_SERVER', join(__dirname, 'temp_server'));
-    // 同步命令默认用 scripts/sync-mock.mjs（cp 模拟 file_transfer）。
-    // opencode.json 中为真实 file_transfer，测试环境无此工具故强制替换；
-    // 模板沿用 {local_root} 占位符方案，外部可用 MSGFERRY_SYNC_PUSH_CMD 覆盖回真实命令。
-    opts.syncPushCmd = pick(
-      'MSGFERRY_SYNC_PUSH_CMD',
-      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -pd {local_root}/{src} nfs/vm_share/{dst}`,
-      false,
-    );
-    opts.syncPullCmd = pick(
-      'MSGFERRY_SYNC_PULL_CMD',
-      `node ${join(projectRoot, 'scripts', 'sync-mock.mjs')} -g nfs/vm_share/inbound {local_root}/inbound`,
-      false,
-    );
-    opts.syncMockServer = serverRoot;
-    // 兼容旧写法：若同步命令仍用相对前缀（如 vm_share/{src}），sync-mock 需据此剥离前缀
-    // 再相对内网本地根解析；改用 {local_root} 后 src 为绝对路径，该前缀不再生效。
-    opts.syncMockLocalPrefix = 'vm_share/';
+    // 同步命令与模拟交换服务器根均从 MCP_CONFIG 读取，外部可覆盖回真实 file_transfer
+    opts.syncPushCmd = pick('MSGFERRY_SYNC_PUSH_CMD');
+    opts.syncPullCmd = pick('MSGFERRY_SYNC_PULL_CMD');
+    opts.syncMockServer = pick('MSGFERRY_SYNC_MOCK_SERVER');
   }
   return opts;
 }
@@ -176,7 +164,7 @@ function parseOpts() {
  * 组装传给 MCP Server 子进程的环境变量
  * StdioClientTransport 默认只继承白名单环境变量（HOME / PATH / USER 等），
  * MSGFERRY_* / LOG_SAVE / LOG_DIR 不会自动透传，需在此显式指定。
- * 值统一取自 MCP_CONFIG（opencode.json 的 environment）+ 测试覆盖层，
+ * 值统一取自 MCP_CONFIG（environment 默认值 + 外部环境变量覆盖），
  * 无需用户在运行 `node test/mcp-client.mjs` 前自行配置任何环境变量。
  */
 function buildServerEnv(opts) {
@@ -199,29 +187,31 @@ function buildServerEnv(opts) {
     env.MSGFERRY_SYNC_TIMEOUT_MS = opts.syncTimeoutMs;
     env.MSGFERRY_SYNC_RETRIES = opts.syncRetries;
     env.MSGFERRY_SYNC_MOCK_SERVER = opts.syncMockServer;
-    // 内网本地根 + 模板 src 前缀：sync-mock 定位本地文件需剥离 src 前缀后相对内网根解析
+    // 内网本地根：sync-mock 定位本地任务文件的基准
     env.MSGFERRY_SYNC_MOCK_LOCAL = opts.localRoot;
-    env.MSGFERRY_SYNC_MOCK_LOCAL_PREFIX = opts.syncMockLocalPrefix;
   }
   return env;
 }
 
 const opts = parseOpts();
 
-// 安全校验：测试脚本默认应使用 test/temp 作为共享根目录。
+// 安全校验：测试脚本默认应使用测试目录作为共享根目录
+// （shared=test/vm_share，exchange=test/msgferry/vm_share）。
 // 若外部环境变量 MSGFERRY_LOCAL_ROOT 被设置为其他路径（如家目录/共享挂载点），
-// 测试文件将不落在 test/temp，此处打印告警以便及时发现。
-const expectedRoot = join(__dirname, 'temp');
+// 测试文件将不落在默认目录，此处打印告警以便及时发现。
+const expectedRoot = opts.exchange ? join(__dirname, 'msgferry', 'vm_share') : join(__dirname, 'vm_share');
 if (opts.localRoot !== expectedRoot) {
   console.warn(`\n[警告] MSGFERRY_LOCAL_ROOT 被外部环境变量覆盖，当前为: ${opts.localRoot}`);
   console.warn(`        测试文件将不落在 ${expectedRoot}，可能导致测试数据写到非预期目录。`);
-  console.warn(`        如需使用 test/temp，请先取消设置 MSGFERRY_LOCAL_ROOT 环境变量。\n`);
+  console.warn(`        如需使用默认测试目录，请先取消设置 MSGFERRY_LOCAL_ROOT 环境变量。\n`);
 }
 
-// 打印最终生效的环境变量，便于排查（外部覆盖 / 内置默认一目了然）
-console.log('[mcp-client] 生效的环境变量:');
-for (const [k, v] of Object.entries(buildServerEnv(opts))) {
-  console.log(`  ${k}=${v}`);
+// 打印最终生效的环境变量，便于排查（--verbose 时显示，默认静默）
+if (opts.verbose) {
+  console.log('[mcp-client] 生效的环境变量:');
+  for (const [k, v] of Object.entries(buildServerEnv(opts))) {
+    console.log(`  ${k}=${v}`);
+  }
 }
 
 // 检查 MCP Server 编译产物
@@ -235,7 +225,7 @@ if (!existsSync(mcpJs)) {
 // 连接成功后识别到 exchange 模式时自动创建（见 server.ts），故连接前不强制要求。
 if (!opts.exchange && !existsSync(opts.localRoot)) {
   console.error(`[mcp-client] 共享目录不存在: ${opts.localRoot}`);
-  console.error('[mcp-client] 请先运行: node test/test_work_mock.mjs');
+  console.error('[mcp-client] 请先运行: node test/test_work.mjs');
   process.exit(1);
 }
 
@@ -243,7 +233,7 @@ if (!opts.exchange && !existsSync(opts.localRoot)) {
 if (opts.exchange) {
   if (!existsSync(opts.syncMockServer)) {
     console.error(`[mcp-client] 模拟交换服务器目录不存在: ${opts.syncMockServer}`);
-    console.error('[mcp-client] 请先运行: node test/test_work_mock.mjs --exchange');
+    console.error('[mcp-client] 请先运行: node test/test_work.mjs --exchange');
     process.exit(1);
   }
   if (!existsSync(join(projectRoot, 'scripts', 'sync-mock.mjs'))) {
@@ -260,13 +250,35 @@ function separator(title) {
 }
 
 /**
- * 打印期望返回值
+ * 打印期望返回值（仅 --verbose 时输出）
  * @param {string} label - 工具名称
  * @param {object} expected - 期望的 structuredContent 结构
  */
 function printExpected(label, expected) {
+  if (!opts.verbose) return;
   console.log(`\n  [期望返回值]`);
   console.log('  ' + JSON.stringify(expected, null, 2).replace(/\n/g, '\n  '));
+}
+
+/**
+ * 构造单行摘要（默认模式打印关键字段，避免整份 JSON 刷屏）
+ * @param {object} sc - structuredContent
+ * @returns {string} 单行摘要
+ */
+function compactSummary(sc) {
+  if (!sc) return '(无 structuredContent)';
+  const parts = [];
+  if (sc.task_id) parts.push(`task_id=${sc.task_id.slice(0, 8)}`);
+  if (sc.online !== undefined) parts.push(`online=${sc.online}`);
+  if (sc.status) parts.push(`status=${sc.status}`);
+  if (sc.cancelled !== undefined) parts.push(`cancelled=${sc.cancelled}`);
+  if (sc.exit_code !== undefined) parts.push(`exit=${sc.exit_code}`);
+  if (sc.duration_ms !== undefined) parts.push(`dur=${sc.duration_ms}ms`);
+  if (sc.error_code) parts.push(`error_code=${sc.error_code}`);
+  if (sc.error_msg) parts.push(`error=${sc.error_msg}`);
+  if (sc.stdout) parts.push(`stdout=${sc.stdout.replace(/\n/g, ' ').slice(0, 80)}`);
+  if (sc.stderr) parts.push(`stderr=${sc.stderr.replace(/\n/g, ' ').slice(0, 80)}`);
+  return parts.join('  ') || JSON.stringify(sc);
 }
 
 /**
@@ -277,13 +289,17 @@ function printExpected(label, expected) {
  */
 function printResult(label, result, assertFn) {
   const sc = result.structuredContent;
-  console.log(`\n  [实际返回值]`);
-  console.log('  ' + JSON.stringify(sc, null, 2).replace(/\n/g, '\n  '));
+  if (opts.verbose) {
+    console.log(`\n  [实际返回值]`);
+    console.log('  ' + JSON.stringify(sc, null, 2).replace(/\n/g, '\n  '));
+  } else {
+    console.log(`  ${compactSummary(sc)}`);
+  }
 
   if (assertFn) {
     const passed = assertFn(sc);
-    console.log(`\n  [断言] ${passed ? 'PASS' : 'FAIL'}`);
-    if (!passed) {
+    console.log(`  [断言] ${passed ? 'PASS' : 'FAIL'}`);
+    if (!passed && opts.verbose) {
       console.log('  期望字段未全部满足，请检查上方实际返回值');
     }
   }
@@ -353,9 +369,13 @@ async function main() {
     stderr: 'pipe',
   });
 
-  // 转发 MCP Server 的 stderr 到当前进程
+  // 转发 MCP Server 的 stderr：--verbose 全量转发；默认只转发含 error/warn/fail 的行，
+  // 避免业务日志刷屏
   transport.stderr?.on('data', (d) => {
-    process.stderr.write('[mcp-server] ' + d.toString());
+    const text = d.toString();
+    if (opts.verbose || /error|warn|fail/i.test(text)) {
+      process.stderr.write('[mcp-server] ' + text);
+    }
   });
 
   const client = new Client(
@@ -371,10 +391,12 @@ async function main() {
   const toolsResult = await client.listTools();
   const toolNames = toolsResult.tools.map((t) => t.name);
   console.log('  注册的工具:', toolNames.join(', '));
-  for (const tool of toolsResult.tools) {
-    console.log(`\n  --- ${tool.name} ---`);
-    console.log(`  title: ${tool.title ?? '(无)'}`);
-    console.log(`  description: ${tool.description ?? '(无)'}`);
+  if (opts.verbose) {
+    for (const tool of toolsResult.tools) {
+      console.log(`\n  --- ${tool.name} ---`);
+      console.log(`  title: ${tool.title ?? '(无)'}`);
+      console.log(`  description: ${tool.description ?? '(无)'}`);
+    }
   }
 
   // 1. check_bridge_health
@@ -395,7 +417,7 @@ async function main() {
 
   // 2. submit_ssh_task（单条命令）
   separator('工具调用 2: submit_ssh_task（单条命令）');
-  await runSubmitTask(client, 'docker ps', { timeout_sec: 10 });
+  await runSubmitTask(client, 'uname -a', { timeout_sec: 10 });
 
   // 3. submit_ssh_task（多条命令串联：换行分隔，验证 cd && pwd && ls 的真实场景）
   separator('工具调用 3: submit_ssh_task（多条命令串联）');

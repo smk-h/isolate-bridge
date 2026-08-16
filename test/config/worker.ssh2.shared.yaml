@@ -1,0 +1,20 @@
+# 测试用 Worker 配置模板（executor=ssh2 + queue_mode=shared）
+# 由 test/test_work.mjs 复制到 <hgfs-root>/config/worker.yaml 使用。
+# 连哪台设备由任务 device 字段决定（mcp-client 用 --device <name>）；未指定走 default。
+# 需要连接的设备直接修改本文件的 devices 块：
+#   - default：默认设备
+#   - board-107：与 default 同主机的命名设备（可按需改 IP/端口/用户名）
+queue_mode: shared
+executor: ssh2
+exec_mode: command
+devices:
+  default:
+    host: 192.168.16.107
+    port: 22
+    username: root
+    password: root
+  board-107:
+    host: 192.168.16.107
+    port: 22
+    username: root
+    password: root

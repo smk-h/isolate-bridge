@@ -43,16 +43,6 @@ devices:
     port: 22
     username: admin
     password: another_password
-  # 本机模拟设备：连接本机 OpenSSH server（127.0.0.1），适合本地测试
-  # ssh_shell_login / ssh_shell_exec / SFTP 上传下载，无需外部真实设备。
-  # 前置条件：本机已安装并启动 OpenSSH server（sudo apt install openssh-server
-  # && sudo systemctl start ssh）。username 可用当前系统用户（$USER），
-  # 测试脚本 test_work_ssh.mjs 传 --device local 会自动切换到本机连接。
-  local:
-    host: 127.0.0.1
-    port: 22
-    username: root
-    password: ''
 
 # 策略文件路径（建议写相对共享根目录的路径，由 Worker 解析为绝对路径）
 policy_file: policy/policy.json
