@@ -46,7 +46,7 @@ pnpm build
 
 （3）**Pack**：依据各子包 `.npmignore` 白名单清单拷贝分发文件，并从 pnpm `.pnpm` store 解引用拷贝 external 依赖的 `node_modules`（离线解压即用）；
 
-（4）**Tarball**：对每个成果物生成 `dist/<产物名>.tar.gz`。
+（4）**Tarball**：对每个成果物生成 `dist/<产物名>-v<版本号>.tar.gz`（版本号取自产物目录内 `package.json` 的 `version` 字段）。
 
 > 子包 `src/` 与 `test/` 不进产物（已被 bundle 成 `index.mjs`），新增分发文件只需改对应子包的 `.npmignore`，无需改动 build。
 
@@ -57,9 +57,9 @@ pnpm build
 | 成果物 | 内容 | 部署侧 |
 | --- | --- | --- |
 | `dist/msgferry-mcp-server/` | `index.mjs`、`.mcp.json`、`.claude/settings.local.json`、`.opencode/opencode.json`、`scripts/sync-mock.mjs`、`node_modules/`、`package.json` | Ubuntu 内网 |
-| `dist/msgferry-mcp-server.tar.gz` | 同上压缩包 | |
+| `dist/msgferry-mcp-server-v<版本号>.tar.gz` | 同上压缩包（如 `msgferry-mcp-server-v0.0.0.tar.gz`） | |
 | `dist/msgferry-worker/` | `index.mjs`、`config.example.yaml`、`policy.example.json`、`node_modules/`、`package.json` | Windows 外网 |
-| `dist/msgferry-worker.tar.gz` | 同上压缩包 | |
+| `dist/msgferry-worker-v<版本号>.tar.gz` | 同上压缩包（如 `msgferry-worker-v0.0.0.tar.gz`） | |
 
 - 两个成果物均为 **解压即用**（`node_modules` 已内置），可直接拷贝或解压到部署机。
 - 自带 CLI 命令：MCP Server 为 `msgferry-mcp`（入口 `index.mjs`），Worker 为 `msgferry-worker`。
