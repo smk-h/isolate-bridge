@@ -65,6 +65,26 @@ pnpm build
 - 自带 CLI 命令：MCP Server 为 `msgferry-mcp`（入口 `index.mjs`），Worker 为 `msgferry-worker`。
 - Worker 的 `config.example.yaml` 需按部署场景改名为 `config/worker.yaml` 放到共享根目录下（见第二章）。
 
+### 6. 版本号管理
+
+采用 **lockstep 统一版本**：根 `package.json` 的 `version` 是唯一版本源，`mcp-server` 与 `worker` 两个发布子包的版本始终与之一致。两者成对部署、共享 `shared` 协议层，统一版本号便于在隔离网络两侧核对部署的是同一发布批次（压缩包名中的 `v<版本号>` 即来源于此）。
+
+发版流程：
+
+```sh
+# 1. 编辑根 package.json 的 version 字段（如 0.0.0 -> 0.1.0）
+# 2. 同步子包版本（scripts/sync-packages.mjs，幂等，仅写有变化的文件）
+pnpm sync-packages
+# 3. 构建产出带新版本号的压缩包
+pnpm build
+```
+
+【**注意**】
+
+- `pnpm build` 前置版本一致性守卫：子包版本与根版本不一致时直接报错，提示先运行 `pnpm sync-packages`，避免产出与根版本脱节的压缩包。
+- `shared`（被 bundle 内联）与 `build`（构建工具）不发布，不参与版本同步。
+- pnpm workspace 依赖走 `link:` 协议，lockfile 不记录子包自身版本，因此无需像 npm 仓库那样同步 lockfile。
+
 ## 二、 怎么部署？
 
 部署拓扑为「内网 Ubuntu 虚拟机 + 外网 Windows 物理机」，两侧通过 VMware HGFS 共享文件夹互通。以 `vm_share` 作为**共享根目录**（所有队列子目录、交换服务器目录都收进 `vm_share`，不裸在上级目录）。

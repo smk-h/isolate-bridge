@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "build": "pnpm --filter @smai-kit/msgferry-build run build:dist",
+    "sync-packages": "node scripts/sync-packages.mjs",
     "dev": "pnpm -r --parallel run dev",
     "clean": "pnpm -r exec rimraf dist && rimraf dist",
     "clean:all": "pnpm -r exec rimraf dist node_modules && rimraf dist node_modules",

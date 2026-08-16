@@ -2,7 +2,34 @@ import { existsSync, rmSync, readFileSync } from "fs";
 import { resolve } from "path";
 import picocolors from "picocolors";
 import { execSync } from "child_process";
-import { buildTargets, buildOutput, pkgOutputNames } from "./helper";
+import {
+  buildTargets,
+  buildOutput,
+  pkgOutputNames,
+  getPkgSrcRoot,
+  projectPackage,
+} from "./helper";
+
+/**
+ * 版本一致性守卫：根 package.json 是唯一版本源（lockstep 发版），
+ * 子包版本不一致说明改了根版本但忘了跑 pnpm sync-packages，
+ * 直接报错拦截，避免产出与根版本脱节的压缩包
+ */
+const verifyVersions = () => {
+  const rootVersion = JSON.parse(
+    readFileSync(projectPackage, "utf-8")
+  ).version;
+
+  for (const pkgName of buildTargets) {
+    const pkgPath = resolve(getPkgSrcRoot(pkgName), "package.json");
+    const version = JSON.parse(readFileSync(pkgPath, "utf-8")).version;
+    if (version !== rootVersion) {
+      throw new Error(
+        `[${pkgName}] 版本 ${version} 与根版本 ${rootVersion} 不一致，请先运行 pnpm sync-packages`
+      );
+    }
+  }
+};
 
 /**
  * 完整构建流程：
@@ -13,6 +40,9 @@ import { buildTargets, buildOutput, pkgOutputNames } from "./helper";
  */
 const main = async () => {
   console.log(picocolors.cyan("=== MsgFerry Build ===\n"));
+
+  // 0. 版本一致性守卫（在清理 dist 之前，失败不破坏现有产物）
+  verifyVersions();
 
   // 1. 清理旧产物
   if (existsSync(buildOutput)) {
