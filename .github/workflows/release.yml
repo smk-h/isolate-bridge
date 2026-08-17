@@ -1,0 +1,129 @@
+name: Publish Release
+
+# 触发条件：推送到 main/master 且提交记录标题（message 首行）包含 [release]（含中括号整体）标记
+# 触发链：CNB push(main) → tencentcom/git-sync 同步到 GitHub → 本流水线触发
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write # 创建 tag / release 需要
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 1. 读取版本号并创建草稿 Release（占位，后续 job 上传产物）
+  #    提交记录标题含 [release] 时自动触发
+  # ─────────────────────────────────────────────────────────────
+  release:
+    name: Create Draft Release
+    runs-on: ubuntu-latest
+    if: contains(join(github.event.commits.*.message, ' '), '[release]')
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Read version from package.json
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.meta.outputs.tag }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true # 自动生成 changelog（追加在 body 之后）
+          body: |
+            ## 产物说明
+
+            | 文件 | 适用场景 |
+            |------|---------|
+            | `msgferry-mcp-server-${{ steps.meta.outputs.version }}.tar.gz` | 内网 MCP Server（任务投递与结果回读），启动命令 `msgferry-mcp` |
+            | `msgferry-worker-${{ steps.meta.outputs.version }}.tar.gz` | 外网 Node Worker（任务消费与 SSH 执行），启动命令 `msgferry-worker` |
+
+            ### 使用说明
+
+            压缩包已内置依赖（node_modules 随包分发），解压即用，无需 `npm install`：
+
+            ```bash
+            tar -xzf msgferry-mcp-server-${{ steps.meta.outputs.version }}.tar.gz
+            cd msgferry-mcp-server
+            node index.mjs
+            ```
+
+            ```bash
+            tar -xzf msgferry-worker-${{ steps.meta.outputs.version }}.tar.gz
+            cd msgferry-worker
+            node index.mjs
+            ```
+
+  # ─────────────────────────────────────────────────────────────
+  # 2. 构建：pnpm 安装依赖 + 构建，产出 dist/ 下两个压缩包并上传
+  #    ssh2/cpu-features 为原生依赖，安装时按 runner 平台编译；
+  #    与本地打包环境一致，使用 windows runner 生成 Windows 二进制。
+  # ─────────────────────────────────────────────────────────────
+  build:
+    name: Build dist bundles
+    needs: release
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash # Windows runner 默认 PowerShell，统一改用 Git Bash 跑 pnpm/tar
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dist bundles
+        run: pnpm build
+
+      - name: Verify dist archives
+        run: ls -lh dist/*.tar.gz
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          draft: true
+          files: dist/*.tar.gz
+
+  # ─────────────────────────────────────────────────────────────
+  # 3. 全部产物上传完毕，把草稿 Release 正式发布
+  # ─────────────────────────────────────────────────────────────
+  publish:
+    name: Publish Release
+    needs: [release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark release as published (undraft)
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          draft: false
+          make_latest: true
