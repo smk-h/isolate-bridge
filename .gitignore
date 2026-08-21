@@ -8,6 +8,8 @@ dist/
 test/vm_share
 test/msgferry
 .pnpm-store/
+/*.tar.gz
+
 
 # 本地渲染脚本（拉取自 my-skills，勿提交）
 scripts/render-puml.mjs
