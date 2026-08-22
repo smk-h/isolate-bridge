@@ -43,6 +43,12 @@ afterEach(() => {
 });
 
 describe('parseConfig from config file', () => {
+  it('throws early when --hgfs-root is missing', () => {
+    // 未传 --hgfs-root 时必须在路径解析/配置文件读取之前就抛错
+    assert.throws(() => parseConfig([]), /--hgfs-root is required/);
+    assert.throws(() => parseConfig(['--log-save', '1']), /--hgfs-root is required/);
+  });
+
   it('reads ssh settings from <hgfs_root>/config/worker.yaml', () => {
     const root = makeRoot();
     writeConfig(root, {
