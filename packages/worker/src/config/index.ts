@@ -300,3 +300,4 @@ export function validateConfig(config: WorkerConfig): void {
 export type { SshConfig, DeviceSshMap, DeviceSshFileShape } from './device.js';
 export { findSshConfig, isValidDeviceName } from './device.js';
 export { ensureConfigTemplate } from './template.js';
+export { pickArg };
