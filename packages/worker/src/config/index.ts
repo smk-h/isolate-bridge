@@ -130,6 +130,11 @@ function pickArg(argv: string[], flag: string): string | undefined {
 export function parseConfig(argv: string[]): WorkerConfig {
   // hgfs_root 仅来自命令行（配置文件路径依赖它，存在循环依赖）
   const hgfsRoot = pickArg(argv, '--hgfs-root') ?? '';
+  // 尽早校验：hgfs_root 缺失时后续所有基于它的路径解析/文件读取都无意义，
+  // 必须先于任何路径拼接与配置文件读取抛出清晰错误，避免在空字符串下误读相对路径
+  if (!hgfsRoot) {
+    throw new Error('--hgfs-root is required (HGFS shared root directory)');
+  }
 
   // 读取配置文件（存在才生效，否则全部走 CLI/默认值）
   const configFilePath = resolveUnderRoot(hgfsRoot, WORKER_CONFIG_FILE);
@@ -300,3 +305,4 @@ export function validateConfig(config: WorkerConfig): void {
 export type { SshConfig, DeviceSshMap, DeviceSshFileShape } from './device.js';
 export { findSshConfig, isValidDeviceName } from './device.js';
 export { ensureConfigTemplate } from './template.js';
+export { pickArg };

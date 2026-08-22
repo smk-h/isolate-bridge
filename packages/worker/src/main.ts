@@ -9,7 +9,7 @@
  * ======================================================
  */
 
-import { parseConfig, validateConfig, ensureConfigTemplate } from './config/index.js';
+import { parseConfig, validateConfig, ensureConfigTemplate, pickArg } from './config/index.js';
 import { createBackoff } from './backoff.js';
 import { statSync } from 'node:fs';
 import { spawn } from 'node:child_process';
@@ -103,8 +103,26 @@ function startConfigWatcher(root: string): void {
   timer.unref?.();
 }
 
-/** 主函数占位，下一步追加实现 */
+/**
+ * 主函数
+ * 启动顺序要点：
+ * 1. hgfs_root 仅来自命令行，先单独解析出来
+ * 2. 先 ensureConfigTemplate 让模板复制出的 config/worker.yaml 就位
+ * 3. 再 parseConfig 读取完整配置，保证首次启动就能读到模板中的 queue_mode 等设置
+ */
 export async function main(): Promise<void> {
+  // ① hgfs_root 仅来自命令行（避免与配置文件形成循环依赖），先独立取出
+  const hgfsRoot = pickArg(process.argv, '--hgfs-root') ?? '';
+
+  // ② 启动引导：先补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
+  //    放在 parseConfig 之前，确保首次启动也能读到模板复制出的 worker.yaml
+  //    hgfsRoot 为空时跳过，留给 validateConfig 统一报“hgfs_root is required”
+  if (hgfsRoot) {
+    await ensureConfigTemplate(hgfsRoot);
+    await ensurePolicyTemplate(hgfsRoot);
+  }
+
+  // ③ 再解析完整配置（此时 config/worker.yaml 已就位，queue_mode 等模板值生效）
   const config = parseConfig(process.argv);
   validateConfig(config);
   const root = config.hgfs_root;
@@ -128,10 +146,6 @@ export async function main(): Promise<void> {
 
   // 队列策略：收敛 shared/exchange 分支（选目录、回写、取消、心跳、GC）
   const strategy: QueueModeStrategy = createQueueStrategy(config.queue_mode);
-
-  // 启动引导：自动补齐共享目录的 config/ 与 policy/ 目录及模板文件（已存在则跳过）
-  await ensureConfigTemplate(root);
-  await ensurePolicyTemplate(root);
 
   // 配置文件变更检测：mtime 变化即预校验新配置并热重启（须在 ensureConfigTemplate / ensurePolicyTemplate 之后）
   startConfigWatcher(root);
