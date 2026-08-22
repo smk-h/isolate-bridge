@@ -14,7 +14,7 @@
 # 队列模式：shared（共享目录，免同步，默认）| exchange（文件交换服务器单向信箱）
 # exchange 模式下 worker 扫描 outbound/ 领取任务，结果回写 inbound/，
 # 心跳额外落 inbound/heartbeat.json；结果保留期建议调大到 3600。
-queue_mode: exchange
+queue_mode: shared
 
 # SSH 执行器：mock（本地模拟）| ssh2（真实 SSH）
 executor: ssh2
@@ -24,7 +24,7 @@ executor: ssh2
 #   shell  ：交互式 shell ——使用 SSH shell 通道 + pty 执行命令，
 #            适用于目标设备不支持 exec 通道、仅支持交互式登录 shell 的场景
 #            （如部分 Dropbear / 受限登录 shell）。
-exec_mode: shell
+exec_mode: command
 
 # 多设备：设备名 → SSH 连接信息（设备名仅限字母/数字/下划线/连字符）
 devices:
@@ -58,7 +58,7 @@ heartbeat_interval_sec: 5
 # 结果文件保留期（秒）
 # 交换服务器模式（queue_mode: exchange）下内网拉回周期可能较长，
 # 建议调大到 3600，避免结果没拉回就被 GC 清掉。
-result_ttl_sec: 3600
+result_ttl_sec: 600
 
 # stdout/stderr 内联字节数上限（超过则落 outputs/ 子目录）
 max_inline_bytes: 65536
